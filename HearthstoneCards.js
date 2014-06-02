@@ -28,6 +28,7 @@
     BEFORE_SPELL: 11,
     AFTER_SPELL: 12,
     MINION_DIES: 13,
+    AFTER_MINION_SUMMONED: 14
   }
   
   var CardType = {
@@ -57,16 +58,19 @@
     verify: function(game, position, opt_target) {
       // verify sufficient mana
       if (game.currentPlayer.currentMana < this.currentMana) {
+        console.log('insufficient mana');
         return false;
       }
       
       // verify sufficient space
       if (game.currentPlayer.minions.length >= 7) {
+        console.log('insufficient space');
         return false;
       }
       
       // verify valid position
-      if (game.curentPlayer.minions.length < position) {
+      if (game.currentPlayer.minions.length < position) {
+        console.log('invalid position');
         return false;
       }
       
@@ -74,13 +78,15 @@
       if (this.battlecry) {
         return this.battlecry.verify(game, position, opt_target);
       }
+      
+      return true;
     },
     activate: function(game, position, opt_target) {
       // spend mana
       game.currentPlayer.currentMana -= this.currentMana;
       
       // add minion to board
-      var minion = new Minion(game.currentPlayer, this.attack, this.hp, this.charge, this.divineShield, this.stealth, this.taunt, this.windfury, this.handlers);
+      var minion = new Minion(game.currentPlayer, this.name, this.mana, this.attack, this.hp, this.charge, this.divineShield, this.stealth, this.taunt, this.windfury, this.handlers);
       game.currentPlayer.minions.splice(position, 0, minion);
       minion.registerHandlers();
       
@@ -90,6 +96,7 @@
       }
       
       // trigger events
+      console.log(game.handlers, Events.AFTER_MINION_SUMMONED);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
     }
   };
@@ -158,14 +165,16 @@
   };
   
   var TargetType = {
+    HERO: 0,
     MINION: 1,
-    HERO: 2
   };
   
-  var Minion = function(player, attack, hp, charge, divineShield, stealth, taunt, windfury, eventHandlers) {
+  var Minion = function(player, name, mana, attack, hp, charge, divineShield, stealth, taunt, windfury, eventHandlers) {
     this.type = TargetType.MINION;
     
     this.player = player;
+    this.name = name;
+    this.mana = mana;
     this.attack = attack;
     this.hp = hp;
     this.charge = charge;
@@ -173,12 +182,13 @@
     this.stealth = stealth;
     this.divineShield = divineShield;
     this.eventHandlers = eventHandlers;
-    this.buffs = buffs;
+    // this.buffs = buffs;
     
     this.sleeping = !this.charge;
     this.frozen = false;
     this.currentHp = hp;
     this.currentAttack = attack;
+    this.attackCount = 0;
     
     this.registerHandlers = function(game) {
       for (var i = 0; i < this.eventHandlers.length; i++) {
@@ -230,7 +240,7 @@
   };
   
   // must implement verify, activate
-  var Card = function(name, set, type, heroClass, rarity, mana, requiresTarget, eventHandlers, opt_verify, opt_activate, opt_applyEffects) {
+  var Card = function(name, set, type, heroClass, rarity, mana, overrides) {
     this.name = name;
     this.set = set;
     this.type = type;
@@ -238,32 +248,32 @@
     this.rarity = rarity
     this.mana = mana;
     this.currentMana = mana;
-    this.requiresTarget = requiresTarget;
-    this.eventHandlers = eventHandlers;
-
+    
     this.__proto__ = BasicCards[type];
     
-    if (opt_verify) {
-      this.verify = opt_verify.bind(this);
-    }
-    
-    if (opt_activate) {
-      this.activate = opt_activate.bind(this);
-    }
-    
-    if (opt_applyEffects) {
-      this.applyEffects = opt_applyEffects.bind(this);
+    for (prop in overrides) {
+      this[prop] = overrides[prop];
     }
   };
   
   var HearthstoneCards = {
-    TheCoin: new Card('The Coin', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, false, [], false, false, function(game) {
+    TheCoin: new Card('The Coin', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {applyEffects: function(game) {
       game.currentPlayer.currentMana++;
-    }),
-    Fireball: new Card('Fireball', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, true, [], false, false, function(game, unused_position, target) {
+    }}),
+    Fireball: new Card('Fireball', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       console.log(arguments);
       game.dealDamage(target, game.currentPlayer.spellDamage + 6);
-    }),
+    }}),
+    Wisp: new Card('Wisp', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 0, {hp: 1, attack: 1}),
+    PriestessOfElune: new Card('Priestess of Elune', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
+      activate: function(game) {
+        game.currentPlayer.hero.hp = Math.min(game.currentPlayer.hero.hp + 4, 30);
+        // todo: trigger heal events
+      },
+      verify: function() {
+        return true;
+      }
+    }})
   };
   
   var Mage = function(player) {

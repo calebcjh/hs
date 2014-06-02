@@ -32,33 +32,17 @@
     
     this.takeAction = function(action, card, minion, position, target) {
       console.log('taking action', arguments);
-      var cardIndex = -1;
-      for (var i = 0; i < this.player.hand.length; i++) {
-        if (this.player.hand[i] == card) {
-          cardIndex = i;
-        }
-      }
+      var cardIndex = this.player.hand.indexOf(card);
       
-      var minionIndex = -1;
-      for (var i = 0; i < this.player.minions.length; i++) {
-        if (this.player.minions[i] == minion) {
-          minionIndex = i;
-        }
-      }
+      var minionIndex = this.player.minions.indexOf(minion);
       
       var targetObject = null;
       if (target) {
         targetObject = {
           type: target.type,
-          ownerId: target.player == this.player ? id : 1 - id
+          ownerId: target.player == this.player ? id : 1 - id,
+          index: target.player.minions.indexOf(target)
         };
-      
-        for (var i = 0; i < this.playerControllers[targetObject.ownerId].minions.length; i++) {
-          if (this.playerControllers[targetObject.ownerId].minions[i] == target) {
-            targetObject.index = i;
-            break;
-          }
-        }
       }
       
       // check for hero power
@@ -71,7 +55,7 @@
         playerId: this.id,
         card: cardIndex,
         minion: minionIndex,
-        position: position,
+        position: position ? position : null,
         target: targetObject
       });
     };
@@ -115,6 +99,8 @@
         }
         this.draw();
       }.bind(this));
+      
+      this.field.querySelector('#message').style.display = 'none';
     };
     
     this.addOpponent = function(name) {
@@ -201,21 +187,21 @@
     this.drawMinion = function(minion, index, isPlayer) {
       var base = document.createElement('div');
       base.className = 'minion';
-      base.innerHTML = card.name;
+      base.innerHTML = minion.name;
       
       var mana = document.createElement('div');
       mana.className = 'mana';
-      mana.innerHTML = card.currentMana;
+      mana.innerHTML = minion.mana;
       base.appendChild(mana);
       
       var attack = document.createElement('div');
       attack.className = 'attack';
-      attack.innerHTML = card.currentAttack;
+      attack.innerHTML = minion.currentAttack;
       base.appendChild(attack);
       
       var hp = document.createElement('div');
       hp.className = 'hp';
-      hp.innerHTML = card.currentHp;
+      hp.innerHTML = minion.currentHp;
       base.appendChild(hp);
       
       if (isPlayer) {
@@ -256,7 +242,13 @@
         console.log('playing', card);
         this.takeAction(Actions.PLAY_CARD, card);
         this.clearSelection();
+      } else if (!card.requiresTarget && this.player.minions.length == 0) {
+        this.takeAction(Actions.PLAY_CARD, card, null /* minion */, 0 /* position */, null);
+        this.clearSelection();
       } else {
+        if (card.requiresPosition && this.player.minions.length == 0) {
+          this.selectedPosition = 0;
+        }
         console.log(card, 'selected');
         this.selectedCard = card;
       }

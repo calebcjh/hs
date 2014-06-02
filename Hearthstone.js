@@ -49,12 +49,7 @@
       console.log('activated');
 
       // remove card from hand
-      for (var i = 0; i < game.currentPlayer.hand.length; i++) {
-        if (game.currentPlayer.hand[i] == card) {
-          game.currentPlayer.hand.splice(i, 1);
-          break;
-        }
-      }
+      game.currentPlayer.hand.splice(game.currentPlayer.hand.indexOf(card), 1);
     };
     
     this.minionAttack = function(minion, target) {
@@ -64,18 +59,20 @@
       
       // check if minion has summoning sickness or is frozen
       if (minion.sleeping || minion.frozen) {
+        console.log('minion is sleeping or is frozen');
         return;
       }
 
       // check if minion can attack
       if (minion.attackCount > 0 && (!minion.windfury || minion.attackCount > 1)) {
+        console.log('minion has already attacked');
         return;
       }
       
-      // verify valid target
-      if (minion.listTargets().indexOf(target) == -1) {
-        return;
-      }
+      // todo: verify valid target
+      // if (minion.listTargets().indexOf(target) == -1) {
+      //   return;
+      // }
       
       // before attack
       var handlerParams = {cancel: false, target: target};
@@ -206,7 +203,7 @@
       }
       
       if (handlerParams.damage > 0) {
-        minion.hp -= damageLeft;
+        minion.currentHp -= handlerParams.damage;
       }
       
       // trigger hero damage handlers
@@ -265,16 +262,33 @@
       // trigger turn end handlers
       this.handlers[Events.END_TURN].forEach(run(this));
       
+      // remove summoning sickness
+      this.currentPlayer.minions.forEach(function(minion) {
+        minion.sleeping = false;
+        minion.attackCount = 0;
+      });
+      
       this.startTurn();
     };
 
     this.startGame = function() {
       // deal cards
       // todo: initial cards
-      this.players[1].hand.push(HearthstoneCards.TheCoin);
       this.players[0].hand.push(HearthstoneCards.Fireball);
+      this.players[0].deck.push(HearthstoneCards.Fireball);
+      this.players[0].deck.push(HearthstoneCards.PriestessOfElune);
+      this.players[0].deck.push(HearthstoneCards.Wisp);
+      this.players[0].deck.push(HearthstoneCards.Fireball);
+      this.players[0].deck.push(HearthstoneCards.Wisp);
+      
+      this.players[1].hand.push(HearthstoneCards.TheCoin);
+      this.players[1].hand.push(HearthstoneCards.Fireball);
+      this.players[1].hand.push(HearthstoneCards.Fireball);
+      this.players[1].deck.push(HearthstoneCards.PriestessOfElune);
+      this.players[1].deck.push(HearthstoneCards.Wisp);
+      this.players[1].deck.push(HearthstoneCards.Wisp);
       this.startTurn();
-    }
+    };
     
     this.startGame();
   };

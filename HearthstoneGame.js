@@ -49,11 +49,9 @@
       
       // update game in firebase
       ref.transaction(function(game) {
-        for (var i = 0; i < game.playerNames.length; i++) {
-          if (game.playerNames[i] == playerName) {
-            id = i;
-            return game;
-          }
+        id = game.playerNames.indexOf(playerName);
+        if (id != -1) {
+          return game;
         }
         
         id = game.playerNames.length;
@@ -104,7 +102,7 @@
       // opponent may have arrived
       if (this.ui && this.ui.gameName == gameName && this.ui.playerNames.length == 1 && game.playerNames.length == 2) {
         this.ui.addOpponent(game.playerNames[1]);
-        this.currGame = new Hearthstone(ui.playerControllers);
+        this.currGame = new Hearthstone(this.ui.playerControllers);
         this.ui.startGame();
       }
     }.bind(this));
