@@ -48,6 +48,7 @@
     hp: 0,
     battlecry: false,
     charge: false,
+    deathrattle: false,
     divineShield: false,
     stealth: false,
     taunt: false,
@@ -86,8 +87,11 @@
       game.currentPlayer.currentMana -= this.currentMana;
       
       // add minion to board
-      var minion = new Minion(game.currentPlayer, this.name, this.mana, this.attack, this.hp, this.charge, this.divineShield, this.stealth, this.taunt, this.windfury, this.handlers);
+      var minion = new Minion(game.currentPlayer, this.name, this.mana, this.attack, this.hp, this.charge, this.deathrattle, this.divineShield, this.magicImmune, this.stealth, this.taunt, this.windfury, this.handlers);
+      console.log('position', position);
+      console.log('before', game.currentPlayer.minions.slice(0));
       game.currentPlayer.minions.splice(position, 0, minion);
+      console.log('after', game.currentPlayer.minions.slice(0));
       minion.registerHandlers();
       
       // execute battlecry
@@ -169,7 +173,7 @@
     MINION: 1,
   };
   
-  var Minion = function(player, name, mana, attack, hp, charge, divineShield, stealth, taunt, windfury, eventHandlers) {
+  var Minion = function(player, name, mana, attack, hp, charge, deathrattle, divineShield, magicImmune, stealth, taunt, windfury, eventHandlers) {
     this.type = TargetType.MINION;
     
     this.player = player;
@@ -178,9 +182,12 @@
     this.attack = attack;
     this.hp = hp;
     this.charge = charge;
-    this.taunt = taunt;
-    this.stealth = stealth;
+    this.deathrattle = deathrattle;
     this.divineShield = divineShield;
+    this.magicImmune = magicImmune;
+    this.stealth = stealth;
+    this.taunt = taunt;
+    this.windfury = windfury;
     this.eventHandlers = eventHandlers;
     // this.buffs = buffs;
     
@@ -202,7 +209,10 @@
     
     this.die = function() {
       // todo: remove from owner's minions
-      // trigger death handlers
+      var index = this.player.minions.indexOf(this);
+      this.player.minions.splice(index, 1);
+      
+      // todo: trigger death handlers
     };
   };  
   
@@ -264,7 +274,7 @@
       console.log(arguments);
       game.dealDamage(target, game.currentPlayer.spellDamage + 6);
     }}),
-    Wisp: new Card('Wisp', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 0, {hp: 1, attack: 1}),
+    Wisp: new Card('Wisp', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
     PriestessOfElune: new Card('Priestess of Elune', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game) {
         game.currentPlayer.hero.hp = Math.min(game.currentPlayer.hero.hp + 4, 30);
@@ -273,7 +283,8 @@
       verify: function() {
         return true;
       }
-    }})
+    }}),
+    StonetuskBoar: new Card('Stonetusk Boar', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.Free, 1, {charge: true, hp: 1, attack: 1})
   };
   
   var Mage = function(player) {

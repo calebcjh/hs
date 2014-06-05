@@ -37,6 +37,7 @@
       var minionIndex = this.player.minions.indexOf(minion);
       
       var targetObject = null;
+      console.log('target', target);
       if (target) {
         targetObject = {
           type: target.type,

@@ -37,7 +37,7 @@
     text-align: center;
     margin: auto;
     font-size: 12px;
-    vertcal-align: bottom;
+    vertical-align: bottom;
   }
   
   .card .mana, .minion .mana {
@@ -59,7 +59,18 @@
   }
   
   .minion .left, .minion .right {
+    position: absolute;
+    top: 0;
     width: 50%;
+    height: 100%;
+  }
+  
+  .minion .left {
+    left: 0;
+  }
+  
+  .minion .right {
+    right: 0;
   }
   
   #game_field {

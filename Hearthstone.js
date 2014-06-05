@@ -23,6 +23,8 @@
 		this.minions = [];
     this.spellDamage = 0;
     
+    this.hero.player = this;
+    
     this.play = function(turn) {
       this.turn = turn;
       this.ui.draw();
@@ -275,6 +277,7 @@
       // deal cards
       // todo: initial cards
       this.players[0].hand.push(HearthstoneCards.Fireball);
+      this.players[0].hand.push(HearthstoneCards.StonetuskBoar);
       this.players[0].deck.push(HearthstoneCards.Fireball);
       this.players[0].deck.push(HearthstoneCards.PriestessOfElune);
       this.players[0].deck.push(HearthstoneCards.Wisp);
@@ -283,9 +286,11 @@
       
       this.players[1].hand.push(HearthstoneCards.TheCoin);
       this.players[1].hand.push(HearthstoneCards.Fireball);
+      this.players[1].hand.push(HearthstoneCards.StonetuskBoar);
       this.players[1].hand.push(HearthstoneCards.Fireball);
       this.players[1].deck.push(HearthstoneCards.PriestessOfElune);
       this.players[1].deck.push(HearthstoneCards.Wisp);
+      this.players[1].deck.push(HearthstoneCards.StonetuskBoar);
       this.players[1].deck.push(HearthstoneCards.Wisp);
       this.startTurn();
     };
