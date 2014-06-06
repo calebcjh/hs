@@ -28,7 +28,9 @@
     BEFORE_SPELL: 11,
     AFTER_SPELL: 12,
     MINION_DIES: 13,
-    AFTER_MINION_SUMMONED: 14
+    AFTER_MINION_SUMMONED: 14,
+    BEFORE_HERO_POWER: 15,
+    AFTER_HERO_POWER: 16
   }
   
   var CardType = {
@@ -167,6 +169,46 @@
       game.currentPlayer.hero.weapon = new Weapon(this.attack, this.durability, this.windfury, this.handlers);
     }
   };
+  BasicCards[CardType.HERO_POWER] = {
+    type: CardType.HERO_POWER,
+    requiresPosition: false,
+    currentMana: 2,
+    mana: 2,
+    handlers: [],
+    verify: function(game, unused_position, opt_target) {
+      // verify sufficient mana
+      if (game.currentPlayer.currentMana < this.currentMana) {
+        return false;
+      }
+
+      // verify target is not magic immune
+      if (opt_target && (opt_target.magicImmune || opt_target.immune)) {
+        return false;
+      }
+
+      return true;
+    },
+    applyEffects: function(game, unused_position, opt_target) {
+    },
+    activate: function(game, unused_position, opt_target) {
+      
+      console.log(this, this.applyEffects, arguments);
+      // spend mana
+      game.currentPlayer.currentMana -= this.currentMana;
+      
+      // trigger before hero power events
+      var handlerParams = {cancel: false, target: opt_target};
+      game.handlers[Events.BEFORE_HERO_POWER].forEach(run(game, handlerParams));
+      if (handlerParams.cancel) {
+        return;
+      }
+      
+      this.applyEffects(game, unused_position, opt_target);
+      
+      // trigger after hero power events
+      game.handlers[Events.AFTER_HERO_POWER].forEach(run(game));
+    }
+  };
   
   var TargetType = {
     HERO: 0,
@@ -207,20 +249,30 @@
       // todo: list taunts first
     };
     
-    this.die = function() {
+    this.die = function(game) {
       // todo: remove from owner's minions
       var index = this.player.minions.indexOf(this);
       this.player.minions.splice(index, 1);
       
-      // todo: trigger death handlers
+      if (this.deathrattle) {
+        this.deathrattle(game);
+      }
     };
   };  
   
-  var Hero = {
+  var BasicHero = {
     type: TargetType.HERO,
     hp: 30,
     attack: 0,
     armor: 0,
+  };
+  
+  var Hero = function(heroPower) {
+    return function(player) {
+      this.__proto__ = BasicHero;
+      this.heroPower = heroPower;    
+      this.player = player;
+    };
   };
   
   var Rarity = {
@@ -284,13 +336,16 @@
         return true;
       }
     }}),
-    StonetuskBoar: new Card('Stonetusk Boar', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.Free, 1, {charge: true, hp: 1, attack: 1})
+    StonetuskBoar: new Card('Stonetusk Boar', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1})
   };
   
-  var Mage = function(player) {
-    this.__proto__ = Hero;
-    this.player = player;
-  };
+  var Mage = new Hero(new Card('Fireblast', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    game.dealDamage(target, 1);
+  }}));
+  
+  var Hunter = new Hero(new Card('Reinforce', Set.BASIC, CardType.HERO_POWER, HeroClass.PALADIN, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+    game.dealDamageToHero(game.players[1 - game.currentIndex].hero, 2);
+  }}));
 
   window.HearthstoneCards = HearthstoneCards;
   window.Card = Card;

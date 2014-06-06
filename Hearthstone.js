@@ -119,8 +119,8 @@
       if (game.currentPlayer.usedHeroPower) {
         return false;
       }
-      
-      game.currentPlayer.hero.heroPower.activate(game, opt_target);
+      console.log('about to activate hero power', game, opt_target);
+      game.currentPlayer.hero.heroPower.activate(game, null /* position */, opt_target);
     };
     
     this.endTurn = function() {
@@ -135,7 +135,7 @@
 
   var Hearthstone = function(players) {
     this.players = players;
-    this.currIndex = 1;
+    this.currentIndex = 1;
     
     this.nextPlayers = [];
     
@@ -213,7 +213,7 @@
 
 
       if (minion.currentHp <= 0) {
-        minion.die();
+        minion.die(this);
       }
 
       // trigger minion death handlers
@@ -239,14 +239,14 @@
     this.startTurn = function() {
       // determine next player
       if (this.nextPlayers.length == 0) {
-        this.currIndex = 1 - this.currIndex;
+        this.currentIndex = 1 - this.currentIndex;
       } else {
-        this.currIndex = this.nextPlayers.shift();
+        this.currentIndex = this.nextPlayers.shift();
       }
-      this.currentPlayer = this.players[this.currIndex];
+      this.currentPlayer = this.players[this.currentIndex];
       
       // increase and restore mana
-      this.currentPlayer.mana++;
+      this.currentPlayer.mana = Math.min(10, this.currentPlayer.mana + 1);
       this.currentPlayer.currentMana = this.currentPlayer.mana;
       this.currentPlayer.usedHeroPower = false;
       

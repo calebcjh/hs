@@ -150,7 +150,11 @@
         hero.onclick = this.selectTarget.bind(this, player.hero);
       }
       
-      field.querySelector('.hero_power').innerHTML = 'hero power';
+      var heroPower = field.querySelector('.hero_power');
+      heroPower.innerHTML = 'hero power';
+      if (isPlayer) {
+        heroPower.onclick = this.selectCard.bind(this, player.hero.heroPower);
+      }
       
       field.querySelector('.minions').innerHTML = '';
       for (var i = 0; i < player.minions.length; i++) {
