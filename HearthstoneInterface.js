@@ -117,6 +117,15 @@
     this.draw = function() {
       this.drawPlayer(this.opponent, this.field.querySelector('#opponent_field'), false);
       this.drawPlayer(this.player, this.field.querySelector('#player_field'), true);
+      
+      var endTurn = this.field.querySelector('#end_turn');
+      if (this.player.turn) {
+        endTurn.innerHTML = 'END TURN';
+        endTurn.className = 'player_turn';
+      } else {
+        endTurn.innerHTML = 'ENEMY TURN';
+        endTurn.className = 'enemy_turn';
+      }
     };
     
     this.drawPlayer = function(player, field, isPlayer) {
@@ -167,6 +176,10 @@
       base.className = 'card';
       base.innerHTML = card.name;
       
+      if (card == this.selectedCard) {
+        base.className += ' selected';
+      }
+      
       var mana = document.createElement('div');
       mana.className = 'mana';
       mana.innerHTML = card.currentMana;
@@ -193,6 +206,10 @@
       var base = document.createElement('div');
       base.className = 'minion';
       base.innerHTML = minion.name;
+      
+      if (minion = this.selectedMinion) {
+        base.className += ' selected';
+      }
       
       var mana = document.createElement('div');
       mana.className = 'mana';

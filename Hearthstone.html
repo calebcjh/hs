@@ -198,9 +198,19 @@
   
   #end_turn {
     position: absolute;
-    font-size: 15px;
-    right: 229px;
+    right: 227px;
     top: 358px;
+    width: 86px;
+  }
+  
+  #end_turn.player_turn {
+    font-size: 15px;
+    background: #0f0;
+  }
+  
+  #end_turn.enemy_turn {
+    font-size: 13px;
+    background: #ff5;
   }
   
   #player_field .hand {
@@ -220,6 +230,10 @@
   
   #player_field .minions {
     top: 20px;
+  }
+  
+  .selected {
+    border: 1px solid red;
   }
   
 </style>
