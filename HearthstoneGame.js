@@ -74,10 +74,10 @@
           // join successful, start game
           var game = snapshot.val();
           var actionsRef = this.server.child(gameName).child('actions');
-          this.ui = new HearthstoneInterface(gameName, game.playerNames.slice(0), this.gameField, actionsRef, id);
+          this.ui = new HearthstoneInterface(gameName, game.playerNames.slice(0), this.gameField, actionsRef, id, game.seed);
           
           if (game.playerNames.length == 2) {
-            this.currGame = new Hearthstone(this.ui.playerControllers);
+            this.currGame = new Hearthstone(this.ui.playerControllers, game.seed);
             this.ui.startGame();
           }
           
@@ -102,7 +102,7 @@
       // opponent may have arrived
       if (this.ui && this.ui.gameName == gameName && this.ui.playerNames.length == 1 && game.playerNames.length == 2) {
         this.ui.addOpponent(game.playerNames[1]);
-        this.currGame = new Hearthstone(this.ui.playerControllers);
+        this.currGame = new Hearthstone(this.ui.playerControllers, game.seed);
         this.ui.startGame();
       }
     }.bind(this));
@@ -113,11 +113,12 @@
           var actionsRef = this.server.child(gameName).child('actions');
           
           // create game, but wait for opponents
-          this.ui = new HearthstoneInterface(gameName, [playerName], this.gameField, actionsRef, 0);
+          var seed = Math.floor(Math.random() * 100000);
+          this.ui = new HearthstoneInterface(gameName, [playerName], this.gameField, actionsRef, 0, seed);
           this.roomField.style.display = 'none';
           this.gameField.style.display = 'block';
           
-          return {playerNames: [playerName]};
+          return {playerNames: [playerName], seed: seed};
         } else {
           console.log('Error: Game already exists. Pick a new name');
           return currentValue;

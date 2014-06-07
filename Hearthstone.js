@@ -8,7 +8,7 @@
   };
   
   include('HearthstoneCards.js');
-
+  
   var Player = function(deck, hero, ui) {
 		this.deck = deck;
     this.hero = hero;
@@ -82,6 +82,7 @@
       if (handlerParams.cancel) {
         return;
       }
+      target = handlerParams.target;
       
       // increment minion's attack count
       minion.attackCount++;
@@ -100,10 +101,37 @@
       game.handlers[Events.AFTER_MINION_ATTACKS].forEach(run(game, minion, target));
     };
     
-    this.heroAttack = function(target) {
+    this.heroAttack = function(hero, target) {
       if (this.ended) {
         return;
       }
+      
+      // todo: check if hero has attack
+      
+      // check if hero can attack
+      if (hero.attackCount > 0 && (!hero.windfury || hero.attackCount > 1)) {
+        console.log('hero has already attacked');
+        return;
+      }
+      
+      // todo: verify valid target
+      // if (hero.listTargets().indexOf(target) == -1) {
+      //   return;
+      // }
+      
+      // before attack
+      var handlerParams = {cancel: false, target: target};
+      game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(run(game, minion, target, handlerParams));
+      if (handlerParams.cancel) {
+        return;
+      }
+      target = handlerParams.target;
+      
+      // todo: do damage
+      
+      // todo: reduce weapon durability, or destroy weapon
+      
+      game.handlers[Events.AFTER_HERO_ATTACKS].forEach(run(game, hero, target));
     };
     
     this.useHeroPower = function(opt_target) {
@@ -120,6 +148,7 @@
         return false;
       }
       console.log('about to activate hero power', game, opt_target);
+      game.currentPlayer.usedHeroPower = true;
       game.currentPlayer.hero.heroPower.activate(game, null /* position */, opt_target);
     };
     
@@ -133,11 +162,20 @@
     };
   };
 
-  var Hearthstone = function(players) {
+  var Hearthstone = function(players, seed) {
+    this.seed = seed;
+    this.random = function () {
+      var x = Math.sin(this.seed++) * 10000;
+      return x - Math.floor(x);
+    }
+    
     this.players = players;
     this.currentIndex = 1;
     
     this.nextPlayers = [];
+    
+    this.simultaneouslyDamagedMinions = [];
+    this.simultaneouslyDamagedHeroes = [];
     
     this.handlers = [];
     for (prop in Events) {
@@ -168,6 +206,14 @@
         this.dealDamageToMinion(target, amount);
       }
     };
+    
+    this.dealSimultaneousDamage = function(target, amount) {
+      if (target.type == TargetType.HERO) {
+        this.dealSimultaneousDamageToHero(target, amount);
+      } else {
+        this.dealSimultaneousDamageToMinion(target, amount);
+      }
+    };
 
     this.dealDamageToHero = function(hero, amount) {
       // trigger before hero damage
@@ -186,14 +232,35 @@
       
       if (damageLeft > 0) {
         hero.hp -= damageLeft;
-      }
       
-      if(this.checkEndGame()) {
+        if(this.checkEndGame()) {
+          return;
+        }
+        
+        // trigger hero damage handlers
+        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, amount, handlerParams.damage));
+      }
+    };
+    
+    this.dealSimultaneousDamageToHero = function(hero, amount) {
+      // trigger before hero damage
+      var handlerParams = {cancel: false, damage: amount};
+      this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, amount, handlerParams));
+      if (handlerParams.cancel) {
         return;
       }
       
-      // trigger hero damage handlers
-      this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, amount, handlerParams.damage));
+      var damageLeft = handlerParams.damage;
+      if (hero.armor > 0) {
+        var damageAbsorbed = math.min(hero.armor, damageLeft);
+        hero.armor -= damageAbsorbed;
+        damageLeft -= damageAbsorbed;
+      }
+      
+      if (damageLeft > 0) {
+        hero.hp -= damageLeft;
+        this.simultaneouslyDamagedHeroes.push({hero: hero, amount: amount, actualDamage: handlerParams.damage});
+      }
     };
 
     this.dealDamageToMinion = function(minion, amount) {
@@ -206,19 +273,60 @@
       
       if (handlerParams.damage > 0) {
         minion.currentHp -= handlerParams.damage;
+      
+        // trigger damage handlers
+        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, amount, handlerParams.damage));
+
+        if (minion.currentHp <= 0) {
+          minion.die(this);
+        
+          // trigger minion death handlers
+          this.handlers[Events.MINION_DIES].forEach(run(this, minion));
+        }
+      }
+    };
+    
+    this.dealSimultaneousDamageToMinion = function(minion, amount) {
+      // trigger before minion damage
+      var handlerParams = {cancel: false, damage: amount};
+      this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, amount, handlerParams));
+      if (handlerParams.cancel) {
+        return;
       }
       
-      // trigger hero damage handlers
-      this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, amount, handlerParams.damage));
-
-
-      if (minion.currentHp <= 0) {
-        minion.die(this);
+      if (handlerParams.damage > 0) {
+        minion.currentHp -= handlerParams.damage;
+        this.simultaneouslyDamagedMinions.push({minion: minion, amount: amount, actualDamage: handlerParams.damage});
       }
-
-      // trigger minion death handlers
-      this.handlers[Events.MINION_DIES].forEach(run(this, minion));
     };
+    
+    this.simultaneousDamageDone = function() {
+      for (var i = 0; i < this.simultaneouslyDamagedHeroes.length; i++) {
+        var damagedHero = this.simultaneouslyDamagedHeroes[i];
+        
+        if(this.checkEndGame()) {
+          return;
+        }
+        
+        // trigger hero damage handlers
+        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.actualDamage));
+      }
+      this.simultaneouslyDamagedHeroes = [];
+      console.log('simul', this.simultaneouslyDamagedMinions);
+      for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
+        var damagedMinion = this.simultaneouslyDamagedMinions[i];
+        // trigger damage handlers
+        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount, damagedMinion.actualDamage));
+        console.log(damagedMinion);
+        if (damagedMinion.minion.currentHp <= 0) {
+          damagedMinion.minion.die(this);
+        
+          // trigger minion death handlers
+          this.handlers[Events.MINION_DIES].forEach(run(this, damagedMinion.minion));
+        }
+      }
+      this.simultaneouslyDamagedMinions = [];
+    }
     
     this.drawCard = function(player) {
       if (player.deck.length == 0) {
@@ -227,13 +335,23 @@
         return null;
       }
       
-      var card = player.deck.pop();
+      var card = player.deck.pop().copy();
       player.hand.push(card);
       
       // trigger card draw triggers
       this.handlers[Events.AFTER_DRAW].forEach(run(this, player, card));
       
       return card;
+    };
+    
+    this.updateFreezeStatus = function(character) {
+      if (character.frozen) {
+        if (character.frostElapsed) {
+          character.frozen = false;
+        } else {
+          character.frostElapsed = true;
+        }
+      }
     };
     
     this.startTurn = function() {
@@ -244,6 +362,7 @@
         this.currentIndex = this.nextPlayers.shift();
       }
       this.currentPlayer = this.players[this.currentIndex];
+      this.otherPlayer = this.players[1 - this.currentIndex];
       
       // increase and restore mana
       this.currentPlayer.mana = Math.min(10, this.currentPlayer.mana + 1);
@@ -253,8 +372,18 @@
       // trigger start handlers
       this.handlers[Events.START_TURN].forEach(run(this));
       
+      // unfreeze minions
+      for (var i = 0; i < this.currentPlayer.minions.length; i++) {
+        this.updateFreezeStatus(this.currentPlayer.minions[i]);
+      }
+      
+      // unfreeze hero
+      this.updateFreezeStatus(this.currentPlayer.hero);
+      
       // draw card
       this.drawCard(this.currentPlayer);
+      
+      this.currentPlayer.usedHeroPower = false;
       
       // pass control to player
       this.currentPlayer.play(new Turn(this));
@@ -272,26 +401,18 @@
       
       this.startTurn();
     };
-
+    
     this.startGame = function() {
-      // deal cards
-      // todo: initial cards
-      this.players[0].hand.push(HearthstoneCards.Fireball);
-      this.players[0].hand.push(HearthstoneCards.StonetuskBoar);
-      this.players[0].deck.push(HearthstoneCards.Fireball);
-      this.players[0].deck.push(HearthstoneCards.PriestessOfElune);
-      this.players[0].deck.push(HearthstoneCards.Wisp);
-      this.players[0].deck.push(HearthstoneCards.Fireball);
-      this.players[0].deck.push(HearthstoneCards.Wisp);
+      this.players[1].hand.push(NeutralCards.TheCoin);
       
-      this.players[1].hand.push(HearthstoneCards.TheCoin);
-      this.players[1].hand.push(HearthstoneCards.Fireball);
-      this.players[1].hand.push(HearthstoneCards.StonetuskBoar);
-      this.players[1].hand.push(HearthstoneCards.Fireball);
-      this.players[1].deck.push(HearthstoneCards.PriestessOfElune);
-      this.players[1].deck.push(HearthstoneCards.Wisp);
-      this.players[1].deck.push(HearthstoneCards.StonetuskBoar);
-      this.players[1].deck.push(HearthstoneCards.Wisp);
+      for (var i = 0; i < 3; i++) {
+        this.players[0].hand.push(this.players[0].deck.pop().copy());
+        this.players[1].hand.push(this.players[1].deck.pop().copy());
+      }
+      this.players[1].hand.push(this.players[1].deck.pop().copy());
+      
+      console.log(this);
+      
       this.startTurn();
     };
     

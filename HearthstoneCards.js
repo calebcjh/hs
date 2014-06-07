@@ -8,8 +8,9 @@
   };
   
   var run = function() {
+    var args = Array.prototype.slice.call(arguments);
     return function(f) {
-      f.apply(arguments);
+      f.apply(null, args);
     };
   };
   
@@ -29,8 +30,9 @@
     AFTER_SPELL: 12,
     MINION_DIES: 13,
     AFTER_MINION_SUMMONED: 14,
-    BEFORE_HERO_POWER: 15,
-    AFTER_HERO_POWER: 16
+    AFTER_MINION_PLAYED_FROM_HAND: 15,
+    BEFORE_HERO_POWER: 16,
+    AFTER_HERO_POWER: 17
   }
   
   var CardType = {
@@ -42,6 +44,7 @@
   
   var BasicCards = [];
   BasicCards[CardType.MINION] = {
+    draftable: true,
     type: CardType.MINION,
     requiresPosition: true,
     currentMana: 0,
@@ -94,7 +97,7 @@
       console.log('before', game.currentPlayer.minions.slice(0));
       game.currentPlayer.minions.splice(position, 0, minion);
       console.log('after', game.currentPlayer.minions.slice(0));
-      minion.registerHandlers();
+      minion.registerHandlers(game);
       
       // execute battlecry
       if (this.battlecry) {
@@ -102,11 +105,12 @@
       }
       
       // trigger events
-      console.log(game.handlers, Events.AFTER_MINION_SUMMONED);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
+      game.handlers[Events.AFTER_MINION_PLAYED_FROM_HAND].forEach(run(game, game.currentPlayer, position, minion));
     }
   };
   BasicCards[CardType.SPELL] = {
+    draftable: true,
     type: CardType.SPELL,
     requiresPosition: false,
     currentMana: 0,
@@ -148,6 +152,7 @@
     }
   };
   BasicCards[CardType.WEAPON] = {
+    draftable: true,
     type: CardType.WEAPON,
     requiresPosition: false,
     currentMana: 0,
@@ -170,6 +175,7 @@
     }
   };
   BasicCards[CardType.HERO_POWER] = {
+    draftable: false,
     type: CardType.HERO_POWER,
     requiresPosition: false,
     currentMana: 2,
@@ -235,6 +241,7 @@
     
     this.sleeping = !this.charge;
     this.frozen = false;
+    this.frostElapsed = true;
     this.currentHp = hp;
     this.currentAttack = attack;
     this.attackCount = 0;
@@ -309,23 +316,28 @@
     this.heroClass = heroClass;
     this.rarity = rarity
     this.mana = mana;
-    this.currentMana = mana;
     
+    this.currentMana = mana;
     this.__proto__ = BasicCards[type];
     
     for (prop in overrides) {
       this[prop] = overrides[prop];
     }
+    
+    this.copy = function() {
+      var newCard = {};
+      for (prop in this) {
+        newCard[prop] = this[prop];
+      }
+      return newCard;
+    }
   };
   
-  var HearthstoneCards = {
-    TheCoin: new Card('The Coin', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {applyEffects: function(game) {
+  var NeutralCards = {
+    TheCoin: new Card('The Coin', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
     }}),
-    Fireball: new Card('Fireball', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
-      console.log(arguments);
-      game.dealDamage(target, game.currentPlayer.spellDamage + 6);
-    }}),
+    Sheep: new Card('Sheep', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1}),
     Wisp: new Card('Wisp', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
     PriestessOfElune: new Card('Priestess of Elune', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game) {
@@ -339,6 +351,94 @@
     StonetuskBoar: new Card('Stonetusk Boar', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1})
   };
   
+  var MageCards = {
+    ArcaneExplosion: new Card('Arcane Explosion', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1 + game.currentPlayer.spellDamage);
+      }
+      game.simultaneousDamageDone();
+    }}),
+    ArcaneIntellect: new Card('Arcane Intellect', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
+      game.drawCard(game.currentPlayer);
+      game.drawCard(game.currentPlayer);
+    }}),
+    ArcaneMissiles: new Card('Arcane Missiles', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+      for (var i = 0; i < 3 + game.currentPlayer.spellDamage; i++) {
+        var numTargets = 1 + game.otherPlayer.minions.length;
+        var selectedTarget = Math.floor(game.random() * numTargets);
+        var target;
+        if (selectedTarget == numTargets - 1) {
+          target = game.otherPlayer.hero;
+        } else {
+          target = game.otherPlayer.minions[selectedTarget];
+          if (target.currentHp == 0) {
+            i--;
+            continue;
+          }
+        }
+        console.log('hitting', target.currentHp, target);
+        game.dealDamage(target, 1);
+      }
+    }}),
+    Fireball: new Card('Fireball', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      game.dealDamage(target, 6 + game.currentPlayer.spellDamage);
+    }}),
+    FlameStrike: new Card('Flamestrike', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
+      console.log(game, game.otherPlayer.minions);
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 4 + game.currentPlayer.spellDamage);
+      }
+      game.simultaneousDamageDone();
+    }}),
+    FrostNova: new Card('Frost Nova', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.otherPlayer.minions[i].frozen = true;
+        game.otherPlayer.minions[i].frostElapsed = false;
+      }
+    }}),
+    MirrorImageMinion: new Card('Mirror Image', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true}),
+    MirrorImage: new Card('Mirror Image', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+      var image1 = new Minion(game.currentPlayer, 'Mirror Image', 0, 0, 2, false, false, false, false, false, true /* taunt */, false, false);
+      game.currentPlayer.minions.push(image1);
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image1));
+    
+      var image2 = new Minion(game.currentPlayer, 'Mirror Image', 0, 0, 2, false, false, false, false, false, true /* taunt */, false, false);
+      game.currentPlayer.minions.push(image2);
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
+    }}),
+    Polymorph: new Card('Polymorph', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, verify: function(game, unused_position, target) {
+      // verify sufficient mana
+      if (game.currentPlayer.currentMana < this.currentMana) {
+        return false;
+      }
+
+      if (!target || target.type == TargetType.HERO || target.magicImmune) {
+        return false;
+      }
+   
+      return true;
+    }, applyEffects: function(game, unused_position, target) {
+      var index = target.player.minions.indexOf(target);
+      var sheep = new Minion(target.player, 'Sheep', 0, 1, 1, false, false, false, false, false, false, false, false);
+      target.player.minions.splice(index, 1, sheep);
+    }}),
+    WaterElemental: new Card('Water Elemental', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_ATTACKS, handler: function(game, minion, target) {
+      if (minion == this) {
+        target.frozen = true;
+        target.frostElapsed = false;
+      }
+      if (target == this) {
+        minion.frozen = true;
+        minion.frostElapsed = false;
+      }
+    }}, {event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
+      if (target == this) {
+        hero.frozen = true;
+        hero.frostElapsed = false;
+      }
+    }}]}),
+  }
+  
   var Mage = new Hero(new Card('Fireblast', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
     game.dealDamage(target, 1);
   }}));
@@ -347,7 +447,8 @@
     game.dealDamageToHero(game.players[1 - game.currentIndex].hero, 2);
   }}));
 
-  window.HearthstoneCards = HearthstoneCards;
+  window.NeutralCards = NeutralCards;
+  window.MageCards = MageCards;
   window.Card = Card;
   window.Rarity = Rarity;
   window.CardType = CardType;

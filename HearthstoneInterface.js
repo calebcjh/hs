@@ -17,7 +17,13 @@
     END_TURN: 4
   };
 
-  var HearthstoneInterface = function(gameName, playerNames, field, actionsRef, id) {
+  var HearthstoneInterface = function(gameName, playerNames, field, actionsRef, id, seed) {
+    this.seed = seed;
+    this.random = function () {
+      var x = Math.sin(this.seed++) * 10000;
+      return x - Math.floor(x);
+    }
+  
     this.gameName = gameName;
     this.playerNames = playerNames;
     this.field = field;
@@ -56,12 +62,27 @@
         playerId: this.id,
         card: cardIndex,
         minion: minionIndex,
-        position: position ? position : null,
+        position: position ? position : 0,
         target: targetObject
       });
     };
     
+    this.shuffle = function(deck) {
+      for (var i = 0; i < 30; i++) {
+        for (var j = 0; j < deck.length; j++) {
+          if (this.random() < 0.5) {
+            var card = deck[j];
+            deck.splice(j, 1);
+            deck.push(card);
+          }
+        }
+      }
+    };
+    
     this.startGame = function() {
+      // deal cards
+      // todo: initial cards
+      
       actionsRef.on('child_added', function(snapshot) {
         var action = snapshot.val();
         var player = this.playerControllers[action.playerId];
@@ -89,7 +110,7 @@
             player.turn.minionAttack(minion, target);
             break;
           case Actions.HERO_ATTACK:
-            player.turn.heroAttack(target);
+            player.turn.heroAttack(player.hero, target);
             break;
           case Actions.USE_HERO_POWER:
             player.turn.useHeroPower(target);
@@ -110,6 +131,7 @@
         this.opponent = new Player([], new Mage(), this);
         this.playerControllers.push(this.opponent);
         
+        this.deal();
         this.draw();
       }
     };
@@ -119,7 +141,7 @@
       this.drawPlayer(this.player, this.field.querySelector('#player_field'), true);
       
       var endTurn = this.field.querySelector('#end_turn');
-      if (this.player.turn) {
+      if (this.player.turn && !this.player.turn.ended) {
         endTurn.innerHTML = 'END TURN';
         endTurn.className = 'player_turn';
       } else {
@@ -142,6 +164,13 @@
       field.querySelector('.deck').innerHTML = player.deck.length + ' cards in deck';
       
       hero = field.querySelector('.hero');
+      
+      if (player.hero.frozen) {
+        hero.className = 'hero frozen';
+      } else {
+        hero.className = 'hero'
+      }
+      
       hero.querySelector('.secrets').innerHTML = 'no secrets';
       
       var attack = player.hero.attack;
@@ -207,8 +236,12 @@
       base.className = 'minion';
       base.innerHTML = minion.name;
       
-      if (minion = this.selectedMinion) {
+      if (minion == this.selectedMinion) {
         base.className += ' selected';
+      }
+      
+      if (minion.frozen) {
+        base.className += ' frozen';
       }
       
       var mana = document.createElement('div');
@@ -361,6 +394,31 @@
       this.draw();
     };
     
+    // temporary card dealing
+    this.deal = function() {
+      this.playerControllers[0].deck.push(NeutralCards.StonetuskBoar);
+      this.playerControllers[0].deck.push(NeutralCards.StonetuskBoar);
+      this.playerControllers[0].deck.push(NeutralCards.Wisp);
+      this.playerControllers[0].deck.push(NeutralCards.Wisp);
+
+      this.playerControllers[1].deck.push(NeutralCards.StonetuskBoar);
+      this.playerControllers[1].deck.push(NeutralCards.StonetuskBoar);
+      this.playerControllers[1].deck.push(NeutralCards.Wisp);
+      this.playerControllers[1].deck.push(NeutralCards.Wisp);
+      
+      for (prop in MageCards) {
+        if (MageCards[prop].draftable) {
+          this.playerControllers[0].deck.push(MageCards[prop]);
+          this.playerControllers[0].deck.push(MageCards[prop]);
+          this.playerControllers[1].deck.push(MageCards[prop]);
+          this.playerControllers[1].deck.push(MageCards[prop]);
+        }
+      }
+      
+      this.shuffle(this.playerControllers[0].deck);
+      this.shuffle(this.playerControllers[1].deck);
+    }
+    
     this.field.querySelector('#end_turn').onclick = this.endTurn.bind(this);
     
     // opponent has yet to join
@@ -377,7 +435,7 @@
         this.playerControllers.push(this.opponent);
         this.playerControllers.push(this.player);
       }
-      
+      this.deal();
       this.draw();
     }
   };
