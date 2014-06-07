@@ -10,7 +10,9 @@
   var run = function() {
     var args = Array.prototype.slice.call(arguments);
     return function(f) {
-      f.apply(null, args);
+      if (f) {
+        f.run(args);
+      }
     };
   };
   
@@ -34,6 +36,19 @@
     BEFORE_HERO_POWER: 16,
     AFTER_HERO_POWER: 17
   }
+  
+  var EventHandler = function(owner, event, handler) {
+    console.log(this);
+    this.owner = owner;
+    console.log('&', this.owner.player.minions);
+    this.event = event;
+    this.handler = handler;
+    
+    this.run = function(args) {
+      this.handler.apply(this, args);
+    };
+    console.log('*', this.owner.player.minions);
+  };
   
   var CardType = {
     MINION: 0,
@@ -97,7 +112,13 @@
       console.log('before', game.currentPlayer.minions.slice(0));
       game.currentPlayer.minions.splice(position, 0, minion);
       console.log('after', game.currentPlayer.minions.slice(0));
+      if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
+        console.log('@@', game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
+      }
       minion.registerHandlers(game);
+      if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
+        console.log('@@@', game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
+      }
       
       // execute battlecry
       if (this.battlecry) {
@@ -113,6 +134,7 @@
     draftable: true,
     type: CardType.SPELL,
     requiresPosition: false,
+    minionOnly: false,
     currentMana: 0,
     mana: 0,
     handlers: [],
@@ -122,8 +144,16 @@
         return false;
       }
 
+      if (this.requiresTarget && !opt_target) {
+        return false;
+      }
+      
       // verify target is not magic immune
-      if (opt_target && (opt_target.magicImmune || opt_target.immune)) {
+      if (opt_target && opt_target.magicImmune) {
+        return false;
+      }
+      
+      if (this.minionOnly && opt_target.type != TargetType.MINION) {
         return false;
       }
 
@@ -145,7 +175,7 @@
         return;
       }
       
-      this.applyEffects(game, unused_position, opt_target);
+      this.applyEffects(game, unused_position, handlerParams.target);
       
       // trigger after spell events
       game.handlers[Events.AFTER_SPELL].forEach(run(game));
@@ -245,10 +275,21 @@
     this.currentHp = hp;
     this.currentAttack = attack;
     this.attackCount = 0;
+    this.registeredHandlers = [];
     
     this.registerHandlers = function(game) {
       for (var i = 0; i < this.eventHandlers.length; i++) {
-        game.handlers[this.eventHandlers[i].event].push(this.eventHandlers[i].handler.bind(this));
+        if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
+          console.log('@', i, game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
+        }
+        console.log(this, this.player.minions, game.otherPlayer.minions);
+        var handler = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
+        console.log(this, this.player.minions, game.otherPlayer.minions);
+        if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
+          console.log('#', i, game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
+        }
+        game.handlers[this.eventHandlers[i].event].push(handler);
+        this.registeredHandlers.push(handler);
       }
     };
     
@@ -257,9 +298,19 @@
     };
     
     this.die = function(game) {
-      // todo: remove from owner's minions
       var index = this.player.minions.indexOf(this);
       this.player.minions.splice(index, 1);
+      
+      if (this.removeEffects) {
+        this.removeEffects();
+      }
+      
+      // remove handlers
+      for (var i = 0; i < this.registeredHandlers.length; i++) {
+        var index = game.handlers[this.registeredHandlers[i].event].indexOf(this.registeredHandlers[i]);
+        console.log('removing', index, this.registeredHandlers[i].event, game.handlers[this.registeredHandlers[i].event]);
+        delete game.handlers[this.registeredHandlers[i].event][index];
+      }
       
       if (this.deathrattle) {
         this.deathrattle(game);
@@ -324,12 +375,57 @@
       this[prop] = overrides[prop];
     }
     
-    this.copy = function() {
-      var newCard = {};
-      for (prop in this) {
-        newCard[prop] = this[prop];
+    function clone(obj) {
+      if (obj == null || typeof obj != 'object') {
+        return obj;
       }
-      return newCard;
+      
+      if (obj instanceof Array) {
+        var copy = [];
+        for (var i = 0, len = obj.length; i < len; i++) {
+            copy[i] = clone(obj[i]);
+        }
+        return copy;
+      }
+
+      if (obj instanceof Object) {
+        var copy = {};
+        copy.__proto__ = obj.__proto__;
+        for (var attr in obj) {
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        }
+        return copy;
+      }
+    }
+    
+    this.copy = function() {
+      return clone(this);
+    }
+  };
+  
+  var Secret = function(player, handlers) {
+    this.player = player;
+    this.eventHandlers = handlers;
+    
+    this.activate = function(game) {
+      // register handlers
+      for (var i = 0; i < this.eventHandlers.length; i++) {
+        this.eventHandlers[i] = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
+        game.handlers[this.eventHandlers[i].event].push(this.eventHandlers[i]);
+      }
+      
+      // add to player secrets
+      this.player.secrets.push(this);
+    };
+    
+    this.remove = function(game) {
+      var secretIndex = this.player.secrets.indexOf(this);
+      this.player.secrets.splice(secretIndex, 1);
+      
+      for (var i = 0; i < this.eventHandlers.length; i++) {
+        var index = game.handlers[this.eventHandlers[i].event].indexOf(this.eventHandlers[i]);
+        delete game.handlers[this.eventHandlers[i].event][index];
+      }
     }
   };
   
@@ -406,18 +502,7 @@
       game.currentPlayer.minions.push(image2);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
     }}),
-    Polymorph: new Card('Polymorph', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, verify: function(game, unused_position, target) {
-      // verify sufficient mana
-      if (game.currentPlayer.currentMana < this.currentMana) {
-        return false;
-      }
-
-      if (!target || target.type == TargetType.HERO || target.magicImmune) {
-        return false;
-      }
-   
-      return true;
-    }, applyEffects: function(game, unused_position, target) {
+    Polymorph: new Card('Polymorph', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var index = target.player.minions.indexOf(target);
       var sheep = new Minion(target.player, 'Sheep', 0, 1, 1, false, false, false, false, false, false, false, false);
       target.player.minions.splice(index, 1, sheep);
@@ -437,6 +522,56 @@
         hero.frostElapsed = false;
       }
     }}]}),
+    ArchmageAntonidas: new Card('Archmage Antonidas', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, handlerParams) {
+      console.log('in Archmage', this, this.owner.player, game.currentPlayer, this.owner.player == game.currentPlayer, arguments);
+      if (game.currentPlayer == this.owner.player) {
+        console.log('adding fireball');
+        this.owner.player.hand.push(MageCards.Fireball.copy());
+      }
+      console.log('done');
+    }}]}),
+    Blizzard: new Card('Blizzard', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 6, {applyEffects: function(game, unused_position, unused_target) {
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        var minion = game.otherPlayer.minions[i];
+        game.dealSimultaneousDamage(minion, 2 + game.currentPlayer.spellDamage);
+        minion.frozen = true;
+        minion.frostElapsed = false;
+      }
+      game.simultaneousDamageDone();
+    }}),
+    ConeOfCold: new Card('Cone of Cold', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      var damage = 1 + game.currentPlayer.spellDamage;
+      game.dealSimultaneousDamage(target, damage);
+      target.frozen = true;
+      target.frostElapsed = false;
+      var index = target.player.minions.indexOf(target);
+      if (index - 1 >= 0) {
+        var minion = target.player.minions[index - 1];
+        game.dealSimultaneousDamage(minion, damage);
+        minion.frozen = true;
+        minion.frostElapsed = false;
+      }
+      if (index + 1 <= target.player.minions.length - 1) {
+        var minion = target.player.minions[index + 1];
+        game.dealSimultaneousDamage(minion, damage);
+        minion.frozen = true;
+        minion.frostElapsed = false;
+      }
+      game.simultaneousDamageDone();
+    }}),
+    Counterspell: new Card('Counterspell', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {applyEffects: function(game, unused_position, unused_target) {
+      var counterspell = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, handlerParams) {
+        if (game.currentPlayer != this.owner.player) {
+          // counter the spell
+          console.log('countered!');
+          handlerParams.cancel = true;
+          
+          this.owner.remove(game);
+        }
+      }}]);
+      
+      counterspell.activate(game);
+    }}),
   }
   
   var Mage = new Hero(new Card('Fireblast', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {

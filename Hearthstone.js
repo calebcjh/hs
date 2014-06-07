@@ -46,6 +46,7 @@
         return;
       }
       console.log('verified', arguments);
+
       // update game state
       card.activate(game, opt_position, opt_target);
       console.log('activated');
