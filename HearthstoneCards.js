@@ -47,6 +47,16 @@
     this.run = function(args) {
       this.handler.apply(this, args);
     };
+    
+    this.register = function(game) {
+      game.handlers[this.event].push(this);
+    };
+    
+    this.remove = function(game) {
+      var index = game.handlers[this.event].indexOf(this);
+      delete game.handlers[this.event][index];
+    };
+
     console.log('*', this.owner.player.minions);
   };
   
@@ -112,13 +122,7 @@
       console.log('before', game.currentPlayer.minions.slice(0));
       game.currentPlayer.minions.splice(position, 0, minion);
       console.log('after', game.currentPlayer.minions.slice(0));
-      if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
-        console.log('@@', game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
-      }
       minion.registerHandlers(game);
-      if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
-        console.log('@@@', game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
-      }
       
       // execute battlecry
       if (this.battlecry) {
@@ -406,12 +410,14 @@
   var Secret = function(player, handlers) {
     this.player = player;
     this.eventHandlers = handlers;
+    this.registeredHandlers = [];
     
     this.activate = function(game) {
       // register handlers
       for (var i = 0; i < this.eventHandlers.length; i++) {
-        this.eventHandlers[i] = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
-        game.handlers[this.eventHandlers[i].event].push(this.eventHandlers[i]);
+        var handler = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
+        handler.register(game);
+        this.registeredHandlers.push(handler);
       }
       
       // add to player secrets
@@ -422,11 +428,10 @@
       var secretIndex = this.player.secrets.indexOf(this);
       this.player.secrets.splice(secretIndex, 1);
       
-      for (var i = 0; i < this.eventHandlers.length; i++) {
-        var index = game.handlers[this.eventHandlers[i].event].indexOf(this.eventHandlers[i]);
-        delete game.handlers[this.eventHandlers[i].event][index];
+      for (var i = 0; i < this.registeredHandlers.length; i++) {
+        this.registeredHandlers[i].remove(game);
       }
-    }
+    };
   };
   
   var NeutralCards = {
@@ -523,7 +528,7 @@
       }
     }}]}),
     ArchmageAntonidas: new Card('Archmage Antonidas', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, handlerParams) {
-      console.log('in Archmage', this, this.owner.player, game.currentPlayer, this.owner.player == game.currentPlayer, arguments);
+      // todo: silence
       if (game.currentPlayer == this.owner.player) {
         console.log('adding fireball');
         this.owner.player.hand.push(MageCards.Fireball.copy());
@@ -571,6 +576,58 @@
       }}]);
       
       counterspell.activate(game);
+    }}),
+    EtherealArcanist: new Card('Ethereal Archanist', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3,  handlers: [{event: Events.END_TURN, handler: function(game) {
+      console.log('EA', game.currentPlayer == this.owner.player, this.owner.player.secrets);
+      if (game.currentPlayer == this.owner.player && this.owner.player.secrets.length > 0) {
+        // todo: silence
+        this.owner.currentAttack += 2;
+        this.owner.attack += 2;
+        this.owner.currentHp += 2;
+        this.owner.hp += 2;
+      }
+    }}]}),
+    IceBarrier: new Card('Ice Barrier', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {applyEffects: function(game, unused_position, unused_target) {
+      var iceBarrier = new Secret(game.currentPlayer, [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          this.owner.player.hero.armor += 8;
+          this.owner.remove(game);
+        }
+      }}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          this.owner.player.hero.armor += 8;
+          this.owner.remove(game);
+        }
+      }}]);
+      
+      iceBarrier.activate(game);
+    }}),
+    IceBlock: new Card('Ice Block', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.EPIC, 3, {applyEffects: function(game, unused_position, unused_target) {
+      var iceBlock = new Secret(game.currentPlayer, [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
+        if (handlerParams.amount >= hero.hp) {
+          handlerParams.amount = 0;
+          hero.immune = true;
+          
+          this.owner.remove(game);
+          
+          var removeIceBlock = new EventHandler(hero, Events.START_TURN, function(game) {
+            this.owner.immune = false;
+            this.remove(game);
+          });
+          
+          removeIceBlock.register(game);
+        }
+      }}]);
+      
+      iceBlock.activate(game);
+    }}),
+    IceLance: new Card('Ice Lance', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      if (target.frozen) {
+        game.dealDamage(target, 4 + game.currentPlayer.spellDamage);
+      } else {
+        target.frozen = true;
+        target.frostElapsed = false;
+      }
     }}),
   }
   
