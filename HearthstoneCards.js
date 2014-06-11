@@ -362,8 +362,9 @@
   };
   
   // must implement verify, activate
-  var Card = function(name, set, type, heroClass, rarity, mana, overrides) {
+  var Card = function(name, description, set, type, heroClass, rarity, mana, overrides) {
     this.name = name;
+    this.description = description;
     this.set = set;
     this.type = type;
     this.heroClass = heroClass;
@@ -433,32 +434,32 @@
   };
   
   var NeutralCards = {
-    TheCoin: new Card('The Coin', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
+    TheCoin: new Card('The Coin', 'Gain 1 Mana Crystal this turn only.', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
     }}),
-    Sheep: new Card('Sheep', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1}),
-    Wisp: new Card('Wisp', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
-    PriestessOfElune: new Card('Priestess of Elune', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
+    Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1}),
+    Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
+    PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
         game.currentPlayer.hero.hp = Math.min(game.currentPlayer.hero.hp + 4, 30);
         // todo: trigger heal events
       }
     }}),
-    StonetuskBoar: new Card('Stonetusk Boar', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1})
+    StonetuskBoar: new Card('Stonetusk Boar', 'Charge', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1})
   };
   
   var MageCards = {
-    ArcaneExplosion: new Card('Arcane Explosion', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+    ArcaneExplosion: new Card('Arcane Explosion', 'Deal 1 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1 + game.currentPlayer.spellDamage);
       }
       game.simultaneousDamageDone();
     }}),
-    ArcaneIntellect: new Card('Arcane Intellect', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
+    ArcaneIntellect: new Card('Arcane Intellect', 'Draw 2 cards.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
       game.drawCard(game.currentPlayer);
       game.drawCard(game.currentPlayer);
     }}),
-    ArcaneMissiles: new Card('Arcane Missiles', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+    ArcaneMissiles: new Card('Arcane Missiles', 'Deal 3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < 3 + game.currentPlayer.spellDamage; i++) {
         var numTargets = 1 + game.otherPlayer.minions.length;
         var selectedTarget = Math.floor(game.random() * numTargets);
@@ -476,24 +477,29 @@
         game.dealDamage(target, 1);
       }
     }}),
-    Fireball: new Card('Fireball', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    Fireball: new Card('Fireball', 'Deal 6 damage.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 6 + game.currentPlayer.spellDamage);
     }}),
-    FlameStrike: new Card('Flamestrike', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
+    FlameStrike: new Card('Flamestrike', 'Deal 4 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
       console.log(game, game.otherPlayer.minions);
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.dealSimultaneousDamage(game.otherPlayer.minions[i], 4 + game.currentPlayer.spellDamage);
       }
       game.simultaneousDamageDone();
     }}),
-    FrostNova: new Card('Frost Nova', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
+    FrostNova: new Card('Frost Nova', 'Freeze all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.otherPlayer.minions[i].frozen = true;
         game.otherPlayer.minions[i].frostElapsed = false;
       }
     }}),
-    MirrorImageMinion: new Card('Mirror Image', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true}),
-    MirrorImage: new Card('Mirror Image', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+    FrostBolt: new Card('Frost Bolt', 'Deal 3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.Free, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      game.dealDamage(target, 3 + game.currentPlayer.spellDamage);
+      target.frozen = true;
+      target.frostElapsed = false;
+    }}),
+    MirrorImageMinion: new Card('Mirror Image', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true}),
+    MirrorImage: new Card('Mirror Image', 'Summon two 0/2 minions with Taunt.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       var image1 = new Minion(game.currentPlayer, 'Mirror Image', 0, 0, 2, false, false, false, false, false, true /* taunt */, false, false);
       game.currentPlayer.minions.push(image1);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image1));
@@ -502,12 +508,12 @@
       game.currentPlayer.minions.push(image2);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
     }}),
-    Polymorph: new Card('Polymorph', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+    Polymorph: new Card('Polymorph', 'Transform a minion into a 1/1 Sheep.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var index = target.player.minions.indexOf(target);
       var sheep = new Minion(target.player, 'Sheep', 0, 1, 1, false, false, false, false, false, false, false, false);
       target.player.minions.splice(index, 1, sheep);
     }}),
-    WaterElemental: new Card('Water Elemental', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_ATTACKS, handler: function(game, minion, target) {
+    WaterElemental: new Card('Water Elemental', 'Freeze any character damaged by this minion.', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_ATTACKS, handler: function(game, minion, target) {
       if (minion == this) {
         target.frozen = true;
         target.frostElapsed = false;
@@ -522,7 +528,7 @@
         hero.frostElapsed = false;
       }
     }}]}),
-    ArchmageAntonidas: new Card('Archmage Antonidas', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
+    ArchmageAntonidas: new Card('Archmage Antonidas', 'Whenever you cast a spell, put a \'Fireball\' spell into your hand.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
       // todo: silence
       if (game.currentPlayer == this.owner.player) {
         console.log('adding fireball');
@@ -530,7 +536,7 @@
       }
       console.log('done');
     }}]}),
-    Blizzard: new Card('Blizzard', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 6, {applyEffects: function(game, unused_position, unused_target) {
+    Blizzard: new Card('Blizzard', 'Deal 2 damage to all enemy minions and Freeze them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 6, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         var minion = game.otherPlayer.minions[i];
         game.dealSimultaneousDamage(minion, 2 + game.currentPlayer.spellDamage);
@@ -539,7 +545,7 @@
       }
       game.simultaneousDamageDone();
     }}),
-    ConeOfCold: new Card('Cone of Cold', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+    ConeOfCold: new Card('Cone of Cold', 'Freeze a minion and the minions next to it, and deal 1 damage to them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var damage = 1 + game.currentPlayer.spellDamage;
       game.dealSimultaneousDamage(target, damage);
       target.frozen = true;
@@ -559,7 +565,7 @@
       }
       game.simultaneousDamageDone();
     }}),
-    Counterspell: new Card('Counterspell', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+    Counterspell: new Card('Counterspell', 'Secret: When your opponent casts a spell, Counter it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var counterspell = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
         if (game.currentPlayer != this.owner.player) {
           // counter the spell
@@ -572,17 +578,17 @@
       
       counterspell.activate(game);
     }}),
-    EtherealArcanist: new Card('Ethereal Archanist', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3,  handlers: [{event: Events.END_TURN, handler: function(game) {
+    EtherealArcanist: new Card('Ethereal Archanist', 'If you control a Secret at the end of your turn, gain +2/+2.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3,  handlers: [{event: Events.END_TURN, handler: function(game) {
       console.log('EA', game.currentPlayer == this.owner.player, this.owner.player.secrets);
       if (game.currentPlayer == this.owner.player && this.owner.player.secrets.length > 0) {
-        // todo: silence
+        // todo: silence, remove after death
         this.owner.currentAttack += 2;
         this.owner.attack += 2;
         this.owner.currentHp += 2;
         this.owner.hp += 2;
       }
     }}]}),
-    IceBarrier: new Card('Ice Barrier', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+    IceBarrier: new Card('Ice Barrier', 'Secret: As soon as your hero is attacked, gain 8 Armor.', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBarrier = new Secret(game.currentPlayer, [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
           this.owner.player.hero.armor += 8;
@@ -597,7 +603,7 @@
       
       iceBarrier.activate(game);
     }}),
-    IceBlock: new Card('Ice Block', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+    IceBlock: new Card('Ice Block', 'Secret: When your hero takes fatal damage, prevent it and become Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBlock = new Secret(game.currentPlayer, [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
         if (handlerParams.amount >= hero.hp) {
           handlerParams.amount = 0;
@@ -616,7 +622,7 @@
       
       iceBlock.activate(game);
     }}),
-    IceLance: new Card('Ice Lance', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    IceLance: new Card('Ice Lance', 'Freeze a character. If it was already Frozen, deal 4 damage instead.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       if (target.frozen) {
         game.dealDamage(target, 4 + game.currentPlayer.spellDamage);
       } else {
@@ -624,7 +630,7 @@
         target.frostElapsed = false;
       }
     }}),
-    KirinTorMage: new Card('Kirin Tor Mage', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 3, {attack: 4, hp: 3, battlecry: {activate: function(game, minion, position, target) {
+    KirinTorMage: new Card('Kirin Tor Mage', 'Battlecry: The next Secret you play this turn costs (0).', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 3, {attack: 4, hp: 3, battlecry: {activate: function(game, minion, position, target) {
       // change all secrets' cost to 0
       console.log(game.currentPlayer.hand);
       for (var i = 0; i < game.currentPlayer.hand.length; i++) {
@@ -669,14 +675,22 @@
       container.secretPlayedHandler.register(game);
       container.endOfTurnHandler.register(game);
     }}}),
+    ManaWyrm: new Card('Mana Wyrm', 'Whenever you cast a spell, gain +1 Attack.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.COMMON, 1, {attack: 1, hp: 3, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
+      console.log('manawyrm handler', arguments, game.currentPlayer == this.owner.player);
+      if (game.currentPlayer == this.owner.player) {
+        // todo: auras, buffs, silence
+        this.owner.currentAttack++;
+      }
+    }}]}),
   }
   
-  var Mage = new Hero(new Card('Fireblast', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+  var Mage = new Hero(new Card('Fireblast', 'Deal 1 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    console.log('fireblast', arguments);
     game.dealDamage(target, 1);
   }}));
   
-  var Hunter = new Hero(new Card('Reinforce', Set.BASIC, CardType.HERO_POWER, HeroClass.PALADIN, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
-    game.dealDamageToHero(game.players[1 - game.currentIndex].hero, 2);
+  var Hunter = new Hero(new Card('Steady Shot', 'Deal 2 damage to the enemy hero.', Set.BASIC, CardType.HERO_POWER, HeroClass.HUNTER, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+    game.dealDamageToHero(game.otherPlayer.hero, 2);
   }}));
 
   window.NeutralCards = NeutralCards;
