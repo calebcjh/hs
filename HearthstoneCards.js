@@ -40,7 +40,6 @@
   var EventHandler = function(owner, event, handler) {
     console.log(this);
     this.owner = owner;
-    console.log('&', this.owner.player.minions);
     this.event = event;
     this.handler = handler;
     
@@ -56,8 +55,6 @@
       var index = game.handlers[this.event].indexOf(this);
       delete game.handlers[this.event][index];
     };
-
-    console.log('*', this.owner.player.minions);
   };
   
   var CardType = {
@@ -106,7 +103,7 @@
       }
       
       // verify battlecry target
-      if (this.battlecry) {
+      if (this.battlecry && this.battlecry.verify) {
         return this.battlecry.verify(game, position, opt_target);
       }
       
@@ -114,8 +111,9 @@
     },
     activate: function(game, position, opt_target) {
       // spend mana
+      console.log('about to pay for cost');
       game.currentPlayer.currentMana -= this.currentMana;
-      
+      console.log('paid for cost');
       // add minion to board
       var minion = new Minion(game.currentPlayer, this.name, this.mana, this.attack, this.hp, this.charge, this.deathrattle, this.divineShield, this.magicImmune, this.stealth, this.taunt, this.windfury, this.handlers);
       console.log('position', position);
@@ -126,7 +124,7 @@
       
       // execute battlecry
       if (this.battlecry) {
-        this.battlecry.activate(game, position, opt_target, minion);
+        this.battlecry.activate(game, minion, position, opt_target);
       }
       
       // trigger events
@@ -174,7 +172,7 @@
       // trigger before spell events
       var handlerParams = {cancel: false, target: opt_target};
       console.log('events', game, Events.BEFORE_SPELL);
-      game.handlers[Events.BEFORE_SPELL].forEach(run(game, handlerParams));
+      game.handlers[Events.BEFORE_SPELL].forEach(run(game, this, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
@@ -182,7 +180,7 @@
       this.applyEffects(game, unused_position, handlerParams.target);
       
       // trigger after spell events
-      game.handlers[Events.AFTER_SPELL].forEach(run(game));
+      game.handlers[Events.AFTER_SPELL].forEach(run(game, this, handlerParams.target));
     }
   };
   BasicCards[CardType.WEAPON] = {
@@ -441,12 +439,9 @@
     Sheep: new Card('Sheep', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1}),
     Wisp: new Card('Wisp', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
     PriestessOfElune: new Card('Priestess of Elune', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
-      activate: function(game) {
+      activate: function(game, minion, position, target) {
         game.currentPlayer.hero.hp = Math.min(game.currentPlayer.hero.hp + 4, 30);
         // todo: trigger heal events
-      },
-      verify: function() {
-        return true;
       }
     }}),
     StonetuskBoar: new Card('Stonetusk Boar', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1})
@@ -527,7 +522,7 @@
         hero.frostElapsed = false;
       }
     }}]}),
-    ArchmageAntonidas: new Card('Archmage Antonidas', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, handlerParams) {
+    ArchmageAntonidas: new Card('Archmage Antonidas', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
       // todo: silence
       if (game.currentPlayer == this.owner.player) {
         console.log('adding fireball');
@@ -564,8 +559,8 @@
       }
       game.simultaneousDamageDone();
     }}),
-    Counterspell: new Card('Counterspell', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {applyEffects: function(game, unused_position, unused_target) {
-      var counterspell = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, handlerParams) {
+    Counterspell: new Card('Counterspell', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var counterspell = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
         if (game.currentPlayer != this.owner.player) {
           // counter the spell
           console.log('countered!');
@@ -587,7 +582,7 @@
         this.owner.hp += 2;
       }
     }}]}),
-    IceBarrier: new Card('Ice Barrier', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {applyEffects: function(game, unused_position, unused_target) {
+    IceBarrier: new Card('Ice Barrier', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBarrier = new Secret(game.currentPlayer, [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
           this.owner.player.hero.armor += 8;
@@ -602,7 +597,7 @@
       
       iceBarrier.activate(game);
     }}),
-    IceBlock: new Card('Ice Block', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.EPIC, 3, {applyEffects: function(game, unused_position, unused_target) {
+    IceBlock: new Card('Ice Block', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBlock = new Secret(game.currentPlayer, [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
         if (handlerParams.amount >= hero.hp) {
           handlerParams.amount = 0;
@@ -621,7 +616,7 @@
       
       iceBlock.activate(game);
     }}),
-    IceLance: new Card('Ice Lance', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    IceLance: new Card('Ice Lance', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       if (target.frozen) {
         game.dealDamage(target, 4 + game.currentPlayer.spellDamage);
       } else {
@@ -629,6 +624,51 @@
         target.frostElapsed = false;
       }
     }}),
+    KirinTorMage: new Card('Kirin Tor Mage', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 3, {attack: 4, hp: 3, battlecry: {activate: function(game, minion, position, target) {
+      // change all secrets' cost to 0
+      console.log(game.currentPlayer.hand);
+      for (var i = 0; i < game.currentPlayer.hand.length; i++) {
+        var card = game.currentPlayer.hand[i];
+        console.log(card);
+        if (card.isSecret) {
+          console.log('found secret');
+          card.currentMana = 0;
+        }
+      }
+      
+      var container = {};
+      
+      // handler1: on card play, if secret, restore cost, delete both handlers
+      container.secretPlayedHandler = new EventHandler(container, Events.BEFORE_SPELL, function(game, card, handlerParams) {
+        if (card.isSecret) {
+          for (var i = 0; i < game.currentPlayer.hand.length; i++) {
+            var card = game.currentPlayer.hand[i];
+            if (card.isSecret) {
+              // todo: millhouse and sorcerer's apprentice
+              card.currentMana = card.mana;
+            }
+          }
+          this.remove(game);
+          this.owner.endOfTurnHandler.remove(game);
+        }
+      });
+      
+      // handler2: on end turn, restore cost, delete both handlers
+      container.endOfTurnHandler = new EventHandler(container, Events.END_TURN, function(game) {
+        for (var i = 0; i < game.currentPlayer.hand.length; i++) {
+          var card = game.currentPlayer.hand[i];
+          if (card.isSecret) {
+            // todo: millhouse and sorcerer's apprentice
+            card.currentMana = card.mana;
+          }
+        }
+        this.remove(game);
+        this.owner.secretPlayedHandler.remove(game);
+      });
+      
+      container.secretPlayedHandler.register(game);
+      container.endOfTurnHandler.register(game);
+    }}}),
   }
   
   var Mage = new Hero(new Card('Fireblast', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {

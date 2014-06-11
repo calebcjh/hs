@@ -48,8 +48,9 @@
       console.log('verified', arguments);
 
       // update game state
+      console.log('about to activate')
       card.activate(game, opt_position, opt_target);
-      console.log('activated');
+      console.log('activated', game, card, opt_position, opt_target);
 
       // remove card from hand
       game.currentPlayer.hand.splice(game.currentPlayer.hand.indexOf(card), 1);
