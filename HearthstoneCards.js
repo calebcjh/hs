@@ -16,6 +16,32 @@
     };
   };
   
+  var clone = function(obj, exceptions) {
+    if (obj == null || typeof obj != 'object') {
+      return obj;
+    }
+    
+    if (obj instanceof Array) {
+      var copy = [];
+      for (var i = 0, len = obj.length; i < len; i++) {
+        copy[i] = clone(obj[i], exceptions);
+      }
+      return copy;
+    }
+
+    if (obj instanceof Object) {
+      var copy = {};
+      copy.__proto__ = obj.__proto__;
+      for (var attr in obj) {
+        if (exceptions.indexOf(attr) == -1) {
+          alert('copying ' + attr);
+          if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr], exceptions);
+        }
+      }
+      return copy;
+    }
+  }
+  
   var Events = {
     START_TURN: 0,
     END_TURN: 1,
@@ -281,15 +307,7 @@
     
     this.registerHandlers = function(game) {
       for (var i = 0; i < this.eventHandlers.length; i++) {
-        if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
-          console.log('@', i, game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
-        }
-        console.log(this, this.player.minions, game.otherPlayer.minions);
         var handler = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
-        console.log(this, this.player.minions, game.otherPlayer.minions);
-        if (game.currentIndex == 1 && game.currentPlayer.mana == 7) {
-          console.log('#', i, game.otherPlayer.minions[1].registeredHandlers[0].owner.player.minions);
-        }
         game.handlers[this.eventHandlers[i].event].push(handler);
         this.registeredHandlers.push(handler);
       }
@@ -378,31 +396,8 @@
       this[prop] = overrides[prop];
     }
     
-    function clone(obj) {
-      if (obj == null || typeof obj != 'object') {
-        return obj;
-      }
-      
-      if (obj instanceof Array) {
-        var copy = [];
-        for (var i = 0, len = obj.length; i < len; i++) {
-            copy[i] = clone(obj[i]);
-        }
-        return copy;
-      }
-
-      if (obj instanceof Object) {
-        var copy = {};
-        copy.__proto__ = obj.__proto__;
-        for (var attr in obj) {
-            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
-        }
-        return copy;
-      }
-    }
-    
     this.copy = function() {
-      return clone(this);
+      return clone(this, []);
     }
   };
   
@@ -682,6 +677,24 @@
         this.owner.currentAttack++;
       }
     }}]}),
+    MirrorEntity: new Card('Mirror Entity', 'Secret: When your opponent plays a minion, summon a copy of it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var mirrorEntity = new Secret(game.currentPlayer, [{event: Events.AFTER_MINION_PLAYED_FROM_HAND, handler: function(game, player, position, minion) {
+        console.log('mirror entity', arguments, this);
+        if (player != this.owner.player) {
+          // play card without triggering the usual
+          var clonedMinion = clone(minion, ['player', 'registeredHandlers']);
+          clonedMinion.player = this.owner.player;
+          clonedMinion.registeredHandlers = [];
+          this.owner.player.minions.push(clonedMinion);
+          clonedMinion.registerHandlers(game);
+
+          // todo: aura buffs
+          this.owner.remove(game);
+        }
+      }}]);
+      
+      mirrorEntity.activate(game);
+    }}),
   }
   
   var Mage = new Hero(new Card('Fireblast', 'Deal 1 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {

@@ -390,6 +390,12 @@
         this.updateFreezeStatus(this.currentPlayer.minions[i]);
       }
       
+      // remove summoning sickness
+      this.currentPlayer.minions.forEach(function(minion) {
+        minion.sleeping = false;
+        minion.attackCount = 0;
+      });
+      
       // unfreeze hero
       this.updateFreezeStatus(this.currentPlayer.hero);
       
@@ -405,12 +411,6 @@
     this.endTurn = function() {
       // trigger turn end handlers
       this.handlers[Events.END_TURN].forEach(run(this));
-      
-      // remove summoning sickness
-      this.currentPlayer.minions.forEach(function(minion) {
-        minion.sleeping = false;
-        minion.attackCount = 0;
-      });
       
       this.startTurn();
     };
