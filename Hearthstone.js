@@ -91,13 +91,13 @@
 
       // perform attack
       if (target.type == TargetType.MINION) {
-        game.dealDamageToMinion(target, minion.currentAttack);
-        game.dealDamageToMinion(minion, target.currentAttack);
+        game.dealDamageToMinion(target, minion.getCurrentAttack());
+        game.dealDamageToMinion(minion, target.getCurrentAttack());
       } else if (target.type == TargetType.HERO) {
         if (target == game.currentPlayer.hero && target.weapon) {
-          game.dealDamageToMinion(minion, target.weapon.currentAttack);
+          game.dealDamageToMinion(minion, target.weapon.getCurrentAttack());
         }
-        game.dealDamageToHero(target, minion.currentAttack);
+        game.dealDamageToHero(target, minion.getCurrentAttack());
       }
       
       game.handlers[Events.AFTER_MINION_ATTACKS].forEach(run(game, minion, target));
@@ -183,6 +183,8 @@
     this.simultaneouslyDamagedHeroes = [];
     
     this.handlers = [];
+    this.auras = [];
+    
     for (prop in Events) {
       this.handlers[Events[prop]] = [];
     }

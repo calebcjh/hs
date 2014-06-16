@@ -175,7 +175,7 @@
       
       var attack = player.hero.attack;
       if (player.hero.weapon) {
-        attack += player.hero.weapon.currentAttack;
+        attack += player.hero.weapon.getCurrentAttack();
       }
       hero.querySelector('.attack').innerHTML = attack;
       
@@ -211,13 +211,13 @@
       
       var mana = document.createElement('div');
       mana.className = 'mana';
-      mana.innerHTML = card.currentMana;
+      mana.innerHTML = card.getCurrentMana();
       base.appendChild(mana);
       
       if (card.type != CardType.SPELL) {
         var attack = document.createElement('div');
         attack.className = 'attack';
-        attack.innerHTML = card.currentAttack;
+        attack.innerHTML = card.attack;
         base.appendChild(attack);
       
         var hp = document.createElement('div');
@@ -246,12 +246,12 @@
       
       var mana = document.createElement('div');
       mana.className = 'mana';
-      mana.innerHTML = minion.mana;
+      mana.innerHTML = minion.card.mana;
       base.appendChild(mana);
       
       var attack = document.createElement('div');
       attack.className = 'attack';
-      attack.innerHTML = minion.currentAttack;
+      attack.innerHTML = minion.getCurrentAttack();
       base.appendChild(attack);
       
       var hp = document.createElement('div');
