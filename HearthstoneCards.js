@@ -89,13 +89,46 @@
     HERO_POWER: 3
   };
   
-  var BasicCards = [];
-  BasicCards[CardType.MINION] = {
+  var BaseCard = {
     draftable: true,
-    type: CardType.MINION,
-    requiresPosition: true,
     enchantMana: 0,
     mana: 0,
+    appliedAuras: [],
+    updateStats: function(game) {
+      for (var i = 0; i < game.auras.length; i++) {
+        var aura = game.auras[i];
+        var index = this.appliedAuras.indexOf(aura);
+        if (index != -1) {
+          // minion already has aura
+          if (aura.eligible(this)) {
+            // keep aura
+            continue;
+          } else {
+            // remove aura
+            aura.removeTarget(this);
+          }
+        } else if (aura.eligible(this)) {
+          // add aura effects
+          this.appliedAuras.push(aura);
+          aura.targets.push(this);
+        }
+      }
+    },
+    getCurrentMana: function() {
+      var manaFromAuras = 0;
+      for (var i = 0; i < this.appliedAuras.length; i++) {
+        var aura = this.appliedAuras[i];
+        manaFromAuras += aura.mana;
+      }
+      return this.mana + this.enchantMana + manaFromAuras;
+    }
+  };
+  
+  var BasicCards = [];
+  BasicCards[CardType.MINION] = {
+    __proto__: BaseCard,
+    type: CardType.MINION,
+    requiresPosition: true,
     attack: 0,
     hp: 0,
     battlecry: false,
@@ -108,7 +141,7 @@
     magicImmune: false,
     immune: false,
     handlers: [],
-    appliedAuras: [],
+    auras: [],
     verify: function(game, position, opt_target) {
       // verify sufficient mana
       if (game.currentPlayer.currentMana < this.getCurrentMana()) {
@@ -141,12 +174,13 @@
       game.currentPlayer.currentMana -= this.getCurrentMana();
       console.log('paid for cost');
       // add minion to board
-      var minion = new Minion(game.currentPlayer, this.name, this.copy(), this.attack, this.hp, this.charge, this.deathrattle, this.divineShield, this.magicImmune, this.stealth, this.taunt, this.windfury, this.handlers);
+      var minion = new Minion(game.currentPlayer, this.name, this.copy(), this.attack, this.hp, this.charge, this.deathrattle, this.divineShield, this.magicImmune, this.stealth, this.taunt, this.windfury, this.handlers, this.auras);
       console.log('position', position);
       console.log('before', game.currentPlayer.minions.slice(0));
       game.currentPlayer.minions.splice(position, 0, minion);
       console.log('after', game.currentPlayer.minions.slice(0));
       minion.registerHandlers(game);
+      minion.registerAuras(game);
       
       // execute battlecry
       if (this.battlecry) {
@@ -156,23 +190,13 @@
       // trigger events
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
       game.handlers[Events.AFTER_MINION_PLAYED_FROM_HAND].forEach(run(game, game.currentPlayer, position, minion));
-    },
-    getCurrentMana: function() {
-      var manaFromAuras = 0;
-      for (var i = 0; i < this.appliedAuras.length; i++) {
-        var aura = this.appliedAuras[i];
-        manaFromAuras += aura.mana;
-      }
-      return this.mana + this.enchantMana + manaFromAuras;
     }
   };
   BasicCards[CardType.SPELL] = {
-    draftable: true,
+    __proto__: BaseCard,
     type: CardType.SPELL,
     requiresPosition: false,
     minionOnly: false,
-    enchantMana: 0,
-    mana: 0,
     handlers: [],
     appliedAuras: [],
     verify: function(game, unused_position, opt_target) {
@@ -216,18 +240,10 @@
       
       // trigger after spell events
       game.handlers[Events.AFTER_SPELL].forEach(run(game, this, handlerParams.target));
-    },
-    getCurrentMana: function() {
-      var manaFromAuras = 0;
-      for (var i = 0; i < this.appliedAuras.length; i++) {
-        var aura = this.appliedAuras[i];
-        manaFromAuras += aura.mana;
-      }
-      return this.mana + this.enchantMana + manaFromAuras;
     }
   };
   BasicCards[CardType.WEAPON] = {
-    draftable: true,
+    __proto__: BaseCard,
     type: CardType.WEAPON,
     requiresPosition: false,
     enchantMana: 0,
@@ -248,17 +264,10 @@
       // spend mana
       game.currentPlayer.currentMana -= this.getCurrentMana();
       game.currentPlayer.hero.weapon = new Weapon(this.attack, this.durability, this.windfury, this.handlers);
-    },
-    getCurrentMana: function() {
-      var manaFromAuras = 0;
-      for (var i = 0; i < this.appliedAuras.length; i++) {
-        var aura = this.appliedAuras[i];
-        manaFromAuras += aura.mana;
-      }
-      return this.mana + this.enchantMana + manaFromAuras;
     }
   };
   BasicCards[CardType.HERO_POWER] = {
+    __proto__: BaseCard,
     draftable: false,
     type: CardType.HERO_POWER,
     requiresPosition: false,
@@ -354,6 +363,54 @@
       return this.hp + this.enchantHp + hpFromAuras;
     };
     
+    this.updateStats = function(game, reapply) {
+      if (reapply) {
+        while(this.appliedAuras.length) {
+          this.appliedAuras[0].removeTarget(this);
+        }
+      }
+
+      var oldMaxHp = this.getCurrentMaxHp();
+
+      for (var i = 0; i < game.auras.length; i++) {
+        var aura = game.auras[i];
+        var index = this.appliedAuras.indexOf(aura);
+        if (index != -1) {
+          // minion already has aura
+          if (aura.eligible(this)) {
+            // keep aura
+            continue;
+          } else {
+            // remove aura
+            aura.removeTarget(this);
+          }
+        } else if (aura.eligible(this)) {
+          // add aura effects
+          this.appliedAuras.push(aura);
+          aura.targets.push(this);
+          // special treatment for current hp
+          this.currentHp += aura.hp;
+        }
+      }
+
+      // check for hp vs max hp
+      var maxHp = this.getCurrentMaxHp();
+      if (this.currentHp >= maxHp) {
+        this.currentHp = maxHp;
+        if (maxHp != oldMaxHp) {
+          // Maybe no longer enraged, update again.
+          this.updateStats(game);
+        }
+      }
+    };
+    
+    this.registerAuras = function(game) {
+      for (var i = 0; i < this.auras.length; i++) {
+        var aura = new Aura(this, this.auras[i].attack, this.auras[i].hp, this.auras[i].mana, this.auras[i].eligible);
+        aura.register(game);
+      }
+    };
+    
     this.registerHandlers = function(game) {
       for (var i = 0; i < this.eventHandlers.length; i++) {
         var handler = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
@@ -366,12 +423,14 @@
       // todo: list taunts first
     };
     
-    this.die = function(game) {
+    this.remove = function(game) {
       var index = this.player.minions.indexOf(this);
       this.player.minions.splice(index, 1);
       
-      if (this.removeEffects) {
-        this.removeEffects();
+      // remove auras
+      for (var i = 0; i < this.auras.length; i++) {
+        console.log('removing aura', index, this.auras[i]);
+        this.auras.remove(game);
       }
       
       // remove handlers
@@ -380,14 +439,19 @@
         console.log('removing', index, this.registeredHandlers[i].event, game.handlers[this.registeredHandlers[i].event]);
         delete game.handlers[this.registeredHandlers[i].event][index];
       }
-      
+    };
+    
+    this.die = function(game) {
+      this.remove(game);
+    
       if (this.deathrattle) {
         this.deathrattle(game);
       }
     };
   };
   
-  var Aura = function(attack, hp, mana, eligible) {
+  var Aura = function(owner, attack, hp, mana, eligible) {
+    this.owner = owner;
     this.attack = attack;
     this.hp = hp;
     this.mana = mana;
@@ -396,15 +460,36 @@
     this.targets = [];
     this.remove = function(game) {
       game.auras.splice(game.auras.indexOf(this), 1);
+      this.owner.registeredAuras.splice(this.owner.registeredAuras.indexOf(this), 1);
+      
       for (var i = 0; i < this.targets.length; i++) {
         this.targets[i].appliedAuras.splice(this.targets[i].appliedAuras.indexOf(this), 1);
-        this.targets[i].updateStats();
+        this.targets[i].updateStats(game);
       }
     };
 
     this.removeTarget = function(target) {
       this.targets.splice(this.targets.indexOf(target), 1);
       target.appliedAuras.splice(target.appliedAuras.indexOf(this), 1);
+    };
+    
+    this.register = function(game) {
+      game.auras.push(this);
+      this.owner.registeredAuras.push(this);
+      
+      // apply to all minions and cards
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.currentPlayer.minions[i].updateStats(game);
+      }
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.otherPlayer.minions[i].updateStats(game);
+      }
+      for (var i = 0; i < game.currentPlayer.hand.length; i++) {
+        game.currentPlayer.hand[i].updateStats(game);
+      }
+      for (var i = 0; i < game.otherPlayer.hand.length; i++) {
+        game.otherPlayer.hand[i].updateStats(game);
+      }
     };
   };
   
@@ -566,18 +651,19 @@
     }}),
     MirrorImageMinion: new Card('Mirror Image', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true}),
     MirrorImage: new Card('Mirror Image', 'Summon two 0/2 minions with Taunt.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
-      var image1 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, false);
+      var image1 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, [], []);
       game.currentPlayer.minions.push(image1);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image1));
     
-      var image2 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, false);
+      var image2 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, [], []);
       game.currentPlayer.minions.push(image2);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
     }}),
     Polymorph: new Card('Polymorph', 'Transform a minion into a 1/1 Sheep.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var index = target.player.minions.indexOf(target);
-      var sheep = new Minion(target.player, 'Sheep', NeutralCards.Sheep.copy(), 1, 1, false, false, false, false, false, false, false, false);
-      target.player.minions.splice(index, 1, sheep);
+      target.remove(game);
+      var sheep = new Minion(target.player, 'Sheep', NeutralCards.Sheep.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+      target.player.minions.splice(index, 0, sheep);
     }}),
     WaterElemental: new Card('Water Elemental', 'Freeze any character damaged by this minion.', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_ATTACKS, handler: function(game, minion, target) {
       if (minion == this) {
@@ -670,7 +756,7 @@
     }}),
     IceBlock: new Card('Ice Block', 'Secret: When your hero takes fatal damage, prevent it and become Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBlock = new Secret(game.currentPlayer, [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
-        if (handlerParams.amount >= hero.hp) {
+        if (handlerParams.amount >= hero.hp + hero.armor) {
           handlerParams.amount = 0;
           hero.immune = true;
           
@@ -703,7 +789,7 @@
         console.log(card);
         if (card.isSecret) {
           console.log('found secret');
-          card.enchantMana = -card.getCurrentMana();
+          card.enchantMana += -card.getCurrentMana();
         }
       }
       
@@ -752,11 +838,12 @@
         console.log('mirror entity', arguments, this);
         if (player != this.owner.player) {
           // play card without triggering the usual
-          var clonedMinion = clone(minion, ['player', 'registeredHandlers']);
+          var clonedMinion = clone(minion, ['player', 'registeredHandlers', 'registeredAuras']);
           clonedMinion.player = this.owner.player;
           clonedMinion.registeredHandlers = [];
           this.owner.player.minions.push(clonedMinion);
           clonedMinion.registerHandlers(game);
+          clonedMinion.registerAuras(game);
 
           // todo: aura buffs
           this.owner.remove(game);
