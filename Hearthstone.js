@@ -352,6 +352,7 @@
       
       var card = player.deck.pop().copy();
       player.hand.push(card);
+      card.updateStats(this);
       
       // trigger card draw triggers
       this.handlers[Events.AFTER_DRAW].forEach(run(this, player, card));

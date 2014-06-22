@@ -95,6 +95,7 @@
     mana: 0,
     appliedAuras: [],
     updateStats: function(game) {
+      console.log(this, game);
       for (var i = 0; i < game.auras.length; i++) {
         var aura = game.auras[i];
         var index = this.appliedAuras.indexOf(aura);
@@ -120,7 +121,7 @@
         var aura = this.appliedAuras[i];
         manaFromAuras += aura.mana;
       }
-      return this.mana + this.enchantMana + manaFromAuras;
+      return Math.max(0, this.mana + this.enchantMana + manaFromAuras);
     }
   };
   
@@ -343,7 +344,8 @@
     
     this.enchantHp = 0;
     this.enchantAttack = 0;
-    this.appliedAuras = [],
+    this.appliedAuras = [];
+    this.registeredAuras = [];
     
     this.getCurrentAttack = function() {
       var attackFromAuras = 0;
@@ -370,7 +372,8 @@
         }
       }
 
-      var oldMaxHp = this.getCurrentMaxHp();
+      console.log(this, arguments);
+      var oldMaxHp = this.getMaxHp();
 
       for (var i = 0; i < game.auras.length; i++) {
         var aura = game.auras[i];
@@ -394,7 +397,7 @@
       }
 
       // check for hp vs max hp
-      var maxHp = this.getCurrentMaxHp();
+      var maxHp = this.getMaxHp();
       if (this.currentHp >= maxHp) {
         this.currentHp = maxHp;
         if (maxHp != oldMaxHp) {
@@ -406,7 +409,7 @@
     
     this.registerAuras = function(game) {
       for (var i = 0; i < this.auras.length; i++) {
-        var aura = new Aura(this, this.auras[i].attack, this.auras[i].hp, this.auras[i].mana, this.auras[i].eligible);
+        var aura = new Aura(this, this.auras[i].attack || 0, this.auras[i].hp || 0, this.auras[i].mana || 0, this.auras[i].eligible);
         aura.register(game);
       }
     };
@@ -490,6 +493,8 @@
       for (var i = 0; i < game.otherPlayer.hand.length; i++) {
         game.otherPlayer.hand[i].updateStats(game);
       }
+      
+      console.log('Aura registered');
     };
   };
   
@@ -544,7 +549,7 @@
     this.rarity = rarity
     this.mana = mana;
     
-    this.appledAuras = [];
+    this.appliedAuras = [];
     this.enchantMana = 0;
     this.__proto__ = BasicCards[type];
     
@@ -756,7 +761,7 @@
     }}),
     IceBlock: new Card('Ice Block', 'Secret: When your hero takes fatal damage, prevent it and become Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBlock = new Secret(game.currentPlayer, [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
-        if (handlerParams.amount >= hero.hp + hero.armor) {
+        if (game.currentPlayer != this.owner.player && handlerParams.amount >= hero.hp + hero.armor) {
           handlerParams.amount = 0;
           hero.immune = true;
           
@@ -836,7 +841,7 @@
     MirrorEntity: new Card('Mirror Entity', 'Secret: When your opponent plays a minion, summon a copy of it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var mirrorEntity = new Secret(game.currentPlayer, [{event: Events.AFTER_MINION_PLAYED_FROM_HAND, handler: function(game, player, position, minion) {
         console.log('mirror entity', arguments, this);
-        if (player != this.owner.player) {
+        if (game.currentPlayer != this.owner.player && player != this.owner.player) {
           // play card without triggering the usual
           var clonedMinion = clone(minion, ['player', 'registeredHandlers', 'registeredAuras']);
           clonedMinion.player = this.owner.player;
@@ -854,6 +859,36 @@
     }}),
     Pyroblast: new Card('Pyroblast', 'Deal 10 damage.', Set.Expert, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 10, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 10 + game.currentPlayer.spellDamage);
+    }}),
+    SorcerersApprentice: new Card('Sorcerer\'s Apprentice', 'Your spells cost (1) less.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.COMMON, 2, {attack: 3, hp: 2, auras: [{mana: -1, eligible: function(entity) {
+      return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.SPELL;
+    }}]}),
+    SpellbenderMinion: new Card('Spellbender', '', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.EPIC, 0, {draftable: false, attack: 1, hp: 3}),
+    Spellbender: new Card('Spellbender', 'Secret: When an enemy casts a spell on a minion, summon a 1/3 as the new target.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var spellbender = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target && handlerParams.target.type == TargetType.MINION) {
+          // bend the spell
+          console.log('bent!');
+          var bender = new Minion(this.owner.player, 'Spellbender', MageCards.SpellbenderMinion.copy(), 1, 3, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(bender);
+          
+          handlerParams.target = bender;
+          
+          this.owner.remove(game);
+        }
+      }}]);
+      
+      spellbender.activate(game);
+    }}),
+    Vaporize: new Card('Vaporize', 'Secret: When a minion attacks your hero, destroy it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var vaporize = new Secret(game.currentPlayer, [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          minion.die();
+          handlerParams.cancel = true;
+        }
+      }}]);
+      
+      vaporize.activate(game);
     }}),
   }
   
