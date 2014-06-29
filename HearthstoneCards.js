@@ -892,6 +892,10 @@
     }}),
   }
   
+  var Cards = [];
+  Cards[HeroClass.MAGE] = MageCards;
+  Cards[HeroClass.NEUTRAL] = NeutralCards;
+  
   var Mage = new Hero(new Card('Fireblast', 'Deal 1 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
     console.log('fireblast', arguments);
     game.dealDamage(target, 1);
@@ -903,6 +907,7 @@
 
   window.NeutralCards = NeutralCards;
   window.MageCards = MageCards;
+  window.Cards = Cards;
   window.Card = Card;
   window.Rarity = Rarity;
   window.CardType = CardType;

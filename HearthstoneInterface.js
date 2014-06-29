@@ -222,7 +222,7 @@
       
         var hp = document.createElement('div');
         hp.className = 'hp';
-        hp.innerHTML = card.currentHp;
+        hp.innerHTML = card.hp;
         base.appendChild(hp);
       }
       
