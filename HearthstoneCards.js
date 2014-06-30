@@ -122,7 +122,23 @@
         manaFromAuras += aura.mana;
       }
       return Math.max(0, this.mana + this.enchantMana + manaFromAuras);
-    }
+    },
+    getReference: function() {
+      var ucased = this.name.split(' ').map(function(word) {
+        var stripped = word.replace(/[^a-z]/gi, '');
+        return stripped.substr(0, 1).toUpperCase() + (stripped.length > 1 ? stripped.substr(1) : '');
+      });
+      return ucased.join('');
+    },
+    getDescription: function() {
+      var description = this.description;
+      var keywords = ['Battlecry', 'Charge', 'Combo', 'Counter', 'Deathrattle', 'Divine Shield', 'Enraged', 'Freeze', 'Immune', 'Overload', 'Secret', 'Silence', 'Spell Power', 'Stealth', 'Taunt', 'Windfury'];
+      for (var i = 0; i < keywords.length; i++) {
+        var needle = new RegExp(keywords[i].replace(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1'), 'g');
+        description = description.replace(needle, '<b>' + keywords[i] + '</b>');
+      }
+      return description;
+    },
   };
   
   var BasicCards = [];
@@ -654,7 +670,9 @@
       target.frozen = true;
       target.frostElapsed = false;
     }}),
-    MirrorImageMinion: new Card('Mirror Image', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true}),
+    MirrorImageMinion: new Card('Mirror Image', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true, getReference: function() {
+      return 'MirrorImageMinion';
+    }}),
     MirrorImage: new Card('Mirror Image', 'Summon two 0/2 minions with Taunt.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       var image1 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, [], []);
       game.currentPlayer.minions.push(image1);
@@ -735,7 +753,7 @@
       
       counterspell.activate(game);
     }}),
-    EtherealArcanist: new Card('Ethereal Archanist', 'If you control a Secret at the end of your turn, gain +2/+2.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3,  handlers: [{event: Events.END_TURN, handler: function(game) {
+    EtherealArcanist: new Card('Ethereal Arcanist', 'If you control a Secret at the end of your turn, gain +2/+2.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3,  handlers: [{event: Events.END_TURN, handler: function(game) {
       console.log('EA', game.currentPlayer == this.owner.player, this.owner.player.secrets);
       if (game.currentPlayer == this.owner.player && this.owner.player.secrets.length > 0) {
         // todo: silence, remove after death
@@ -863,7 +881,9 @@
     SorcerersApprentice: new Card('Sorcerer\'s Apprentice', 'Your spells cost (1) less.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.COMMON, 2, {attack: 3, hp: 2, auras: [{mana: -1, eligible: function(entity) {
       return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.SPELL;
     }}]}),
-    SpellbenderMinion: new Card('Spellbender', '', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.EPIC, 0, {draftable: false, attack: 1, hp: 3}),
+    SpellbenderMinion: new Card('Spellbender', '', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.EPIC, 0, {draftable: false, attack: 1, hp: 3, getReference: function() {
+      return 'SpellbenderMinion';
+    }}),
     Spellbender: new Card('Spellbender', 'Secret: When an enemy casts a spell on a minion, summon a 1/3 as the new target.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var spellbender = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target && handlerParams.target.type == TargetType.MINION) {
