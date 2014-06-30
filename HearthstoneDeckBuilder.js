@@ -116,14 +116,35 @@
       
       var description = document.createElement('span');
       description.innerHTML = card.getDescription();
-      if (card.description.length > 80) {
-        description.style.fontSize = '9px';
-      }
       descriptionContainer.appendChild(description);
+      
+      var lineHeight = this.getLineHeight(card);
+      if (lineHeight != 12) {
+        description.style.lineHeight = lineHeight + 'px';
+      }
       
       // base.onclick = this.selectCard.bind(this, card);
       
       return base;
+    };
+    
+    this.getLineHeight = function(card) {
+      var sizing = document.createElement('span');
+      sizing.style.display = 'block';
+      sizing.style.fontSize = '11px';
+      sizing.style.lineHeight = '12px';
+      sizing.style.width = card.type == CardType.SPELL ? '110px' : '115px';
+      sizing.innerHTML = card.getDescription();
+      sizing.style.visibility = 'hidden';
+      document.body.appendChild(sizing);
+      var lineHeight = 12;
+      while(sizing.offsetHeight > (card.type == CardType.SPELL ? 55 : 60)) {
+        lineHeight--;
+        sizing.style.lineHeight = lineHeight + 'px';
+        console.log(lineHeight, card.getDescription());
+      }
+      document.body.removeChild(sizing);
+      return lineHeight;
     };
   };
   
