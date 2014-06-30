@@ -1,0 +1,197 @@
+<script src='https://cdn.firebase.com/v0/firebase.js'></script>
+<script type="text/javascript" src="HearthstoneDeckBuilder.js"></script>
+<style>
+
+  @font-face {
+    font-family: hearthstone;
+    src: url('Hearthstone.ttf') format('truetype');
+  }
+
+  .card {
+    font-family: hearthstone;
+    display: inline-block;
+    width: 178px;
+    height: 250px;
+    position: relative;
+    text-align: center;
+    margin: auto;
+    font-size: 12px;
+    vertical-align: bottom;
+  }
+  
+  .card.minion .overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('http://www.hsdeck.com/images/cardframe_minion_03.png');
+  }
+  
+  .card.spell .overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('http://www.hsdeck.com/images/cardframe_spell_03.png');
+  }
+  
+  .card.spell .image {
+    position: absolute;
+    left: 25px;
+    top: 28px;
+  }
+  
+  .card.minion .image {
+    position: absolute;
+    left: 40px;
+    top: 5px;
+  }
+  
+  .card .mana, .card .attack, .card .hp {
+    position: absolute;
+    display: block;
+    width: 40px;
+    text-align: center;
+    font-size: 34px;
+    color: white;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
+  .card .mana {
+    top: 5px;
+    left: 5px;
+  }
+  
+  .card .attack {
+    bottom: 10px;
+    left: 7px;
+  }
+  
+  .card .hp {
+    bottom: 10px;
+    right: 4px;
+  }
+  
+  .card.minion .title {
+    display: block;
+    position: absolute;
+    top: 113px;
+    left: 9px;
+  }
+  
+  .card.spell .title {
+    display: block;
+    position: absolute;
+    top: 108px;
+    left: 9px;
+  }
+  
+  .card.spell .rarity {
+    background-image: url('http://www.hsdeck.com/images/sprites/rarity_spell.png');
+    width: 30px;
+    height: 30px;
+    display: block;
+    position: absolute;
+    top: 135px;
+    left: 75px;
+  }
+  
+  .card.minion .rarity {
+    background-image: url('http://www.hsdeck.com/images/sprites/rarity_minion.png');
+    width: 51px;
+    height: 20px;
+    display: block;
+    position: absolute;
+    top: 138px;
+    left: 68px;
+  }
+  
+  .minion .rarity.common {
+    background-position: 0 0;
+  }
+  
+  .minion .rarity.rare {
+    background-position: 0 -20px;
+  }
+  
+  .minion .rarity.epic {
+    background-position: 0 -40px;
+  }
+  
+  .minion .rarity.legendary {
+    background-position: 0 -60px;
+  }
+  
+  .spell .rarity.common {
+    background-position: 0 0;
+  }
+  
+  .spell .rarity.rare {
+    background-position: 0 -30px;
+  }
+  
+  .spell .rarity.epic {
+    background-position: 0 -60px;
+  }
+  
+  .spell .rarity.legendary {
+    background-position: 0 -90px;
+  }
+  
+  .card .description {
+    font-family: helvetica;
+    display: table;
+    position: absolute;
+    overflow: hidden;
+    text-align: center;
+  }
+  
+  .card.minion .description {
+    top: 160px;
+    left: 32px;
+    width: 115px;
+    height: 60px
+  }
+  
+  .card.spell .description {
+    top: 165px;
+    left: 34px;
+    width: 110px;
+    height: 55px;
+  }
+  
+  .card .description span {
+    font-size: 11px;
+    display: table-cell;
+    vertical-align: middle;
+  }
+  
+  .card.minion .dragon {
+    background-image: url('http://www.hsdeck.com/images/dragon_frame.png');
+    width: 135px;
+    height: 102px;
+    display: block;
+    position: absolute;
+    top: -7px;
+    left: 40px;
+  }
+  
+</style>
+<div id="collections">
+  <div id="pool">
+    <div id="classes">
+    </div>
+    <div id="cards">
+    </div>
+    <div id="filter">
+    </div>
+  </div>
+  <div id="picked">
+  </div>
+</div>
+<script>
+  var myBuilder;
+  window.onload = function() {
+    myBuilder = new HearthstoneDeckBuilder(document.getElementById('collections'));
+    myBuilder.selectedClass = HeroClass.MAGE;
+    myBuilder.generatePool();
+  };
+</script>
