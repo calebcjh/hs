@@ -13,7 +13,34 @@
     this.field = field;
     this.selectedClass = HeroClass.NEUTRAL;
     this.selectedMana = -1;
+    this.selectedPage = 0;
     this.filter = '';
+    
+    var classes = field.querySelector('#classes');
+    for (var i = 0; i < 10; i++) {
+      var heroClass = document.createElement('div');
+      heroClass.className = 'class';
+      heroClass.onclick = function(index) {
+        console.log(index);
+        this.selectedClass = index;
+        this.selectedPage = 0;
+        this.show(this.generatePool(), 0);
+      }.bind(this, i);
+      classes.appendChild(heroClass);
+    }
+    
+    var prev = field.querySelector('#prev');
+    prev.onclick = function() {
+      this.selectedPage = Math.max(0, this.selectedPage - 1);
+      this.show(this.generatePool(), this.selectedPage);
+    }.bind(this);
+    
+    var next = field.querySelector('#next');
+    next.onclick = function() {
+      var pool = this.generatePool();
+      this.selectedPage = Math.min(this.selectedPage + 1, Math.floor((pool.length - 1) / 8));
+      this.show(pool, this.selectedPage);
+    }.bind(this);
 	
     this.generatePool = function() {
       var relevantCards = Cards[this.selectedClass];
@@ -33,11 +60,7 @@
         }
       });
       
-      var cards = this.field.querySelector('#cards');
-      cards.innerHTML = '';
-      for (var i = 0; i < filteredCards.length; i++) {
-        cards.appendChild(this.drawCard(filteredCards[i]));
-      }
+      return filteredCards;
     }
     
     this.drawCard = function(card) {
@@ -130,6 +153,7 @@
     
     this.getLineHeight = function(card) {
       var sizing = document.createElement('span');
+      sizing.style.fontFamily = 'helvetica';
       sizing.style.display = 'block';
       sizing.style.fontSize = '11px';
       sizing.style.lineHeight = '12px';
@@ -145,6 +169,18 @@
       }
       document.body.removeChild(sizing);
       return lineHeight;
+    };
+    
+    this.show = function(pool, page) {
+      var cards = this.field.querySelector('#cards');
+      cards.innerHTML = '';
+      for (var i = page * 8; i < page * 8 + 8; i++) {
+        if (pool[i]) {
+          cards.appendChild(this.drawCard(pool[i]));
+        }
+      }
+      var pageElement = this.field.querySelector('#page');
+      pageElement.innerHTML = 'Page ' + (page + 1);
     };
   };
   

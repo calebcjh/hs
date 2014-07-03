@@ -7,6 +7,84 @@
     src: url('Hearthstone.ttf') format('truetype');
   }
 
+  #collections {
+    display: block;
+    background-image: url('collection.png');
+    width: 1440px;
+    height: 810px;
+    position: relative;
+  }
+  
+  #pool {
+    height: 100%;
+    left: 180px;
+    position: absolute;
+    top: 0;
+    width: 780px;
+  }
+  
+  #classes {
+    height: 40px;
+    left: 26px;
+    position: absolute;
+    top: 10px;
+    width: 520px;
+  }
+  
+  .class {
+    display: inline-block;
+    height: 100%;
+    width: 10%;
+  }
+    
+  #cards {
+    height: 500px;
+    left: 35px;
+    position: absolute;
+    top: 138px;
+    width: 712px;
+  }
+  
+  #next {
+    display: block;
+    right: 0;
+    top: 340px;
+    width: 50px;
+    height: 100px;
+    position: absolute;
+  }
+  
+  #prev {
+    display: block;
+    left: 0;
+    top: 340px;
+    width: 50px;
+    height: 100px;
+    position: absolute;
+  }
+  
+  .card:hover, #next:hover, #prev:hover {
+    cursor: pointer;
+  }
+  
+  #page {
+    color: #635645;
+    font-family: hearthstone;
+    font-size: 20px;
+    position: absolute;
+    text-align: center;
+    top: 660px;
+    width: 100%;
+  }
+  
+  #filter {
+    height: 42px;
+    left: 0;
+    position: absolute;
+    top: 720px;
+    width: 100%;
+  }
+	
   .card {
     font-family: hearthstone;
     display: inline-block;
@@ -175,12 +253,27 @@
     left: 40px;
   }
   
+  .pool {
+	display: inline-block;
+	width: 80%;
+	height: 100%;
+  }
+  
+  .picked {
+  }
+  
 </style>
 <div id="collections">
   <div id="pool">
     <div id="classes">
     </div>
+    <div id="prev">
+    </div>
     <div id="cards">
+    </div>
+    <div id="next">
+    </div>
+    <div id="page">
     </div>
     <div id="filter">
     </div>
@@ -192,7 +285,6 @@
   var myBuilder;
   window.onload = function() {
     myBuilder = new HearthstoneDeckBuilder(document.getElementById('collections'));
-    myBuilder.selectedClass = HeroClass.MAGE;
-    myBuilder.generatePool();
+    myBuilder.show(myBuilder.generatePool(), 0);
   };
 </script>

@@ -543,16 +543,16 @@
   }
   
   var HeroClass = {
-    NEUTRAL: 0,
-    DRUID: 1,
-    HUNTER: 2,
-    MAGE: 3,
-    PALADIN: 4,
-    PRIEST: 5,
-    ROGUE: 6,
-    SHAMAN: 7,
-    WARLOCK: 8,
-    WARRIOR: 9
+    DRUID: 0,
+    HUNTER: 1,
+    MAGE: 2,
+    PALADIN: 3,
+    PRIEST: 4,
+    ROGUE: 5,
+    SHAMAN: 6,
+    WARLOCK: 7,
+    WARRIOR: 8,
+    NEUTRAL: 9,
   };
   
   // must implement verify, activate
