@@ -6,7 +6,11 @@
     font-family: hearthstone;
     src: url('Hearthstone.ttf') format('truetype');
   }
-
+  
+  body {
+    font-family: hearthstone;
+  }
+  
   #collections {
     display: block;
     background-image: url('collection.png');
@@ -70,7 +74,7 @@
     border-radius: 20px;
   }
   
-  .card:hover {
+  #pool .card:hover {
     cursor: pointer;
     background: rgba(255, 255, 255, 0.5);
     box-shadow: 0px 0px 50px #fff;
@@ -79,7 +83,6 @@
   
   #page {
     color: #635645;
-    font-family: hearthstone;
     font-size: 20px;
     position: absolute;
     text-align: center;
@@ -96,7 +99,6 @@
   }
 	
   .card {
-    font-family: hearthstone;
     display: inline-block;
     width: 178px;
     height: 250px;
@@ -263,13 +265,132 @@
     left: 40px;
   }
   
-  .pool {
-	display: inline-block;
-	width: 80%;
-	height: 100%;
+  #picked {
+    position: absolute;
+    left: 997px;
+    height: 100%;
+    width: 370px;
   }
   
-  .picked {
+  #hero {
+    position: absolute;
+    left: 28px;
+    width: 180px;
+    top: 10px;
+    height: 57px;
+  }
+  
+  #deck {
+    position: absolute;
+    left: 17px;
+    width: 192px;
+    top: 67px;
+    height: 638px;
+    border-radius: 15px;
+    padding-top: 15px;
+    overflow: hidden;
+  }
+  
+  #counter {
+    position: absolute;
+    left: 30px;
+    width: 85px;
+    top: 738px;
+    height: 24px;
+    font-size: 20px;
+    text-align: center;
+    color: white;
+  }
+  
+  #count {
+    position: absolute;
+    width: 100%;
+    font-size: 20px;
+    line-height: 15px;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
+  #label {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    font-size: 10px;
+    line-height: 5px;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
+  #dust {
+    position: absolute;
+    bottom: 7px;
+    height: 17px;
+    right: 38px;
+    width: 100px;
+    font-size: 17px;
+    text-align: right;
+    line-height: 12px;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+    color: white;
+  }
+  
+  #deck .card {
+    display: block;
+    margin-left: 5px;
+    width: 182px;
+    height: 29px;
+  }
+  
+  #deck .card .mana {
+    position: absolute;
+    width: 15px;
+    font-size: 15px;
+  }
+  
+  #deck .image {
+    position: absolute;
+    background-position: center center;
+    background-size: cover;
+    width: 50%;
+    height: 100%;
+    right: 0;
+  }
+  
+  #deck .overlay {
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-image: url('picked.png');
+  }
+  
+  .card .name {
+    position: absolute;
+    left: 29px;
+    right: 0;
+    top: 7px;
+    font-size: 12px;
+    text-align: left;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+    color: white;
+  }
+  
+  .card .count {
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    width: 15px;
+    font-size: 15px;
+    color: yellow;
+    text-align: right;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
+  #deck .card:hover .overlay {
+    box-shadow: inset 0px 0px 20px #fff;
+    border-radius: 5px;
+  }
+  
+  #deck .card:hover {
+    cursor: pointer;
   }
   
 </style>
@@ -289,6 +410,19 @@
     </div>
   </div>
   <div id="picked">
+    <div id="hero">
+    </div>
+    <div id="deck">
+    </div>
+    <div id="counter">
+      <div id="count">
+      </div>
+      <div id="label">
+        Cards
+      </div>
+    </div>
+    <div id="dust">
+    </div>
   </div>
 </div>
 <script>

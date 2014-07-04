@@ -15,6 +15,7 @@
     this.selectedMana = -1;
     this.selectedPage = 0;
     this.filter = '';
+    this.pickedCards = [];
     
     var classes = field.querySelector('#classes');
     for (var i = 0; i < 10; i++) {
@@ -146,7 +147,7 @@
         description.style.lineHeight = lineHeight + 'px';
       }
       
-      // base.onclick = this.selectCard.bind(this, card);
+      base.onclick = this.pickCard.bind(this, card);
       
       return base;
     };
@@ -181,6 +182,76 @@
       }
       var pageElement = this.field.querySelector('#page');
       pageElement.innerHTML = 'Page ' + (page + 1);
+    };
+    
+    this.pickCard = function(card) {
+      this.pickedCards.push(card);
+      this.drawPickedCards();
+    };
+    
+    this.drawPickedCards = function() {
+      var deck = this.field.querySelector('#deck');
+      deck.innerHTML = '';
+      this.pickedCards.sort(function(c1, c2) {
+        if (c1.mana == c2.mana) {
+          return c1.name > c2.name ? 1 : (c1.name < c2.name ? -1 : 0);
+        } else {
+          return c1.mana > c2.mana ? 1 : (c1.mana < c2.mana ? -1 : 0);
+        }
+      });
+      
+      for (var i = 0; i < this.pickedCards.length; i++) {
+        var card = this.drawPickedCard(this.pickedCards[i]);
+        var count = 1;
+        while (this.pickedCards[i + 1] == this.pickedCards[i]) {
+          count++;
+          i++;
+        }
+        if (count > 1) {
+          var multiple = document.createElement('div');
+          multiple.className = 'count';
+          multiple.innerHTML = count;
+          card.appendChild(multiple);
+        }
+        deck.appendChild(card);
+      };
+      
+      var cardCount = this.field.querySelector('#count');
+      cardCount.innerHTML = this.pickedCards.length;
+    };
+    
+    this.drawPickedCard = function(card) {
+      var base = document.createElement('div');
+      base.className = 'card';
+      
+      var image = document.createElement('div');
+      image.className = 'image';
+      image.style.backgroundImage = 'url(\'http://www.hsdeck.com/images/cards/' + card.getReference() + '.png\')';
+      base.appendChild(image);
+      
+      var overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      base.appendChild(overlay);
+      
+      var cost = document.createElement('div');
+      cost.className = 'mana';
+      cost.innerHTML = card.mana;
+      base.appendChild(cost);
+      
+      var name = document.createElement('div');
+      name.className = 'name';
+      name.innerHTML = card.name;
+      base.appendChild(name);
+      
+      base.onclick = this.removeCard.bind(this, card);
+      
+      return base;
+    };
+    
+    this.removeCard = function(card) {
+      var index = this.pickedCards.indexOf(card);
+      this.pickedCards.splice(index, 1);
+      this.drawPickedCards();
     };
   };
   
