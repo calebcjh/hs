@@ -42,6 +42,25 @@
       this.selectedPage = Math.min(this.selectedPage + 1, Math.floor((pool.length - 1) / 8));
       this.show(pool, this.selectedPage);
     }.bind(this);
+    
+    var rail = field.querySelector('#rail');
+      rail.onmousemove = function(event) {
+      var slider = this.field.querySelector('#slider');
+      if (slider.offsetHeight == 0) {
+        return;
+      }
+      var top;
+      if (event.toElement == slider) {
+        top = event.offsetY + slider.offsetTop - slider.offsetHeight / 2;
+      } else {
+        top = event.offsetY - slider.offsetHeight / 2;
+      }
+      var range = this.field.querySelector('#rail').offsetHeight - slider.offsetHeight;
+      var ratio = Math.min(1, Math.max(0, top / range));
+      var deck = this.field.querySelector('#deck');
+      deck.scrollTop = ratio * (deck.scrollHeight - deck.offsetHeight);
+      slider.style.top = ratio * range + 'px'; 
+    }.bind(this);
 	
     this.generatePool = function() {
       var relevantCards = Cards[this.selectedClass];
@@ -186,12 +205,6 @@
     
     this.pickCard = function(card) {
       this.pickedCards.push(card);
-      this.drawPickedCards();
-    };
-    
-    this.drawPickedCards = function() {
-      var deck = this.field.querySelector('#deck');
-      deck.innerHTML = '';
       this.pickedCards.sort(function(c1, c2) {
         if (c1.mana == c2.mana) {
           return c1.name > c2.name ? 1 : (c1.name < c2.name ? -1 : 0);
@@ -200,6 +213,17 @@
         }
       });
       
+      var index = this.pickedCards.indexOf(card);
+      this.drawPickedCards(index);
+      this.updateDeckType();
+    };
+    
+    this.drawPickedCards = function(scrollTo) {
+      var deck = this.field.querySelector('#deck');
+      deck.innerHTML = '';
+      
+      var index = 0;
+      var height = 0;
       for (var i = 0; i < this.pickedCards.length; i++) {
         var card = this.drawPickedCard(this.pickedCards[i]);
         var count = 1;
@@ -214,10 +238,27 @@
           card.appendChild(multiple);
         }
         deck.appendChild(card);
+        if (scrollTo != undefined && i < scrollTo) {
+          index++;
+        }
+        height++;
       };
       
       var cardCount = this.field.querySelector('#count');
       cardCount.innerHTML = this.pickedCards.length;
+      
+      var slider = this.field.querySelector('#slider');
+      if (deck.scrollHeight > deck.offsetHeight) {
+        slider.style.display = '';
+        var range = this.field.querySelector('#rail').offsetHeight - slider.offsetHeight;
+        if (scrollTo != undefined) {
+          var top = Math.max(0, index - 10);
+          deck.scrollTop = top * 29;
+        }
+        slider.style.top = deck.scrollTop / (deck.scrollHeight - deck.offsetHeight) * range + 'px';
+      } else {
+        slider.style.display = 'none';
+      }
     };
     
     this.drawPickedCard = function(card) {
@@ -252,7 +293,40 @@
       var index = this.pickedCards.indexOf(card);
       this.pickedCards.splice(index, 1);
       this.drawPickedCards();
+      this.updateDeckType();
     };
+    
+    this.updateDeckType = function() {
+      // 1. Constructeds: Only draftable cards that belong to one hero class or neutral. Max 2 each, max 1 for legendary. Max 30 cards.
+      // 2. Arena: Only draftable cards that belong to one hero class or neutral. Max 30 cards.
+      // 3. Puzzle: Others.
+      var heroClass = null;
+      var copies = 0;
+      var deckType = 'Constructed';
+      if (this.pickedCards.length > 30) {
+        deckType = 'Puzzle';
+      } else {
+        for (var i = 0; i < this.pickedCards.length; i++) {
+          var card = this.pickedCards[i];
+          if (card.heroClass != HeroClass.NEUTRAL && heroClass == null) {
+            heroClass = card.heroClass;
+          }
+          if (card.heroClass != HeroClass.NEUTRAL && card.heroClass != heroClass) {
+            deckType = 'Puzzle';
+            break;
+          }
+          copies = 1;
+          while (this.pickedCards[i + 1] == this.pickedCards[i]) {
+            copies++;
+            i++;
+          }
+          if (copies > 2) {
+            deckType = 'Arena';
+          }
+        }
+      }
+      this.field.querySelector('#type').innerHTML = deckType;
+    }
   };
   
   window.HearthstoneDeckBuilder = HearthstoneDeckBuilder;

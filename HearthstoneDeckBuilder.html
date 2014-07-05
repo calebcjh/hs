@@ -284,10 +284,10 @@
     position: absolute;
     left: 17px;
     width: 192px;
-    top: 67px;
+    top: 82px;
     height: 638px;
-    border-radius: 15px;
-    padding-top: 15px;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
     overflow: hidden;
   }
   
@@ -393,6 +393,32 @@
     cursor: pointer;
   }
   
+  #rail {
+    position: absolute;
+    height: 714px;
+    width: 29px;
+    top: 9px;
+    left: 224px;
+  }
+  
+  #slider {
+    position: absolute;
+    background-image: url('slider.png');
+    width: 26px;
+    height: 56px;
+  }
+  
+  #type {
+    position: absolute;
+    left: 862px;
+    top: 15px;
+    width: 100px;
+    color: white;
+    text-align: center;
+    font-size: 17px;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
 </style>
 <div id="collections">
   <div id="pool">
@@ -409,6 +435,8 @@
     <div id="filter">
     </div>
   </div>
+  <div id="type">
+  </div>
   <div id="picked">
     <div id="hero">
     </div>
@@ -419,6 +447,10 @@
       </div>
       <div id="label">
         Cards
+      </div>
+    </div>
+    <div id="rail">
+      <div id="slider">
       </div>
     </div>
     <div id="dust">
