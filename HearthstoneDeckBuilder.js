@@ -216,6 +216,7 @@
       var index = this.pickedCards.indexOf(card);
       this.drawPickedCards(index);
       this.updateDeckType();
+      this.updateDeckCost();
     };
     
     this.drawPickedCards = function(scrollTo) {
@@ -294,6 +295,7 @@
       this.pickedCards.splice(index, 1);
       this.drawPickedCards();
       this.updateDeckType();
+      this.updateDeckCost();
     };
     
     this.updateDeckType = function() {
@@ -304,14 +306,17 @@
       var copies = 0;
       var deckType = 'Constructed';
       if (this.pickedCards.length > 30) {
+        console.log(this.pickedCards.length);
         deckType = 'Puzzle';
       } else {
         for (var i = 0; i < this.pickedCards.length; i++) {
           var card = this.pickedCards[i];
           if (card.heroClass != HeroClass.NEUTRAL && heroClass == null) {
+            console.log(card);
             heroClass = card.heroClass;
           }
-          if (card.heroClass != HeroClass.NEUTRAL && card.heroClass != heroClass) {
+          if (heroClass != null && card.heroClass != HeroClass.NEUTRAL && card.heroClass != heroClass) {
+            console.log(heroClass, card, card.heroClass);
             deckType = 'Puzzle';
             break;
           }
@@ -326,7 +331,21 @@
         }
       }
       this.field.querySelector('#type').innerHTML = deckType;
-    }
+    };
+    
+    this.updateDeckCost = function() {
+      var costs = {};
+      costs[Rarity.FREE] = 0;
+      costs[Rarity.COMMON] = 40;
+      costs[Rarity.RARE] = 100;
+      costs[Rarity.EPIC] = 400;
+      costs[Rarity.LEGENDARY] = 1600;
+      var cost = 0;
+      for (var i = 0; i < this.pickedCards.length; i++) {
+        cost += costs[this.pickedCards[i].rarity];
+      }
+      this.field.querySelector('#dust').innerHTML = cost;
+    };
   };
   
   window.HearthstoneDeckBuilder = HearthstoneDeckBuilder;

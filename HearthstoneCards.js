@@ -611,7 +611,7 @@
     }}),
     Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1}),
     Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
-    PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.MINION, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
+    PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
         game.currentPlayer.hero.hp = Math.min(game.currentPlayer.hero.hp + 4, 30);
         // todo: trigger heal events
@@ -665,7 +665,7 @@
         game.otherPlayer.minions[i].frostElapsed = false;
       }
     }}),
-    FrostBolt: new Card('Frost Bolt', 'Deal 3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.Free, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    FrostBolt: new Card('Frost Bolt', 'Deal 3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 3 + game.currentPlayer.spellDamage);
       target.frozen = true;
       target.frostElapsed = false;
