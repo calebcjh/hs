@@ -15,7 +15,7 @@
     this.gameField = gameField;
     this.ui = null;
     
-    this.server = new Firebase('https://cepheids.firebaseio.com/Hearthstone/');
+    this.server = new Firebase('https://cepheids.firebaseio.com/Hearthstone/games/');
     
     this.listGame = function(gameName, game) {
       var entry = document.getElementById('game_' + gameName);

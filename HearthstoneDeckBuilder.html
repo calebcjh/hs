@@ -13,7 +13,7 @@
   
   #collections {
     display: block;
-    background-image: url('collection.png');
+    background-image: url('images/collection.png');
     width: 1440px;
     height: 810px;
     position: relative;
@@ -277,7 +277,7 @@
     left: 28px;
     width: 180px;
     top: 10px;
-    height: 57px;
+    height: 56px;
   }
   
   #deck {
@@ -359,7 +359,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    background-image: url('picked.png');
+    background-image: url('images/picked.png');
   }
   
   .card .name {
@@ -402,8 +402,9 @@
   }
   
   #slider {
+    cursor: pointer;
     position: absolute;
-    background-image: url('slider.png');
+    background-image: url('images/slider.png');
     width: 26px;
     height: 56px;
   }
@@ -417,6 +418,14 @@
     text-align: center;
     font-size: 17px;
     text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
+  #done {
+    position: absolute;
+    right: 214px;
+    bottom: 40px;
+    width: 68px;
+    height: 33px;
   }
   
 </style>
@@ -456,11 +465,12 @@
     <div id="dust">
     </div>
   </div>
+  <div id="done">
+  </div>
 </div>
 <script>
   var myBuilder;
   window.onload = function() {
     myBuilder = new HearthstoneDeckBuilder(document.getElementById('collections'));
-    myBuilder.show(myBuilder.generatePool(), 0);
   };
 </script>

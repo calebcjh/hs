@@ -9,13 +9,16 @@
   
   include('HearthstoneCards.js');
 
-  var HearthstoneDeckBuilder = function(field) {
+  var HearthstoneDeckBuilder = function(field, name) {
     this.field = field;
     this.selectedClass = HeroClass.NEUTRAL;
     this.selectedMana = -1;
     this.selectedPage = 0;
     this.filter = '';
     this.pickedCards = [];
+    this.pickedHero = null;
+    this.name = name;
+    this.deckType = null;
     
     var classes = field.querySelector('#classes');
     for (var i = 0; i < 10; i++) {
@@ -44,7 +47,10 @@
     }.bind(this);
     
     var rail = field.querySelector('#rail');
-      rail.onmousemove = function(event) {
+    rail.onmousemove = function(event) {
+      if (!this.selecting) {
+        return;
+      }
       var slider = this.field.querySelector('#slider');
       if (slider.offsetHeight == 0) {
         return;
@@ -61,7 +67,66 @@
       deck.scrollTop = ratio * (deck.scrollHeight - deck.offsetHeight);
       slider.style.top = ratio * range + 'px'; 
     }.bind(this);
+    rail.onclick = function(event) {
+      this.selecting = true;
+      rail.onmousemove(event);
+      this.selecting = false;
+    }.bind(this);
+    rail.onmousedown = function(event) {
+      this.selecting = true;
+      rail.onmousemove(event);
+    }.bind(this);
+    
+    var slider = this.field.querySelector('#slider');
+    slider.onmousedown = function(event) {
+      this.selecting = true;
+    }.bind(this);
+    
+    this.field.onmouseup = function() {
+      this.selecting = false;
+    }.bind(this);
 	
+    var hero = this.field.querySelector('#hero');
+    hero.onclick = function() {
+      if (this.pickedHero == null) {
+        this.pickedHero = 0;
+      } else {
+        this.pickedHero = (this.pickedHero + 1) % 9;
+      }
+      this.updateDeckType();
+    }.bind(this);
+  
+    this.server = new Firebase('https://cepheids.firebaseio.com/Hearthstone/decks/');
+  
+    var done = this.field.querySelector('#done');
+    done.onclick = function() {
+      if (this.pickedHero == null) {
+        alert('Hero has not been selected');
+        return;
+      }
+      
+      if (this.pickedCards.length < 30 && (this.deckType == 'Constructed' || this.deckType == 'Arena')) {
+        if (!window.confirm('You have yet to pick 30 cards. When using this deck, random cards will be selected to top this deck up. Are you sure you want to continue?')) {
+          return;
+        }
+      }
+    
+      if (this.name == undefined) {
+        this.name = window.prompt('How would you like to name this deck?');
+      }
+      
+      if (!this.name) {
+        return;
+      }
+      
+      var deck = this.makeDeck();
+      this.server.child(this.name).transaction(function() {
+        return deck;
+      });
+    }.bind(this);
+  
+    // methods
+  
     this.generatePool = function() {
       var relevantCards = Cards[this.selectedClass];
       var filteredCards = [];
@@ -259,7 +324,7 @@
         slider.style.top = deck.scrollTop / (deck.scrollHeight - deck.offsetHeight) * range + 'px';
       } else {
         slider.style.display = 'none';
-      }
+        }
     };
     
     this.drawPickedCard = function(card) {
@@ -302,7 +367,7 @@
       // 1. Constructeds: Only draftable cards that belong to one hero class or neutral. Max 2 each, max 1 for legendary. Max 30 cards.
       // 2. Arena: Only draftable cards that belong to one hero class or neutral. Max 30 cards.
       // 3. Puzzle: Others.
-      var heroClass = null;
+      var heroClass = this.pickedHero;
       var copies = 0;
       var deckType = 'Constructed';
       if (this.pickedCards.length > 30) {
@@ -312,8 +377,8 @@
         for (var i = 0; i < this.pickedCards.length; i++) {
           var card = this.pickedCards[i];
           if (card.heroClass != HeroClass.NEUTRAL && heroClass == null) {
-            console.log(card);
             heroClass = card.heroClass;
+            this.pickedHero = heroClass;
           }
           if (heroClass != null && card.heroClass != HeroClass.NEUTRAL && card.heroClass != heroClass) {
             console.log(heroClass, card, card.heroClass);
@@ -329,8 +394,19 @@
             deckType = 'Arena';
           }
         }
+        this.drawHero();
       }
       this.field.querySelector('#type').innerHTML = deckType;
+      this.deckType = deckType;
+    };
+    
+    this.drawHero = function() {
+      if (this.pickedHero == null) {
+        return;
+      }
+      var hero = this.field.querySelector('#hero');
+      var name = ['druid', 'hunter', 'mage', 'priest', 'paladin', 'rogue', 'shaman', 'warlock', 'warrior'];
+      hero.style.background = 'url(images/' + name[this.pickedHero] + '.png)';
     };
     
     this.updateDeckCost = function() {
@@ -346,6 +422,19 @@
       }
       this.field.querySelector('#dust').innerHTML = cost;
     };
+    
+    this.makeDeck = function() {
+      var deck = {};
+      deck.type = this.deckType;
+      deck.hero = this.pickedHero;
+      deck.cards = this.pickedCards.map(function(card) {
+        return card.heroClass + '_' + card.getReference();
+      });
+      return deck;
+    };
+    
+    this.show(this.generatePool(), 0);
+    this.drawPickedCards();
   };
   
   window.HearthstoneDeckBuilder = HearthstoneDeckBuilder;
