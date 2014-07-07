@@ -12,6 +12,7 @@
   var Player = function(deck, hero, ui) {
 		this.deck = deck;
     this.hero = hero;
+    // todo: clean up
     this.ui = ui;
 		
     this.fatigue = 1;
@@ -27,7 +28,9 @@
     
     this.play = function(turn) {
       this.turn = turn;
-      this.ui.draw();
+      if (this.ui) {
+        this.ui.draw();
+      }
     };
 	};
   
@@ -427,10 +430,16 @@
       this.players[1].hand.push(NeutralCards.TheCoin);
       
       for (var i = 0; i < 3; i++) {
-        this.players[0].hand.push(this.players[0].deck.pop().copy());
+        if (this.players[0].deck.length) {
+          this.players[0].hand.push(this.players[0].deck.pop().copy());
+        }
+        if (this.players[1].deck.length) {
+          this.players[1].hand.push(this.players[1].deck.pop().copy());
+        }
+      }
+      if (this.players[1].deck.length) {
         this.players[1].hand.push(this.players[1].deck.pop().copy());
       }
-      this.players[1].hand.push(this.players[1].deck.pop().copy());
       
       console.log(this);
       
