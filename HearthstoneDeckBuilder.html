@@ -274,10 +274,11 @@
   
   #hero {
     position: absolute;
-    left: 28px;
+    left: 29px;
     width: 180px;
-    top: 10px;
+    top: 11px;
     height: 56px;
+    background: black;
   }
   
   #deck {
@@ -327,7 +328,7 @@
     width: 100px;
     font-size: 17px;
     text-align: right;
-    line-height: 12px;
+    line-height: 13px;
     text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
     color: white;
   }
@@ -428,6 +429,21 @@
     height: 33px;
   }
   
+  #name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 25px;
+    width: 100%;
+    color: white;
+    text-align: left;
+    font-size: 22px;
+    line-height: 21px;
+    padding-left: 5px;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+    background: linear-gradient(to right, black 0%, rgba(0, 0, 0, 0) 75%);
+  }
+  
 </style>
 <div id="collections">
   <div id="pool">
@@ -448,6 +464,8 @@
   </div>
   <div id="picked">
     <div id="hero">
+      <div id="name" style="display: none">
+      </div>
     </div>
     <div id="deck">
     </div>
@@ -463,14 +481,9 @@
       </div>
     </div>
     <div id="dust">
+      0
     </div>
   </div>
   <div id="done">
   </div>
 </div>
-<script>
-  var myBuilder;
-  window.onload = function() {
-    myBuilder = new HearthstoneDeckBuilder(document.getElementById('collections'));
-  };
-</script>

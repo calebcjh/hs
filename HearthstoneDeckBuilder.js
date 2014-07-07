@@ -119,6 +119,10 @@
         return;
       }
       
+      var name = this.field.querySelector('#name');
+      name.innerHTML = this.name;
+      name.style.display = '';
+      
       var deck = this.makeDeck();
       this.server.child(this.name).transaction(function() {
         return deck;
@@ -433,8 +437,42 @@
       return deck;
     };
     
+    // init
+    if (this.name) {
+      var name = this.field.querySelector('#name');
+      name.innerHTML = this.name;
+      name.style.display = '';
+      var deckServer = this.server.child(this.name);
+      var savedDeck;
+      deckServer.transaction(function(deck) {
+        savedDeck = deck;
+        return deck;
+      }, function() {
+        if (savedDeck) {
+          this.pickedHero = savedDeck.hero;
+          for (var i = 0; i < savedDeck.cards.length; i++) {
+            var cardHash = savedDeck.cards[i].split('_');
+            this.pickedCards.push(Cards[cardHash[0]][cardHash[1]]);
+          }
+          this.drawPickedCards();
+          this.updateDeckType();
+          this.updateDeckCost();
+        }
+      }.bind(this));
+    }
     this.show(this.generatePool(), 0);
     this.drawPickedCards();
+  };
+  
+  // bootstrap
+  window.onload = function() {
+    var params = {};
+    window.location.hash.substr(1).split('&').forEach(function (pair) {
+      var split = pair.split('=');
+      params[split[0]] = split[1];
+    });
+    var deckName = params.name;
+    window.builder = new HearthstoneDeckBuilder(document.getElementById('collections'), deckName);
   };
   
   window.HearthstoneDeckBuilder = HearthstoneDeckBuilder;
