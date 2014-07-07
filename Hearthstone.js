@@ -91,14 +91,15 @@
 
       // perform attack
       if (target.type == TargetType.MINION) {
-        game.dealDamageToMinion(target, minion.getCurrentAttack());
-        game.dealDamageToMinion(minion, target.getCurrentAttack());
+        game.dealSimultaneousDamageToMinion(target, minion.getCurrentAttack(), minion);
+        game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
       } else if (target.type == TargetType.HERO) {
         if (target == game.currentPlayer.hero && target.weapon) {
-          game.dealDamageToMinion(minion, target.weapon.getCurrentAttack());
+          game.dealSimultaneousDamageToMinion(minion, target.weapon.getCurrentAttack(), target);
         }
-        game.dealDamageToHero(target, minion.getCurrentAttack());
+        game.dealSimultaneousDamageToHero(target, minion.getCurrentAttack(), minion);
       }
+      game.simultaneousDamageDone();
       
       game.handlers[Events.AFTER_MINION_ATTACKS].forEach(run(game, minion, target));
     };
@@ -205,26 +206,26 @@
       return false;
     };
     
-    this.dealDamage = function(target, amount) {
+    this.dealDamage = function(target, amount, source) {
       console.log(target);
       if (target.type == TargetType.HERO) {
-        this.dealDamageToHero(target, amount);
+        this.dealDamageToHero(target, amount, source);
       } else {
-        this.dealDamageToMinion(target, amount);
+        this.dealDamageToMinion(target, amount, source);
       }
     };
     
-    this.dealSimultaneousDamage = function(target, amount) {
+    this.dealSimultaneousDamage = function(target, amount, source) {
       if (target.type == TargetType.HERO) {
-        this.dealSimultaneousDamageToHero(target, amount);
+        this.dealSimultaneousDamageToHero(target, amount, source);
       } else {
-        this.dealSimultaneousDamageToMinion(target, amount);
+        this.dealSimultaneousDamageToMinion(target, amount, source);
       }
     };
 
-    this.dealDamageToHero = function(hero, amount) {
+    this.dealDamageToHero = function(hero, amount, source) {
       // trigger before hero damage
-      var handlerParams = {cancel: false, amount: amount};
+      var handlerParams = {cancel: false, amount: amount, source: source};
       this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
       if (handlerParams.cancel) {
         return;
@@ -249,13 +250,13 @@
         }
         
         // trigger hero damage handlers
-        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams.amount));
+        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams.amount, source));
       }
     };
     
-    this.dealSimultaneousDamageToHero = function(hero, amount) {
+    this.dealSimultaneousDamageToHero = function(hero, amount, source) {
       // trigger before hero damage
-      var handlerParams = {cancel: false, amount: amount};
+      var handlerParams = {cancel: false, amount: amount, source: source};
       this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
       if (handlerParams.cancel) {
         return;
@@ -274,13 +275,13 @@
       
       if (damageLeft > 0) {
         hero.hp -= damageLeft;
-        this.simultaneouslyDamagedHeroes.push({hero: hero, amount: handlerParams.amount});
+        this.simultaneouslyDamagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
       }
     };
 
-    this.dealDamageToMinion = function(minion, amount) {
+    this.dealDamageToMinion = function(minion, amount, source) {
       // trigger before minion damage
-      var handlerParams = {cancel: false, amount: amount};
+      var handlerParams = {cancel: false, amount: amount, source: source};
       this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
       if (handlerParams.cancel) {
         return;
@@ -290,7 +291,7 @@
         minion.currentHp -= handlerParams.amount;
       
         // trigger damage handlers
-        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams.amount));
+        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams.amount, source));
 
         if (minion.currentHp <= 0) {
           minion.die(this);
@@ -301,9 +302,9 @@
       }
     };
     
-    this.dealSimultaneousDamageToMinion = function(minion, amount) {
+    this.dealSimultaneousDamageToMinion = function(minion, amount, source) {
       // trigger before minion damage
-      var handlerParams = {cancel: false, amount: amount};
+      var handlerParams = {cancel: false, amount: amount, source: source};
       this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
       if (handlerParams.cancel) {
         return;
@@ -311,7 +312,7 @@
       
       if (handlerParams.amount > 0 && !minion.immune) {
         minion.currentHp -= handlerParams.amount;
-        this.simultaneouslyDamagedMinions.push({minion: minion, amount: handlerParams.amount});
+        this.simultaneouslyDamagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
       }
     };
     
@@ -324,15 +325,18 @@
         }
         
         // trigger hero damage handlers
-        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount));
+        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.source));
       }
       this.simultaneouslyDamagedHeroes = [];
       console.log('simul', this.simultaneouslyDamagedMinions);
       for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
         var damagedMinion = this.simultaneouslyDamagedMinions[i];
         // trigger damage handlers
-        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount));
+        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount, damagedMinion.source));
         console.log(damagedMinion);
+      }
+      for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
+        var damagedMinion = this.simultaneouslyDamagedMinions[i];
         if (damagedMinion.minion.currentHp <= 0) {
           damagedMinion.minion.die(this);
         
@@ -341,6 +345,7 @@
         }
       }
       this.simultaneouslyDamagedMinions = [];
+      console.log('simultaneousDamageDone completed');
     }
     
     this.drawCard = function(player) {

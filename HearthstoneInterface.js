@@ -7,6 +7,7 @@
     head.appendChild(script);
   };
   
+  include('Hearthstone.js');
   include('HearthstoneCards.js');
   
   var Actions = {
@@ -17,16 +18,15 @@
     END_TURN: 4
   };
 
-  var HearthstoneInterface = function(gameName, playerNames, field, actionsRef, id, seed) {
+  var HearthstoneInterface = function(playerNames, id, actionsRef, seed) {
     this.seed = seed;
     this.random = function () {
       var x = Math.sin(this.seed++) * 10000;
       return x - Math.floor(x);
     }
   
-    this.gameName = gameName;
     this.playerNames = playerNames;
-    this.field = field;
+    this.field = document.getElementById('game_field');
     this.actionsRef = actionsRef;
     this.id = id;
     
@@ -57,7 +57,7 @@
         action = Actions.USE_HERO_POWER;
       }
       
-      actionsRef.push({
+      this.actionsRef.push({
         actionId: action,
         playerId: this.id,
         card: cardIndex,
@@ -80,10 +80,11 @@
     };
     
     this.startGame = function() {
+      console.log('STARTGAME CALLED');
       // deal cards
       // todo: initial cards
       
-      actionsRef.on('child_added', function(snapshot) {
+      this.actionsRef.on('child_added', function(snapshot) {
         var action = snapshot.val();
         var player = this.playerControllers[action.playerId];
         var card = player.hand[action.card];
@@ -130,9 +131,10 @@
         this.playerNames.push(name);
         this.opponent = new Player([], new Mage(), this);
         this.playerControllers.push(this.opponent);
-        
         this.deal();
         this.draw();
+        this.currGame = new Hearthstone(this.playerControllers, this.seed);
+        this.startGame();
       }
     };
     
@@ -171,7 +173,7 @@
         hero.className = 'hero'
       }
       
-      hero.querySelector('.secrets').innerHTML = 'no secrets';
+      hero.querySelector('.secrets').innerHTML = player.secrets.length + ' secrets';
       
       var attack = player.hero.attack;
       if (player.hero.weapon) {
@@ -437,7 +439,45 @@
       }
       this.deal();
       this.draw();
+      this.currGame = new Hearthstone(this.playerControllers, this.seed);
+      this.startGame();
     }
+  };
+  
+  // bootstrap
+  window.onload = function() {
+    var params = {};
+    window.location.hash.substr(1).split('&').forEach(function (pair) {
+      var split = pair.split('=');
+      params[split[0]] = split[1];
+    });
+    var gameName = params.game;
+    var name = params.name;
+    
+    var gameServer = new Firebase('https://cepheids.firebaseio.com/Hearthstone/games/' + gameName);
+    var actionsRef, playerNames, seed;
+    gameServer.transaction(function(game) {
+      console.log(arguments); 
+      if (game != null) {
+        actionsRef = gameServer.child('actions');
+        playerNames = game.playerNames.slice(0);
+        seed = game.seed;
+      }
+      return game;
+    }, function() {
+      if (actionsRef == null || playerNames == null || seed == null) {
+        console.log('Error: Game does not exist: https://cepheids.firebaseio.com/Hearthstone/games/' + gameName);
+        return;
+      }
+      window.ui = new HearthstoneInterface(playerNames, playerNames.indexOf(name), actionsRef, seed);
+      if (playerNames.length == 1) {
+        // check for updates
+        gameServer.child('playerNames').on('child_added', function(snapshot) {
+          var playerNames = snapshot.val();
+          window.ui.addOpponent(playerNames[1]);
+        });
+      }
+    });
   };
   
   window.HearthstoneInterface = HearthstoneInterface;

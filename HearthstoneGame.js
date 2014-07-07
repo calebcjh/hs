@@ -6,14 +6,9 @@
     script.src = url;
     head.appendChild(script);
   };
-
-  include('Hearthstone.js');
-  include('HearthstoneInterface.js');
   
-  var HearthstoneGame = function(roomField, gameField) {
+  var HearthstoneGame = function(roomField) {
     this.roomField = roomField;
-    this.gameField = gameField;
-    this.ui = null;
     
     this.server = new Firebase('https://cepheids.firebaseio.com/Hearthstone/games/');
     
@@ -23,6 +18,8 @@
         entry = document.createElement('tr');
         entry.id = 'game_' + gameName;
         roomField.querySelector('#games').appendChild(entry);
+      } else {
+        entry.innerHTML = '';
       }
       
       var name = document.createElement('td');
@@ -49,6 +46,10 @@
       
       // update game in firebase
       ref.transaction(function(game) {
+        if (game == null) {
+          return game;
+        }
+        
         id = game.playerNames.indexOf(playerName);
         if (id != -1) {
           return game;
@@ -72,17 +73,7 @@
           console.log('Failed to join game');
         } else {
           // join successful, start game
-          var game = snapshot.val();
-          var actionsRef = this.server.child(gameName).child('actions');
-          this.ui = new HearthstoneInterface(gameName, game.playerNames.slice(0), this.gameField, actionsRef, id, game.seed);
-          
-          if (game.playerNames.length == 2) {
-            this.currGame = new Hearthstone(this.ui.playerControllers, game.seed);
-            this.ui.startGame();
-          }
-          
-          this.roomField.style.display = 'none';
-          this.gameField.style.display = 'block';
+          window.location = 'Hearthstone.html#game=' + gameName + '&name=' + playerName;
         }
       }.bind(this));
     }
@@ -98,13 +89,6 @@
       var game = snapshot.val();
       var gameName = snapshot.name();
       this.listGame(gameName, game);
-      
-      // opponent may have arrived
-      if (this.ui && this.ui.gameName == gameName && this.ui.playerNames.length == 1 && game.playerNames.length == 2) {
-        this.ui.addOpponent(game.playerNames[1]);
-        this.currGame = new Hearthstone(this.ui.playerControllers, game.seed);
-        this.ui.startGame();
-      }
     }.bind(this));
     
     this.createGame = function(gameName, playerName) {
@@ -112,18 +96,21 @@
         if (currentValue == null) {
           var actionsRef = this.server.child(gameName).child('actions');
           
-          // create game, but wait for opponents
+          // create game
           var seed = Math.floor(Math.random() * 100000);
-          this.ui = new HearthstoneInterface(gameName, [playerName], this.gameField, actionsRef, 0, seed);
-          this.roomField.style.display = 'none';
-          this.gameField.style.display = 'block';
-          
           return {playerNames: [playerName], seed: seed};
         } else {
           console.log('Error: Game already exists. Pick a new name');
           return currentValue;
         }
-      }.bind(this));
+      }.bind(this), function(error, committed, snapshot) {
+        if (!committed) {
+          console.log('Error: ' + error);
+        } else {
+          // create successful, start game, but wait for opponents
+          window.location = 'Hearthstone.html#game=' + gameName + '&name=' + playerName;
+        }
+      });
     };
     
     roomField.querySelector('#create').onclick = function() {

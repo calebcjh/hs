@@ -443,13 +443,14 @@
     };
     
     this.remove = function(game) {
+      console.log(this, this.player, this.player.minions);
       var index = this.player.minions.indexOf(this);
       this.player.minions.splice(index, 1);
       
       // remove auras
-      for (var i = 0; i < this.auras.length; i++) {
-        console.log('removing aura', index, this.auras[i]);
-        this.auras.remove(game);
+      for (var i = 0; i < this.registeredAuras.length; i++) {
+        console.log('removing aura', index, this.registeredAuras[i]);
+        this.registeredAuras[i].remove(game);
       }
       
       // remove handlers
@@ -578,8 +579,9 @@
     }
   };
   
-  var Secret = function(player, handlers) {
+  var Secret = function(player, name, handlers) {
     this.player = player;
+    this.name = name;
     this.eventHandlers = handlers;
     this.registeredHandlers = [];
     
@@ -622,8 +624,10 @@
   
   var MageCards = {
     ArcaneExplosion: new Card('Arcane Explosion', 'Deal 1 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+      console.log('in ArcaneExplosion', arguments);
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
-        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1 + game.currentPlayer.spellDamage);
+        console.log('hurting', game.otherPlayer.minions[i]);
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1 + game.currentPlayer.spellDamage, this);
       }
       game.simultaneousDamageDone();
     }}),
@@ -646,16 +650,16 @@
           }
         }
         console.log('hitting', target.currentHp, target);
-        game.dealDamage(target, 1);
+        game.dealDamage(target, 1, this);
       }
     }}),
     Fireball: new Card('Fireball', 'Deal 6 damage.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
-      game.dealDamage(target, 6 + game.currentPlayer.spellDamage);
+      game.dealDamage(target, 6 + game.currentPlayer.spellDamage, this);
     }}),
     FlameStrike: new Card('Flamestrike', 'Deal 4 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
       console.log(game, game.otherPlayer.minions);
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
-        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 4 + game.currentPlayer.spellDamage);
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 4 + game.currentPlayer.spellDamage, this);
       }
       game.simultaneousDamageDone();
     }}),
@@ -666,7 +670,7 @@
       }
     }}),
     FrostBolt: new Card('Frost Bolt', 'Deal 3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
-      game.dealDamage(target, 3 + game.currentPlayer.spellDamage);
+      game.dealDamage(target, 3 + game.currentPlayer.spellDamage, this);
       target.frozen = true;
       target.frostElapsed = false;
     }}),
@@ -688,17 +692,14 @@
       var sheep = new Minion(target.player, 'Sheep', NeutralCards.Sheep.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
       target.player.minions.splice(index, 0, sheep);
     }}),
-    WaterElemental: new Card('Water Elemental', 'Freeze any character damaged by this minion.', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_ATTACKS, handler: function(game, minion, target) {
-      if (minion == this) {
-        target.frozen = true;
-        target.frostElapsed = false;
-      }
-      if (target == this) {
+    WaterElemental: new Card('Water Elemental', 'Freeze any character damaged by this minion.', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
+      if (source == this.owner && amount > 0) {
+        console.log('water elemental hit something!', minion);
         minion.frozen = true;
         minion.frostElapsed = false;
       }
-    }}, {event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
-      if (target == this) {
+    }}, {event: Events.AFTER_HERO_TAKES_DAMAGE, handler: function(game, hero, amount, source) {
+      if (source == this.owner && amount > 0) {
         hero.frozen = true;
         hero.frostElapsed = false;
       }
@@ -714,7 +715,7 @@
     Blizzard: new Card('Blizzard', 'Deal 2 damage to all enemy minions and Freeze them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 6, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         var minion = game.otherPlayer.minions[i];
-        game.dealSimultaneousDamage(minion, 2 + game.currentPlayer.spellDamage);
+        game.dealSimultaneousDamage(minion, 2 + game.currentPlayer.spellDamage, this);
         minion.frozen = true;
         minion.frostElapsed = false;
       }
@@ -722,26 +723,26 @@
     }}),
     ConeOfCold: new Card('Cone of Cold', 'Freeze a minion and the minions next to it, and deal 1 damage to them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var damage = 1 + game.currentPlayer.spellDamage;
-      game.dealSimultaneousDamage(target, damage);
+      game.dealSimultaneousDamage(target, damage, this);
       target.frozen = true;
       target.frostElapsed = false;
       var index = target.player.minions.indexOf(target);
       if (index - 1 >= 0) {
         var minion = target.player.minions[index - 1];
-        game.dealSimultaneousDamage(minion, damage);
+        game.dealSimultaneousDamage(minion, damage, this);
         minion.frozen = true;
         minion.frostElapsed = false;
       }
       if (index + 1 <= target.player.minions.length - 1) {
         var minion = target.player.minions[index + 1];
-        game.dealSimultaneousDamage(minion, damage);
+        game.dealSimultaneousDamage(minion, damage, this);
         minion.frozen = true;
         minion.frostElapsed = false;
       }
       game.simultaneousDamageDone();
     }}),
     Counterspell: new Card('Counterspell', 'Secret: When your opponent casts a spell, Counter it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var counterspell = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
+      var counterspell = new Secret(game.currentPlayer, 'Counterspell', [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
         if (game.currentPlayer != this.owner.player) {
           // counter the spell
           console.log('countered!');
@@ -763,7 +764,7 @@
       }
     }}]}),
     IceBarrier: new Card('Ice Barrier', 'Secret: As soon as your hero is attacked, gain 8 Armor.', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var iceBarrier = new Secret(game.currentPlayer, [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+      var iceBarrier = new Secret(game.currentPlayer, 'Ice Barrier', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
           this.owner.player.hero.armor += 8;
           this.owner.remove(game);
@@ -778,7 +779,7 @@
       iceBarrier.activate(game);
     }}),
     IceBlock: new Card('Ice Block', 'Secret: When your hero takes fatal damage, prevent it and become Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var iceBlock = new Secret(game.currentPlayer, [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
+      var iceBlock = new Secret(game.currentPlayer, 'Ice Block', [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.amount >= hero.hp + hero.armor) {
           handlerParams.amount = 0;
           hero.immune = true;
@@ -798,7 +799,7 @@
     }}),
     IceLance: new Card('Ice Lance', 'Freeze a character. If it was already Frozen, deal 4 damage instead.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       if (target.frozen) {
-        game.dealDamage(target, 4 + game.currentPlayer.spellDamage);
+        game.dealDamage(target, 4 + game.currentPlayer.spellDamage, this);
       } else {
         target.frozen = true;
         target.frostElapsed = false;
@@ -857,7 +858,7 @@
       }
     }}]}),
     MirrorEntity: new Card('Mirror Entity', 'Secret: When your opponent plays a minion, summon a copy of it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var mirrorEntity = new Secret(game.currentPlayer, [{event: Events.AFTER_MINION_PLAYED_FROM_HAND, handler: function(game, player, position, minion) {
+      var mirrorEntity = new Secret(game.currentPlayer, 'Mirror Entity', [{event: Events.AFTER_MINION_PLAYED_FROM_HAND, handler: function(game, player, position, minion) {
         console.log('mirror entity', arguments, this);
         if (game.currentPlayer != this.owner.player && player != this.owner.player) {
           // play card without triggering the usual
@@ -876,7 +877,7 @@
       mirrorEntity.activate(game);
     }}),
     Pyroblast: new Card('Pyroblast', 'Deal 10 damage.', Set.Expert, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 10, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
-      game.dealDamage(target, 10 + game.currentPlayer.spellDamage);
+      game.dealDamage(target, 10 + game.currentPlayer.spellDamage, this);
     }}),
     SorcerersApprentice: new Card('Sorcerer\'s Apprentice', 'Your spells cost (1) less.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.COMMON, 2, {attack: 3, hp: 2, auras: [{mana: -1, eligible: function(entity) {
       return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.SPELL;
@@ -885,7 +886,7 @@
       return 'SpellbenderMinion';
     }}),
     Spellbender: new Card('Spellbender', 'Secret: When an enemy casts a spell on a minion, summon a 1/3 as the new target.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var spellbender = new Secret(game.currentPlayer, [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
+      var spellbender = new Secret(game.currentPlayer, 'Spellbender', [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target && handlerParams.target.type == TargetType.MINION) {
           // bend the spell
           console.log('bent!');
@@ -901,10 +902,12 @@
       spellbender.activate(game);
     }}),
     Vaporize: new Card('Vaporize', 'Secret: When a minion attacks your hero, destroy it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var vaporize = new Secret(game.currentPlayer, [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+      var vaporize = new Secret(game.currentPlayer, 'Vaporize', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
-          minion.die();
+          minion.die(game);
           handlerParams.cancel = true;
+          
+          this.owner.remove(game);
         }
       }}]);
       
@@ -918,7 +921,7 @@
   
   var Mage = new Hero(new Card('Fireblast', 'Deal 1 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
     console.log('fireblast', arguments);
-    game.dealDamage(target, 1);
+    game.dealDamage(target, 1, this);
   }}));
   
   var Hunter = new Hero(new Card('Steady Shot', 'Deal 2 damage to the enemy hero.', Set.BASIC, CardType.HERO_POWER, HeroClass.HUNTER, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
