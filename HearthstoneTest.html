@@ -4,21 +4,43 @@
 
 <script>
   function assert(expected, actual) {
-    if (expected == actual) {
-      console.log('Pass');
-    } else {
-      console.log('Fail: Expected', expected, 'but is', actual);
+    if (expected != actual) {
+      throw {expected: expected, actual: actual};
     }
   }
-
-  var p1 = new Player([], new Mage());
-  var p2 = new Player([], new Mage());
-  var game = new Hearthstone([p1, p2], 0);
-  p1.hand.push(MageCards.WaterElemental.copy());
-  p1.turn.playCard(p1.hand[0], 0);
-  assert(0, p1.minions.length);
-  p1.hand.push(NeutralCards.StonetuskBoar.copy());
-  p1.turn.playCard(p1.hand[1], 0);
-  assert(1, p1.minions.length);
-  assert('Stonetusk Boar', p1.minions[0].name);
+  
+  function testInsufficientMana() {
+    var p1 = new Player([], new Mage());
+    var p2 = new Player([], new Mage());
+    var game = new Hearthstone([p1, p2], 0);
+    p1.hand.push(MageCards.WaterElemental.copy());
+    p1.turn.playCard(p1.hand[0], 0);
+    assert(0, p1.minions.length);
+  }
+  
+  function testPlayMinion() {
+    var p1 = new Player([], new Mage());
+    var p2 = new Player([], new Mage());
+    var game = new Hearthstone([p1, p2], 0);
+    p1.hand.push(NeutralCards.StonetuskBoar.copy());
+    p1.turn.playCard(p1.hand[0], 0);
+    assert(1, p1.minions.length);
+    assert('Stonetusk Boar', p1.minions[0].name);
+  }
+  
+  // run all tests
+  console.log_ = console.log;
+  console.log = function() { };
+  for (prop in window) {
+    if (prop.indexOf('test') == 0) {
+      var currTest = prop;
+      try {
+        window[currTest]();
+        console.log_('%c[Pass]', 'color: green', currTest);
+      } catch (err) {
+        console.log_('%c[Fail]', 'color: red', currTest);
+        console.log_('Expected', err.expected, 'but is', err.actual);
+      }
+    }
+  }
 </script>
