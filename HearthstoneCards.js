@@ -763,7 +763,7 @@
         this.owner.enchantHp += 2;
       }
     }}]}),
-    IceBarrier: new Card('Ice Barrier', 'Secret: As soon as your hero is attacked, gain 8 Armor.', Set.EXPERT, CardType.SPELL, HeroClass.Mage, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+    IceBarrier: new Card('Ice Barrier', 'Secret: As soon as your hero is attacked, gain 8 Armor.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBarrier = new Secret(game.currentPlayer, 'Ice Barrier', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
           this.owner.player.hero.armor += 8;
