@@ -55,3 +55,52 @@ tests.testFireball = function() {
   p1.turn.playCard(p1.hand[0], undefined, p2.hero);
   assert(24, p2.hero.hp);
 };
+
+tests.testFlamestrike = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.WaterElemental.copy());
+  p1.hand.push(MageCards.ManaWyrm.copy());
+  p1.currentMana = 5;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  assert(2, p1.minions.length);
+  p2.hand.push(MageCards.Flamestrike.copy());
+  p2.currentMana = 7;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(1, p1.minions.length);
+  assert(2, p1.minions[0].currentHp);
+  assert(29, p1.hero.hp); // p1 took 1 fatigue damage
+};
+
+tests.testFrostNova = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.WaterElemental.copy());
+  p1.hand.push(MageCards.ManaWyrm.copy());
+  p1.currentMana = 5;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  assert(2, p1.minions.length);
+  p2.hand.push(MageCards.FrostNova.copy());
+  p2.currentMana = 3;
+  p2.turn.playCard(p2.hand[1]);
+  assert(true, p1.minions[0].frozen);
+  assert(true, p1.minions[1].frozen);
+  assert(false, p1.hero.frozen);
+};
+
+tests.testFrostBolt = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.FrostBolt.copy());
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0], undefined, p2.hero);
+  assert(27, p2.hero.hp);
+  assert(true, p2.hero.frozen);
+};

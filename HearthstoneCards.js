@@ -520,6 +520,7 @@
     hp: 30,
     attack: 0,
     armor: 0,
+    frozen: false,
   };
   
   var Hero = function(heroPower) {
@@ -656,7 +657,7 @@
     Fireball: new Card('Fireball', 'Deal 6 damage.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 6 + game.currentPlayer.spellDamage, this);
     }}),
-    FlameStrike: new Card('Flamestrike', 'Deal 4 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
+    Flamestrike: new Card('Flamestrike', 'Deal 4 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
       console.log(game, game.otherPlayer.minions);
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.dealSimultaneousDamage(game.otherPlayer.minions[i], 4 + game.currentPlayer.spellDamage, this);
