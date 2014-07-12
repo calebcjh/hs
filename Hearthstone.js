@@ -271,7 +271,7 @@
       }
       
       if (hero.armor > 0) {
-        var damageAbsorbed = math.min(hero.armor, damageLeft);
+        var damageAbsorbed = Math.min(hero.armor, damageLeft);
         hero.armor -= damageAbsorbed;
         damageLeft -= damageAbsorbed;
       }

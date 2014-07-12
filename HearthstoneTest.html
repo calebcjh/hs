@@ -27,7 +27,11 @@
         console.log_('%c[Pass]', 'color: green', currTest);
       } catch (err) {
         console.log_('%c[Fail]', 'color: red', currTest);
-        console.log_('Expected', err.expected, 'but is', err.actual);
+        if (err.expected && err.actual) {
+          console.log_('Expected', err.expected, 'but is', err.actual);
+        } else {
+          console.log_(err);
+        }
       }
     }
   }
