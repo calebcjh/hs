@@ -14,6 +14,7 @@
   
 <script type="text/javascript" src="MageTests.js"></script>
 <script type="text/javascript" src="HearthstoneTests.js"></script>
+<script type="text/javascript" src="ComplexTests.js"></script>
 
 <script>
   // run all tests
@@ -27,10 +28,10 @@
         console.log_('%c[Pass]', 'color: green', currTest);
       } catch (err) {
         console.log_('%c[Fail]', 'color: red', currTest);
-        if (err.expected && err.actual) {
+        if (err.hasOwnProperty('expected') && err.hasOwnProperty('actual')) {
           console.log_('Expected', err.expected, 'but is', err.actual);
         } else {
-          console.log_(err);
+          console.log_(err.stack);
         }
       }
     }
