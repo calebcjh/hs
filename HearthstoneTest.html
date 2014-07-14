@@ -5,7 +5,10 @@
 <script>
   function assert(expected, actual) {
     if (expected != actual) {
-      throw {expected: expected, actual: actual};
+      var ex = new Error();
+      ex.expected = expected;
+      ex.actual = actual;
+      throw ex;
     }
   }
   
@@ -30,6 +33,7 @@
         console.log_('%c[Fail]', 'color: red', currTest);
         if (err.hasOwnProperty('expected') && err.hasOwnProperty('actual')) {
           console.log_('Expected', err.expected, 'but is', err.actual);
+          console.log_(err.stack);
         } else {
           console.log_(err.stack);
         }

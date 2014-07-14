@@ -76,10 +76,10 @@
         return;
       }
       
-      // todo: verify valid target
-      // if (minion.listTargets().indexOf(target) == -1) {
-      //   return;
-      // }
+      if (minion.listTargets(game).indexOf(target) == -1) {
+        console.log('invalid target');
+        return;
+      }
       
       // before attack
       var handlerParams = {cancel: false, target: target};
@@ -123,10 +123,10 @@
         return;
       }
       
-      // todo: verify valid target
-      // if (hero.listTargets().indexOf(target) == -1) {
-      //   return;
-      // }
+      if (hero.listTargets(game).indexOf(target) == -1) {
+        console.log('invalid target');
+        return;
+      }
       
       // before attack
       var handlerParams = {cancel: false, target: target};

@@ -439,7 +439,25 @@
     };
     
     this.listTargets = function(game) {
-      // todo: list taunts first
+      var opponent;
+      if (this.player == game.currentPlayer) {
+        opponent = game.otherPlayer;
+      } else {
+        opponent = game.currentPlayer;
+      }
+      var targets = [];
+      for (var i = 0; i < opponent.minions.length; i++) {
+        if (opponent.minions[i].taunt) {
+          targets.push(opponent.minions[i]);
+        }
+      }
+      if (targets.length > 0) {
+        return targets;
+      } else {
+        targets = opponent.minions.slice(0);
+        targets.push(opponent.hero);
+      }
+      return targets;
     };
     
     this.remove = function(game) {
