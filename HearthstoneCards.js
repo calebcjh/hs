@@ -94,6 +94,8 @@
     enchantMana: 0,
     mana: 0,
     appliedAuras: [],
+    requiresTarget: false,
+    requiresPosition: false,
     updateStats: function(game) {
       console.log(this, game);
       for (var i = 0; i < game.auras.length; i++) {

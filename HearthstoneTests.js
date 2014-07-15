@@ -37,3 +37,22 @@ tests.testTaunt = function() {
   assert(1, p2.minions[0].attackCount);
   assert(1, p1.minions[0].currentHp);
 };
+
+tests.testActions1 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.MirrorImage.copy());
+  assert(2, p1.turn.listAllActions().length);
+};
+
+tests.testActions2 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(MageCards.WaterElemental.copy());
+  p1.currentMana = 2;
+  assert(5, p1.turn.listAllActions().length);
+};

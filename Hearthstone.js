@@ -156,6 +156,13 @@
       if (game.currentPlayer.usedHeroPower) {
         return false;
       }
+      
+      if (!game.currentPlayer.hero.heroPower.verify(game, opt_target)) {
+        // ignore invalid plays
+        console.log('invalid play');
+        return;
+      }
+      
       console.log('about to activate hero power', game, opt_target);
       game.currentPlayer.usedHeroPower = true;
       game.currentPlayer.hero.heroPower.activate(game, null /* position */, opt_target);
@@ -168,6 +175,71 @@
       
       this.ended = true;
       game.endTurn();
+    };
+    
+    this.listAllActions = function() {
+      var player = game.currentPlayer;
+      var targets = player.minions.concat(game.otherPlayer.minions);
+      targets.push(player.hero);
+      targets.push(game.otherPlayer.hero);
+      var actions = [];
+      
+      // play cards
+      for (var i = 0; i < player.hand.length; i++) {
+        var card = game.currentPlayer.hand[i];
+        if (card.requiresPosition) {
+          for (var j = 0; j <= player.minions.length; j++) {
+            if (card.requiresTarget) {
+              for (var k = 0; k < targets.length; k++) {
+                if (card.verify(game, j, targets[k])) {
+                  actions.push({card: card, position: j, target: targets[k]});
+                };
+              };
+            } else if (card.verify(game, j)) {
+              actions.push({card: card, position: j});
+            }
+          }
+        } else if (card.requiresTarget) {
+          for (var k = 0; k < targets.length; k++) {
+            if (card.verify(game, j, targets[k])) {
+              actions.push({card: card, target: targets[k]});
+            };
+          };
+        } else {
+          actions.push({card: card});
+        }
+      }
+      
+      // minion attack
+      for (var i = 0; i < player.minions.length; i++) {
+        var minion = player.minions[i];
+        if (!minion.sleeping && !minion.frozen && (minion.attackCount == 0 || (minion.windfury && minion.attackCount == 1))) {
+          var possibleTargets = minion.listTargets(game);
+          for (var j = 0; j < possibleTargets.length; j++) {
+            actions.push({minion: minion, target: possibleTargets[j]});
+          }
+        }
+      }
+      
+      if (player.currentMana >= 2 && !player.usedHeroPower) {
+        var heroPower = player.hero.heroPower;
+        if (heroPower.requiresTarget) {
+          for (var i = 0; i < targets.length; i++) {
+            if (heroPower.verify(game, undefined /* position */, targets[i])) {
+              actions.push({card: heroPower, target: targets[i]});
+            }
+          }
+        } else if (heroPower.verify(game)) {
+          actions.push({card: heroPower});
+        }
+      }
+      
+      // todo: hero attack
+      
+      // end turn
+      actions.push({endTurn: true});
+      
+      return actions;
     };
   };
 
