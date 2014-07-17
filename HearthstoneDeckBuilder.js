@@ -136,8 +136,7 @@
       var filteredCards = [];
       for (id in relevantCards) {
         if ((this.selectedMana == -1 || relevantCards[id].mana == this.selectedMana) &&
-            (this.filter == '' || relevantCards[id].name.toLowerCase().indexOf(this.filter.toLowerCase()) != -1) &&
-            relevantCards[id].draftable) {
+            (this.filter == '' || relevantCards[id].name.toLowerCase().indexOf(this.filter.toLowerCase()) != -1)) {
           filteredCards.push(relevantCards[id]);
         }
       }
@@ -386,6 +385,10 @@
           }
           if (heroClass != null && card.heroClass != HeroClass.NEUTRAL && card.heroClass != heroClass) {
             console.log(heroClass, card, card.heroClass);
+            deckType = 'Puzzle';
+            break;
+          }
+          if (!card.draftable) {
             deckType = 'Puzzle';
             break;
           }

@@ -56,3 +56,23 @@ tests.testActions2 = function() {
   p1.currentMana = 2;
   assert(5, p1.turn.listAllActions().length);
 };
+
+tests.testActions3 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(MageCards.WaterElemental.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  assert(8, p1.turn.listAllActions().length);
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(7, p1.turn.listAllActions().length);
+  p1.turn.minionAttack(p1.minions[0], p2.hero);
+  assert(6, p1.turn.listAllActions().length);
+  p1.turn.useHeroPower(p2.hero);
+  assert(1, p1.turn.listAllActions().length);
+  p1.turn.endTurn();
+  assert(0, p1.turn.listAllActions());
+};

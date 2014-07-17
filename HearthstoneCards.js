@@ -934,9 +934,33 @@
       
       vaporize.activate(game);
     }}),
-  }
+  };
+  
+  var HunterCards = {
+    Huffer: new Card('Huffer', 'Charge', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 2, charge: true, isBeast: true}),
+    Leokk: new Card('Leokk', 'Other friendly minions have +1 Attack.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 2, hp: 4, isBeast: true, auras: [{attack: 1, eligible: function(entity) {
+      return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner;
+    }}]}),
+    Misha: new Card('Misha', 'Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 4, taunt: true, isBeast: true}),
+    AnimalCompanion: new Card('Animal Companion', 'Summon a random Beast Companion', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
+      var selectedMinion = Math.floor(game.random() * 3);
+      var minion;
+      if (selectedMinion == 0) {
+        minion = new Minion(game.currentPlayer, 'Huffer', HunterCards.Huffer.copy(), 4, 2, true /* charge */, false, false, false, false, false, false, [], []);
+      } else if (selectedMinion == 1) {
+        minion = new Minion(game.currentPlayer, 'Leokk', HunterCards.Leokk.copy(), 2, 4, false, false, false, false, false, false, false, [], [{attack: 1, eligible: function(entity) {
+          return this.owner.player.minion.indexOf(entity) != -1;
+        }}]);
+      } else {
+        minion = new Minion(game.currentPlayer, 'Misha', HunterCards.Huffer.copy(), 4, 4, false, false, false, false, false, true /* taunt */, false, [], []);
+      }
+      game.currentPlayer.minions.push(minion);
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
+    }}),
+  };
   
   var Cards = [];
+  Cards[HeroClass.HUNTER] = HunterCards;
   Cards[HeroClass.MAGE] = MageCards;
   Cards[HeroClass.NEUTRAL] = NeutralCards;
   
@@ -951,11 +975,13 @@
 
   window.NeutralCards = NeutralCards;
   window.MageCards = MageCards;
+  window.HunterCards = HunterCards;
   window.Cards = Cards;
   window.Card = Card;
   window.Rarity = Rarity;
   window.CardType = CardType;
   window.HeroClass = HeroClass;
+  window.Hunter = Hunter;
   window.Mage = Mage;
   window.Events = Events;
   window.run = run;

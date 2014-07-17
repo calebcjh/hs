@@ -178,6 +178,10 @@
     };
     
     this.listAllActions = function() {
+      if (this.ended) {
+        return [];
+      }
+    
       var player = game.currentPlayer;
       var targets = player.minions.concat(game.otherPlayer.minions);
       targets.push(player.hero);
@@ -249,6 +253,7 @@
       var x = Math.sin(this.seed++) * 10000;
       return x - Math.floor(x);
     }
+	this.log = [];
     
     this.players = players;
     this.currentIndex = 1;
