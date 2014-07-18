@@ -221,19 +221,23 @@
     verify: function(game, unused_position, opt_target) {
       // verify sufficient mana
       if (game.currentPlayer.currentMana < this.getCurrentMana()) {
+        console.log('insufficient mana');
         return false;
       }
 
       if (this.requiresTarget && !opt_target) {
+        console.log('requires target');
         return false;
       }
       
       // verify target is not magic immune
       if (opt_target && opt_target.magicImmune) {
+        console.log('target is magic immune');
         return false;
       }
       
       if (this.minionOnly && opt_target.type != TargetType.MINION) {
+        console.log('minion only');
         return false;
       }
 
@@ -364,6 +368,13 @@
     this.enchantAttack = 0;
     this.appliedAuras = [];
     this.registeredAuras = [];
+    
+    // copy isX tags. ie. isBeast.
+    for (prop in card) {
+      if (prop.indexOf('is') == 0) {
+        this[prop] = card[prop];
+      }
+    };
     
     this.getCurrentAttack = function() {
       var attackFromAuras = 0;
@@ -632,7 +643,7 @@
     TheCoin: new Card('The Coin', 'Gain 1 Mana Crystal this turn only.', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
     }}),
-    Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1}),
+    Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, isBeast: true}),
     Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
     PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
@@ -956,6 +967,21 @@
       }
       game.currentPlayer.minions.push(minion);
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
+    }}),
+    ArcaneShot: new Card('Arcane Shot', 'Deal 2 damage', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      game.dealDamage(target, 2 + game.currentPlayer.spellDamage, this);
+    }}),
+    Houndmaster: new Card('Houndmaster', 'Battlecry: Give a friendly Beast +2/+2 and Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 4, {requiresTarget: true, attack: 4, hp: 3, battlecry: {verify: function(game, position, target) {
+      return game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
+    }, activate: function(game, minion, position, target) {
+      target.enchantAttack += 2;
+      target.currentHp += 2;
+      target.enchantHp += 2;
+      target.taunt = true;
+    }}}),
+    HuntersMark: new Card('Hunter\'s Mark', 'Change a minion\'s Health to 1.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      target.enchantHp = 1 - target.hp;
+      target.updateStats(game, true);
     }}),
   };
   

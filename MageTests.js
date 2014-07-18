@@ -129,6 +129,7 @@ tests.testPolymorph = function() {
   p2.turn.playCard(p2.hand[1], undefined, p1.minions[0]);
   assert(1, p1.minions.length);
   assert('Sheep', p1.minions[0].name);
+  assert(true, p1.minions[0].isBeast);
 };
 
 tests.testWaterElemental = function() {
