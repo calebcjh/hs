@@ -161,6 +161,7 @@
     immune: false,
     handlers: [],
     auras: [],
+    tag: '',
     verify: function(game, position, opt_target) {
       // verify sufficient mana
       if (game.currentPlayer.currentMana < this.getCurrentMana()) {
@@ -200,6 +201,7 @@
       console.log('after', game.currentPlayer.minions.slice(0));
       minion.registerHandlers(game);
       minion.registerAuras(game);
+      minion.updateStats(game);
       
       // execute battlecry
       if (this.battlecry) {
@@ -369,12 +371,11 @@
     this.appliedAuras = [];
     this.registeredAuras = [];
     
-    // copy isX tags. ie. isBeast.
-    for (prop in card) {
-      if (prop.indexOf('is') == 0) {
-        this[prop] = card[prop];
-      }
-    };
+    // apply isX tags. ie. isBeast.
+    if (card.tag != '') {
+      this['is' + card.tag] = true;
+      this.tag = card.tag;
+    }
     
     this.getCurrentAttack = function() {
       var attackFromAuras = 0;
@@ -643,7 +644,7 @@
     TheCoin: new Card('The Coin', 'Gain 1 Mana Crystal this turn only.', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
     }}),
-    Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, isBeast: true}),
+    Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, tag: 'Beast'}),
     Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
     PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
@@ -651,7 +652,7 @@
         // todo: trigger heal events
       }
     }}),
-    StonetuskBoar: new Card('Stonetusk Boar', 'Charge', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1})
+    StonetuskBoar: new Card('Stonetusk Boar', 'Charge', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1, tag: 'Beast'})
   };
   
   var MageCards = {
@@ -900,6 +901,8 @@
           this.owner.player.minions.push(clonedMinion);
           clonedMinion.registerHandlers(game);
           clonedMinion.registerAuras(game);
+          
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, clonedMinion));
 
           // todo: aura buffs
           this.owner.remove(game);
@@ -925,6 +928,8 @@
           var bender = new Minion(this.owner.player, 'Spellbender', MageCards.SpellbenderMinion.copy(), 1, 3, false, false, false, false, false, false, false, [], []);
           this.owner.player.minions.push(bender);
           
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, bender));
+          
           handlerParams.target = bender;
           
           this.owner.remove(game);
@@ -942,17 +947,16 @@
           this.owner.remove(game);
         }
       }}]);
-      
       vaporize.activate(game);
     }}),
   };
   
   var HunterCards = {
-    Huffer: new Card('Huffer', 'Charge', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 2, charge: true, isBeast: true}),
-    Leokk: new Card('Leokk', 'Other friendly minions have +1 Attack.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 2, hp: 4, isBeast: true, auras: [{attack: 1, eligible: function(entity) {
+    Huffer: new Card('Huffer', 'Charge', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 2, charge: true, tag: 'Beast'}),
+    Leokk: new Card('Leokk', 'Other friendly minions have +1 Attack.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 2, hp: 4, tag: 'Beast', auras: [{attack: 1, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner;
     }}]}),
-    Misha: new Card('Misha', 'Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 4, taunt: true, isBeast: true}),
+    Misha: new Card('Misha', 'Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 4, taunt: true, tag: 'Beast'}),
     AnimalCompanion: new Card('Animal Companion', 'Summon a random Beast Companion', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
       var selectedMinion = Math.floor(game.random() * 3);
       var minion;
@@ -983,6 +987,37 @@
       target.enchantHp = 1 - target.hp;
       target.updateStats(game, true);
     }}),
+    KillCommand: new Card('Kill Command', 'Deal 3 damage. If you have a Beast, deal 5 damage instead.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      var damage = 3;
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        if (game.currentPlayer.minions[i].isBeast) {
+          damage = 5;
+        }
+      }
+      game.dealDamage(target, damage + game.currentPlayer.spellDamage, this);
+    }}),
+    MultiShot: new Card('Multi-Shot', 'Deal 3 damage to two random enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {verify: function(game, unused_position, unused_target) {
+      return this.__proto__.verify.call(this, game) && game.otherPlayer.minions.length > 1;
+    }, applyEffects: function(game, unused_position, unused_target) {
+      var targets = 0;
+      var len = game.otherPlayer.minions.length;
+      for (var i = 0; i < len; i++) {
+        var probability = (2 - targets) / (len - i);
+        if (game.random() < probability) {
+          targets++;
+          game.dealSimultaneousDamage(game.otherPlayer.minions[i], 3 + game.currentPlayer.spellDamage, this);
+        }
+      }
+      game.simultaneousDamageDone();
+    }}),
+    StarvingBuzzard: new Card('Starving Buzzard', 'Whenever you summon a Beast, draw a card.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 2, {attack: 2, hp: 1, tag: 'Beast', handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
+      if (minion != this.owner && minion.player == this.owner.player && minion.isBeast) {
+        game.drawCard(this.owner.player)
+      }
+    }}]}),
+    TimberWolf: new Card('Timber Wolf', 'Your other Beasts have +1 Attack.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 1, {attack: 1, hp: 1, tag: 'Beast', auras: [{attack: 1, eligible: function(entity) {
+      return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner && entity.isBeast;
+    }}]}),
   };
   
   var Cards = [];

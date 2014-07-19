@@ -234,6 +234,13 @@
         description.style.lineHeight = lineHeight + 'px';
       }
       
+      if (card.tag) {
+        var tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = card.tag;
+        base.appendChild(tag);
+      }
+      
       base.onclick = this.pickCard.bind(this, card);
       
       return base;
