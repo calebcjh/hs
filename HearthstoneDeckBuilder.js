@@ -404,7 +404,7 @@
             copies++;
             i++;
           }
-          if (copies > 2) {
+          if (copies > 2 || (copies > 1 && card.rarity == Rarity.LEGENDARY)) {
             deckType = 'Arena';
           }
         }
