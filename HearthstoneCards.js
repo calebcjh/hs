@@ -359,7 +359,7 @@
     this.eventHandlers = eventHandlers;
     this.auras = auras;
     
-    this.sleeping = !this.charge;
+    this.sleeping = true;
     this.frozen = false;
     this.frostElapsed = true;
     this.currentHp = hp;
@@ -393,6 +393,15 @@
         hpFromAuras += aura.hp;
       }
       return this.hp + this.enchantHp + hpFromAuras;
+    };
+    
+    this.hasCharge = function() {
+      var chargeFromAuras = false;
+      for (var i = 0; i < this.appliedAuras.length; i++) {
+        var aura = this.appliedAuras[i];
+        chargeFromAuras = chargeFromAuras || aura.charge;
+      }
+      return this.charge || chargeFromAuras;
     };
     
     this.updateStats = function(game, reapply) {
@@ -439,7 +448,7 @@
     
     this.registerAuras = function(game) {
       for (var i = 0; i < this.auras.length; i++) {
-        var aura = new Aura(this, this.auras[i].attack || 0, this.auras[i].hp || 0, this.auras[i].mana || 0, this.auras[i].eligible);
+        var aura = new Aura(this, this.auras[i].attack || 0, this.auras[i].hp || 0, this.auras[i].mana || 0, this.auras[i].charge || false, this.auras[i].eligible);
         aura.register(game);
       }
     };
@@ -502,11 +511,12 @@
     };
   };
   
-  var Aura = function(owner, attack, hp, mana, eligible) {
+  var Aura = function(owner, attack, hp, mana, charge, eligible) {
     this.owner = owner;
     this.attack = attack;
     this.hp = hp;
     this.mana = mana;
+    this.charge = charge;
     this.eligible = eligible;
 
     this.targets = [];
@@ -1018,6 +1028,9 @@
     }}]}),
     TimberWolf: new Card('Timber Wolf', 'Your other Beasts have +1 Attack.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 1, {attack: 1, hp: 1, tag: 'Beast', auras: [{attack: 1, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner && entity.isBeast;
+    }}]}),
+    TundraRhino: new Card('Tundra Rhino', 'Your Beasts have Charge.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 5, {attack: 2, hp: 5, tag: 'Beast', auras:[{charge: true, eligible: function(entity) {
+      return this.owner.player.minions.indexOf(entity) != -1 && entity.isBeast;
     }}]}),
   };
   

@@ -245,3 +245,34 @@ tests.testTimberWolf = function() {
   p1.turn.playCard(p1.hand[0], 3);
   assert(1, p1.minions[3].getCurrentAttack());
 };
+
+tests.testTundraRhino = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.deck.push(NeutralCards.Wisp.copy());
+  p1.deck.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(HunterCards.StarvingBuzzard.copy());
+  p1.hand.push(HunterCards.TundraRhino.copy());
+  p1.hand.push(HunterCards.Misha.copy());
+  p1.currentMana = 14;
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(false, p1.minions[0].hasCharge());
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(true, p1.minions[0].hasCharge());
+  assert(true, p1.minions[1].hasCharge());
+  p1.turn.playCard(p1.hand[0], 2);
+  assert('Misha', p1.minions[2].name);
+  assert(true, p1.minions[2].hasCharge());
+  p1.turn.playCard(p1.hand[0], 3);
+  assert('Stonetusk Boar', p1.minions[3].name);
+  assert(true, p1.minions[3].hasCharge());
+  p1.turn.playCard(p1.hand[0], 4);
+  assert(false, p1.minions[4].hasCharge());
+  p1.hand.push(HunterCards.KillCommand.copy());
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[1]);
+  assert(false, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  assert(true, p1.minions[2].hasCharge());
+  assert(false, p1.minions[3].hasCharge());
+};

@@ -65,7 +65,7 @@
       }
       
       // check if minion has summoning sickness or is frozen
-      if (minion.sleeping || minion.frozen) {
+      if ((minion.sleeping && !minion.hasCharge()) || minion.frozen) {
         console.log('minion is sleeping or is frozen');
         return;
       }
@@ -217,7 +217,7 @@
       // minion attack
       for (var i = 0; i < player.minions.length; i++) {
         var minion = player.minions[i];
-        if (!minion.sleeping && !minion.frozen && (minion.attackCount == 0 || (minion.windfury && minion.attackCount == 1))) {
+        if ((!minion.sleeping || minion.hasCharge()) && !minion.frozen && (minion.attackCount == 0 || (minion.windfury && minion.attackCount == 1))) {
           var possibleTargets = minion.listTargets(game);
           for (var j = 0; j < possibleTargets.length; j++) {
             actions.push({minion: minion, target: possibleTargets[j]});
