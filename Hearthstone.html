@@ -240,6 +240,33 @@
     background: #0af;
   }
   
+  #draft {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  #draft_container {
+    position: absolute;
+    left: 0;
+    top: 300px;
+    right: 0;
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  #draft_select {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 250px;
+    text-align: enter;
+    vertical-align: middle;
+  }
+  
 </style>
 
 <div id="game_field">
@@ -270,5 +297,9 @@
     </div>
     <div class="hero_power"></div>
     <div class="minions"></div>
+  </div>
+  <div id="draft">
+    <div id="draft_container"></div>
+    <div id="draft_select">Select</div>
   </div>
 </div>

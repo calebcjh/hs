@@ -246,6 +246,60 @@ tests.testTimberWolf = function() {
   assert(1, p1.minions[3].getCurrentAttack());
 };
 
+tests.testTracking = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.deck.push(NeutralCards.Sheep.copy());
+  p1.deck.push(NeutralCards.Wisp.copy());
+  p1.deck.push(NeutralCards.StonetuskBoar.copy());
+  p1.deck.push(HunterCards.Misha.copy());
+  p1.hand.push(HunterCards.Tracking.copy());
+  p1.turn.playCard(p1.hand[0]);
+  assert(true, p1.turn.drafting);
+  assert(3, p1.turn.draftOptions.length);
+  assert(1, p1.turn.draftPicks);
+  p1.turn.draft([p1.turn.draftOptions[0]]);
+  assert(false, p1.turn.drafting);
+  assert(1, p1.hand.length);
+  assert('Misha', p1.hand[0].name);
+  assert(1, p1.deck.length);
+  assert('Sheep', p1.deck[0].name);
+  assert(0, p1.currentMana);
+  assert(29, p1.hero.hp);
+};
+
+tests.testTracking__lowOnCards = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.deck.push(NeutralCards.Wisp.copy());
+  p1.deck.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(HunterCards.Tracking.copy());
+  p1.turn.playCard(p1.hand[0]);
+  assert(true, p1.turn.drafting);
+  assert(2, p1.turn.draftOptions.length);
+  assert(1, p1.turn.draftPicks);
+  p1.turn.draft([p1.turn.draftOptions[0]]);
+  assert(false, p1.turn.drafting);
+  assert(1, p1.hand.length);
+  assert('Stonetusk Boar', p1.hand[0].name);
+  assert(0, p1.currentMana);
+  assert(29, p1.hero.hp);
+};
+
+tests.testTracking__outOfCards = function() {
+var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.Tracking.copy());
+  p1.turn.playCard(p1.hand[0]);
+  assert(false, p1.turn.drafting);
+  assert(0, p1.hand.length);
+  assert(0, p1.currentMana);
+  assert(29, p1.hero.hp);
+};
+
 tests.testTundraRhino = function() {
   var p1 = new Player([], new Hunter());
   var p2 = new Player([], new Mage());

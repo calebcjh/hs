@@ -752,7 +752,9 @@
       // todo: silence
       if (game.currentPlayer == this.owner.player) {
         console.log('adding fireball');
-        this.owner.player.hand.push(MageCards.Fireball.copy());
+        var card = MageCards.Fireball.copy();
+        this.owner.player.hand.push(card);
+        card.updateStats(game);
       }
       console.log('done');
     }}]}),
@@ -910,7 +912,9 @@
           clonedMinion.player = this.owner.player;
           clonedMinion.registeredHandlers = [];
           this.owner.player.minions.push(clonedMinion);
+          clonedMinion.registeredHandlers = [];
           clonedMinion.registerHandlers(game);
+          clonedMinion.registeredAuras = [];
           clonedMinion.registerAuras(game);
           
           game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, clonedMinion));
@@ -1029,6 +1033,35 @@
     TimberWolf: new Card('Timber Wolf', 'Your other Beasts have +1 Attack.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 1, {attack: 1, hp: 1, tag: 'Beast', auras: [{attack: 1, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner && entity.isBeast;
     }}]}),
+    Tracking: new Card('Tracking', 'Look at the top three cards of your deck. Draw one and discard the others.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+      var deckLength = game.currentPlayer.deck.length;
+      var numOptions = Math.min(3, deckLength);
+      
+      if (numOptions == 0) {
+        return;
+      }
+      
+      var options = [];
+      for (var i = 0; i < numOptions; i++) {
+        options.push(game.currentPlayer.deck[deckLength - i - 1]);
+      }
+      
+      game.currentPlayer.turn.draftOptions = options;
+      game.currentPlayer.turn.draftPicks = 1;
+      game.currentPlayer.turn.drafting = true;
+      game.currentPlayer.turn.draft = function(selected) {
+        for (var i = 0; i < numOptions; i++) {
+          var card = game.currentPlayer.deck[game.currentPlayer.deck.length - 1];
+          if (card == selected[0]) {
+            game.drawCard(game.currentPlayer);
+          } else {
+            game.currentPlayer.deck.pop();
+          }
+        }
+        game.currentPlayer.turn.drafting = false;
+      };
+      game.currentPlayer.play(game.currentPlayer.turn);
+    }}),
     TundraRhino: new Card('Tundra Rhino', 'Your Beasts have Charge.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 5, {attack: 2, hp: 5, tag: 'Beast', auras:[{charge: true, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity.isBeast;
     }}]}),

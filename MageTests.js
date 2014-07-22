@@ -409,6 +409,11 @@ tests.testSorcerersApprentice = function() {
   assert(0, p1.hand[0].getCurrentMana());
   assert(3, p1.hand[1].getCurrentMana());
   assert(4, p1.hand[2].getCurrentMana());
+  p1.turn.endTurn();
+  p1.deck.push(MageCards.Pyroblast.copy());
+  p2.turn.endTurn();
+  assert(4, p1.hand.length);
+  assert(9, p1.hand[3].getCurrentMana());
 };
 
 tests.testSpellBender = function() {

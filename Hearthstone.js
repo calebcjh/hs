@@ -36,9 +36,13 @@
   
   var Turn = function(game) {
     this.ended = false;
+    this.drafting = false;
+    this.draftOptions = [];
+    this.draftPicks = 0;
+    this.draft = undefined;
   
     this.playCard = function(card, opt_position, opt_target) {
-      if (this.ended) {
+      if (this.drafting || this.ended) {
         return;
       }
     
@@ -60,7 +64,7 @@
     };
     
     this.minionAttack = function(minion, target) {
-      if (this.ended) {
+      if (this.drafting || this.ended) {
         return;
       }
       
@@ -108,7 +112,7 @@
     };
     
     this.heroAttack = function(hero, target) {
-      if (this.ended) {
+      if (this.drafting || this.ended) {
         return;
       }
       
@@ -144,7 +148,7 @@
     };
     
     this.useHeroPower = function(opt_target) {
-      if (this.ended) {
+      if (this.drafting || this.ended) {
         return;
       }
       
@@ -169,7 +173,7 @@
     };
     
     this.endTurn = function() {
-      if (this.ended) {
+      if (this.drafting || this.ended) {
         return;
       }
       
@@ -180,6 +184,21 @@
     this.listAllActions = function() {
       if (this.ended) {
         return [];
+      }
+      
+      if (this.drafting) {
+        var n = this.draftOptions.length;
+        var r = this.draftPicks;
+        var choices = 1;
+        for (var i = n; i > 1; i--) {
+          if (i > n - r && i > r) {
+            choices *= i;
+          }
+          if (i <= n - r && i <= r) {
+            choices /= i;
+          }
+        }
+        return {draftCombos: choices};
       }
     
       var player = game.currentPlayer;
@@ -253,7 +272,6 @@
       var x = Math.sin(this.seed++) * 10000;
       return x - Math.floor(x);
     }
-	this.log = [];
     
     this.players = players;
     this.currentIndex = 1;
@@ -265,6 +283,9 @@
     
     this.handlers = [];
     this.auras = [];
+    
+    this.mulligansDone = 0;
+    this.mulligansRequired = 0;
     
     for (prop in Events) {
       this.handlers[Events[prop]] = [];
@@ -504,23 +525,81 @@
     };
     
     this.startGame = function() {
-      this.players[1].hand.push(NeutralCards.TheCoin);
-      
+      var p1Options = [], p2Options = [];
       for (var i = 0; i < 3; i++) {
         if (this.players[0].deck.length) {
-          this.players[0].hand.push(this.players[0].deck.pop().copy());
+          // this.players[0].hand.push(p1Options.push(this.players[0].deck.pop().copy()););
+          p1Options.push(this.players[0].deck.pop().copy());
         }
         if (this.players[1].deck.length) {
-          this.players[1].hand.push(this.players[1].deck.pop().copy());
+          // this.players[1].hand.push(this.players[1].deck.pop().copy());
+          p2Options.push(this.players[1].deck.pop().copy());
         }
       }
       if (this.players[1].deck.length) {
-        this.players[1].hand.push(this.players[1].deck.pop().copy());
+        // this.players[1].hand.push(this.players[1].deck.pop().copy());
+        p2Options.push(this.players[1].deck.pop().copy());
       }
       
-      console.log(this);
+      if (p1Options.length) {
+        this.mulligansRequired++;
+      }
       
-      this.startTurn();
+      if (p2Options.length) {
+        this.mulligansRequired++;
+      }
+      
+      if (p1Options.length) {
+        var p1DraftTurn = new Turn(this);
+        p1DraftTurn.draftOptions = p1Options;
+        p1DraftTurn.draftPicks = p1Options.length;
+        p1DraftTurn.drafting = true;
+        p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
+        this.players[0].play(p1DraftTurn);
+      }
+      
+      if (p2Options.length) {
+        var p2DraftTurn = new Turn(this);
+        p2DraftTurn.draftOptions = p2Options;
+        p2DraftTurn.draftPicks = p2Options.length;
+        p2DraftTurn.drafting = true;
+        p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
+        this.players[1].play(p2DraftTurn);
+      }
+      
+      this.players[1].hand.push(NeutralCards.TheCoin);
+      
+      if (this.mulligansRequired == 0) {
+        this.startTurn();
+      }
+    };
+    
+    this.mulligan = function(player, options, selected) {
+      for (var i = 0; i < options.length; i++) {
+        var card = options[i];
+        if (selected.indexOf(card) == -1) {
+          // this card is retained
+          player.hand.push(card);
+        }
+      }
+      // additional card to be drawn
+      for (var i = 0; i < selected.length; i++) {
+        if (player.deck.length) {
+          player.hand.push(player.deck.pop().copy());
+        }
+      }
+      // return discarded cards
+      for (var i = 0; i < selected.length; i++) {
+        var index = Math.floor(this.random() * (player.deck.length + 1));
+        player.deck.splice(index, 0, selected[i]);
+      }
+      
+      player.turn.ended = true;
+      this.mulligansDone++;
+      
+      if (this.mulligansDone == this.mulligansRequired) {
+        this.startTurn();
+      }
     };
     
     this.startGame();

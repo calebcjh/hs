@@ -76,3 +76,29 @@ tests.testActions3 = function() {
   p1.turn.endTurn();
   assert(0, p1.turn.listAllActions());
 };
+
+tests.testMulligan = function() {
+  var p1 = new Player([MageCards.MirrorImage.copy(), NeutralCards.StonetuskBoar.copy()], new Mage());
+  var p2 = new Player([MageCards.Pyroblast.copy(),
+                       MageCards.Fireball.copy(),
+                       MageCards.IceLance.copy(),
+                       MageCards.ArcaneMissiles.copy(),
+                       MageCards.ConeOfCold.copy(),
+                       MageCards.FrostBolt.copy(),
+                       MageCards.Flamestrike.copy(),
+                       MageCards.Blizzard.copy()], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  assert(2, p1.turn.draftOptions.length);
+  assert(4, p2.turn.draftOptions.length);
+  p1.turn.draft([p1.turn.draftOptions[1]]);
+  assert(1, p1.hand.length);
+  assert(1, p1.deck.length);
+  p2.turn.draft([]);
+  assert(5, p2.hand.length);
+  assert(4, p2.deck.length);
+  assert('The Coin', p2.hand[0].name);
+  assert('Blizzard', p2.hand[1].name);
+  assert('Flamestrike', p2.hand[2].name);
+  assert('Frost Bolt', p2.hand[3].name);
+  assert('Cone of Cold', p2.hand[4].name);
+};

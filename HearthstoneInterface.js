@@ -15,7 +15,8 @@
     MINION_ATTACK: 1,
     HERO_ATTACK: 2,
     USE_HERO_POWER: 3,
-    END_TURN: 4
+    END_TURN: 4,
+    DRAFT: 5
   };
 
   var HearthstoneInterface = function(playerNames, id, actionsRef, seed) {
@@ -36,8 +37,27 @@
     this.selectedMinion = null;
     this.selectedTarget = null;
     
+    this.selectedCards = [];
+    
     this.takeAction = function(action, card, minion, position, target) {
       console.log('taking action', arguments);
+      
+      // drafting
+      if (action == Actions.DRAFT) {
+        var cards = [];
+        for (var i = 0; i < card.length; i++) {
+          cards.push(this.player.turn.draftOptions.indexOf(card[i]));
+        }
+        this.actionsRef.push({
+          actionId: action,
+          playerId: this.id,
+          cards: cards
+        });
+        
+        return;
+      };
+      
+      // non drafting
       var cardIndex = this.player.hand.indexOf(card);
       
       var minionIndex = this.player.minions.indexOf(minion);
@@ -119,6 +139,17 @@
           case Actions.END_TURN:
             console.log('end turn');
             player.turn.endTurn();
+            break;
+          case Actions.DRAFT:
+            console.log('draft');
+            var cards = [];
+            if (action.cards) {
+              for (var i = 0; i < action.cards.length; i++) {
+                cards.push(player.turn.draftOptions[action.cards[i]]);
+              }
+            }
+            console.log('drafting: ', cards);
+            player.turn.draft(cards);
         }
         this.draw();
       }.bind(this));
@@ -143,12 +174,28 @@
       this.drawPlayer(this.player, this.field.querySelector('#player_field'), true);
       
       var endTurn = this.field.querySelector('#end_turn');
-      if (this.player.turn && !this.player.turn.ended) {
-        endTurn.innerHTML = 'END TURN';
-        endTurn.className = 'player_turn';
-      } else {
-        endTurn.innerHTML = 'ENEMY TURN';
-        endTurn.className = 'enemy_turn';
+      if (this.player.turn) {
+        if (!this.player.turn.ended) {
+          endTurn.innerHTML = 'END TURN';
+          endTurn.className = 'player_turn';
+        } else {
+          endTurn.innerHTML = 'ENEMY TURN';
+          endTurn.className = 'enemy_turn';
+        }
+        
+        var draftOverlay = this.field.querySelector('#draft');
+        if (!this.player.turn.ended && this.player.turn.drafting) {
+          draftOverlay.style.display = 'block';
+          
+          var draftContainer = draftOverlay.querySelector('#draft_container');
+          draftContainer.innerHTML = '';
+          
+          for (var i = 0; i < this.player.turn.draftOptions.length; i++) {
+            draftContainer.appendChild(this.drawCard(this.player.turn.draftOptions[i]));
+          }
+        } else {
+          draftOverlay.style.display = 'none';
+        }
       }
     };
     
@@ -207,7 +254,7 @@
       base.className = 'card';
       base.innerHTML = card.name;
       
-      if (card == this.selectedCard) {
+      if (card == this.selectedCard || this.selectedCards.indexOf(card) != -1) {
         base.className += ' selected';
       }
       
@@ -292,9 +339,29 @@
       if (!this.player.turn || this.player.turn.ended) {
         return;
       }
-    
-      this.clearSelection();
+      
       console.log(card);
+      
+      // drafting
+      if (this.player.turn.drafting) {
+        if (this.player.turn.drafting.draftPicks == 1) {
+          // return immediately;
+          this.player.turn.draft([card]);
+        } else {
+          // add to picked cards;
+          var index = this.selectedCards.indexOf(card);
+          if (index == -1) {
+            this.selectedCards.push(card);
+          } else {
+            this.selectedCards.splice(index, 1);
+          }
+        }
+        this.draw();
+        return;
+      }
+      
+      this.clearSelection();
+      // non-drafting
       if (!card.requiresTarget && !card.requiresPosition) {
         console.log('playing', card);
         this.takeAction(Actions.PLAY_CARD, card);
@@ -314,7 +381,7 @@
     };
     
     this.selectPosition = function(index, event) {
-      if (!this.player.turn || this.player.turn.ended) {
+      if (!this.player.turn || this.player.turn.ended || this.player.turn.drafting) {
         return;
       }
       
@@ -333,7 +400,7 @@
     };
     
     this.selectMinion = function(minion, event) {
-      if (!this.player.turn || this.player.turn.ended) {
+      if (!this.player.turn || this.player.turn.ended || this.player.turn.drafting) {
         return;
       }
       
@@ -350,7 +417,7 @@
     };
     
     this.selectHero = function(hero, event) {
-      if (!this.player.turn || this.player.turn.ended) {
+      if (!this.player.turn || this.player.turn.ended || this.player.turn.drafting) {
         return;
       }
       
@@ -367,7 +434,7 @@
     };
     
     this.selectTarget = function(target, event) {
-      if (!this.player.turn || this.player.turn.ended) {
+      if (!this.player.turn || this.player.turn.ended || this.player.turn.drafting) {
         return;
       }
       
@@ -388,11 +455,22 @@
     };
     
     this.endTurn = function() {
-      if (!this.player.turn || this.player.turn.ended) {
+      if (!this.player.turn || this.player.turn.ended || this.player.turn.drafting) {
         return;
       }
       
       this.takeAction(Actions.END_TURN);
+      this.draw();
+    };
+    
+    this.draft = function() {
+      if (!this.player.turn || this.player.turn.ended || !this.player.turn.drafting) {
+        return;
+      }
+
+      console.log('selecting draft', this.player.turn);
+      this.takeAction(Actions.DRAFT, this.selectedCards);
+      this.selectedCards = [];
       this.draw();
     };
     
@@ -422,6 +500,8 @@
     }
     
     this.field.querySelector('#end_turn').onclick = this.endTurn.bind(this);
+    
+    this.field.querySelector('#draft_select').onclick = this.draft.bind(this);
     
     // opponent has yet to join
     if (this.playerNames.length == 1) {
