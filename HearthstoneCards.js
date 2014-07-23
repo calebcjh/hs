@@ -74,11 +74,14 @@
     
     this.register = function(game) {
       game.handlers[this.event].push(this);
+      owner.registeredHandlers.push(this);
     };
     
     this.remove = function(game) {
       var index = game.handlers[this.event].indexOf(this);
-      delete game.handlers[this.event][index];
+      delete game.handlers[this.event][index]; // delete must be used because handlers can be removed while being iterated over
+      var index2 = owner.registeredHandlers.indexOf(this);
+      owner.registeredHandlers.splice(index2, 1);
     };
   };
   
@@ -154,11 +157,11 @@
     charge: false,
     deathrattle: false,
     divineShield: false,
+    immune: false,
+    magicImmune: false,
     stealth: false,
     taunt: false,
     windfury: false,
-    magicImmune: false,
-    immune: false,
     handlers: [],
     auras: [],
     tag: '',
@@ -352,6 +355,7 @@
     this.charge = charge;
     this.deathrattle = deathrattle;
     this.divineShield = divineShield;
+    this.immune = false;
     this.magicImmune = magicImmune;
     this.stealth = stealth;
     this.taunt = taunt;
@@ -498,7 +502,7 @@
       for (var i = 0; i < this.registeredHandlers.length; i++) {
         var index = game.handlers[this.registeredHandlers[i].event].indexOf(this.registeredHandlers[i]);
         console.log('removing', index, this.registeredHandlers[i].event, game.handlers[this.registeredHandlers[i].event]);
-        delete game.handlers[this.registeredHandlers[i].event][index];
+        delete game.handlers[this.registeredHandlers[i].event][index]; // delete must be used because handlers can be removed while being iterated over
       }
     };
     
@@ -563,6 +567,7 @@
     attack: 0,
     armor: 0,
     frozen: false,
+    registeredHandlers: []
   };
   
   var Hero = function(heroPower) {
@@ -863,7 +868,7 @@
         }
       }
       
-      var container = {};
+      var container = {registeredHandlers: []};
       
       // handler1: on card play, if secret, restore cost, delete both handlers
       container.secretPlayedHandler = new EventHandler(container, Events.BEFORE_SPELL, function(game, card, handlerParams) {
@@ -1065,6 +1070,22 @@
     TundraRhino: new Card('Tundra Rhino', 'Your Beasts have Charge.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 5, {attack: 2, hp: 5, tag: 'Beast', auras:[{charge: true, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity.isBeast;
     }}]}),
+    BeastialWrath: new Card('Beastial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, verify: function(game, unused_position, target) {
+      return game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
+    }, applyEffects: function(game, unused_position, target) {
+      // change all secrets' cost to 0
+      target.enchantAttack += 2;
+      target.immune = true;
+      
+      var handler = new EventHandler(target, Events.END_TURN, function(game) {
+        this.owner.enchantAttack -= 2;
+        this.owner.immune = false;
+        
+        this.remove(game);
+      });
+      
+      handler.register(game);
+    }}),
   };
   
   var Cards = [];
