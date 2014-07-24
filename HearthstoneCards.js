@@ -1086,6 +1086,12 @@
       
       handler.register(game);
     }}),
+    DeadlyShot: new Card('Deadly Shot', 'Destroy a random enemy minion.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {verify: function(game, unused_position, unused_target) {
+      return game.otherPlayer.minions.length > 0;
+    }, applyEffects: function(game, unused_position, unused_target) {
+      var index = Math.floor(game.random() * game.otherPlayer.minions.length);
+      game.otherPlayer.minions[index].die(game);
+    }}),
   };
   
   var Cards = [];

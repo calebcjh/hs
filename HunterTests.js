@@ -357,3 +357,42 @@ tests.testBeastialWrath = function() {
 tests.testBeastialWrath_silenced = function() {
   throw new Error('Not implemented');
 };
+
+tests.testDeadlyShot = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.DeadlyShot.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0]);
+  assert(1, p1.hand.length);
+  assert(3, p1.currentMana);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.WaterElemental.copy());
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(NeutralCards.Wisp.copy());
+  p2.currentMana = 5;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], 1);
+  p2.turn.playCard(p2.hand[1], 2);
+  assert(3, p2.minions.length);
+  p2.turn.endTurn();
+  p1.hand.push(HunterCards.DeadlyShot.copy());
+  p1.hand.push(HunterCards.DeadlyShot.copy());
+  p1.currentMana = 9;
+  game.random = function() { return 0.7; };
+  p1.turn.playCard(p1.hand[0]);
+  assert(6, p1.currentMana);
+  assert(2, p2.minions.length);
+  assert('Water Elemental', p2.minions[0].name);
+  assert('Stonetusk Boar', p2.minions[1].name);
+  game.random = function() { return 0; };
+  p1.turn.playCard(p1.hand[0]);
+  assert(3, p1.currentMana);
+  assert(1, p2.minions.length);
+  assert('Stonetusk Boar', p2.minions[0].name);
+  game.random = function() { return 0.3; };
+  p1.turn.playCard(p1.hand[0]);
+  assert(0, p1.currentMana);
+  assert(0, p2.minions.length);
+};
