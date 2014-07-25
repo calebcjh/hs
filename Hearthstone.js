@@ -34,6 +34,15 @@
     };
 	};
   
+  var Actions = {
+    PLAY_CARD: 0,
+    MINION_ATTACK: 1,
+    HERO_ATTACK: 2,
+    USE_HERO_POWER: 3,
+    END_TURN: 4,
+    DRAFT: 5
+  };
+  
   var Turn = function(game) {
     this.ended = false;
     this.drafting = false;
@@ -215,21 +224,31 @@
             if (card.requiresTarget) {
               for (var k = 0; k < targets.length; k++) {
                 if (card.verify(game, j, targets[k])) {
-                  actions.push({card: card, position: j, target: targets[k]});
+                  var target = {
+                    type: targets[k].type,
+                    ownerId: targets[k].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
+                    index: targets[k].player.minions.indexOf(targets[k])
+                  };
+                  actions.push({actionId: Actions.PLAY_CARD, card: i, position: j, target: target});
                 };
               };
             } else if (card.verify(game, j)) {
-              actions.push({card: card, position: j});
+              actions.push({actionId: Actions.PLAY_CARD, card: i, position: j});
             }
           }
         } else if (card.requiresTarget) {
           for (var k = 0; k < targets.length; k++) {
-            if (card.verify(game, j, targets[k])) {
-              actions.push({card: card, target: targets[k]});
+            if (card.verify(game, undefined, targets[k])) {
+              var target = {
+                type: targets[k].type,
+                ownerId: targets[k].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
+                index: targets[k].player.minions.indexOf(targets[k])
+              };
+              actions.push({actionId: Actions.PLAY_CARD, card: i, target: target});
             };
           };
         } else {
-          actions.push({card: card});
+          actions.push({actionId: Actions.PLAY_CARD, card: i});
         }
       }
       
@@ -239,7 +258,12 @@
         if ((!minion.sleeping || minion.hasCharge()) && !minion.frozen && (minion.attackCount == 0 || (minion.windfury && minion.attackCount == 1))) {
           var possibleTargets = minion.listTargets(game);
           for (var j = 0; j < possibleTargets.length; j++) {
-            actions.push({minion: minion, target: possibleTargets[j]});
+            var target = {
+              type: possibleTargets[j].type,
+              ownerId: possibleTargets[j].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
+              index: possibleTargets[j].player.minions.indexOf(possibleTargets[j])
+            };
+            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target});
           }
         }
       }
@@ -249,18 +273,23 @@
         if (heroPower.requiresTarget) {
           for (var i = 0; i < targets.length; i++) {
             if (heroPower.verify(game, undefined /* position */, targets[i])) {
-              actions.push({card: heroPower, target: targets[i]});
+              var target = {
+                type: targets[i].type,
+                ownerId: targets[i].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
+                index: targets[i].player.minions.indexOf(targets[i])
+              };
+              actions.push({actionId: Actions.USE_HERO_POWER, target: target});
             }
           }
         } else if (heroPower.verify(game)) {
-          actions.push({card: heroPower});
+          actions.push({actionId: Actions.USE_HERO_POWER});
         }
       }
       
       // todo: hero attack
       
       // end turn
-      actions.push({endTurn: true});
+      actions.push({actionId: Actions.END_TURN});
       
       return actions;
     };
@@ -607,4 +636,5 @@
   
   window.Hearthstone = Hearthstone;
   window.Player = Player;
+  window.Actions = Actions;
 })(window, document);

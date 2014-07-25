@@ -588,7 +588,7 @@
 
   var Set = {
     BASIC: 0,
-    EXPERT: 1
+    EXPERT: 1,
   }
   
   var HeroClass = {
@@ -1121,4 +1121,5 @@
   window.Events = Events;
   window.run = run;
   window.TargetType = TargetType;
+  window.Set = Set;
 })(window, document);

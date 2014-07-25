@@ -9,15 +9,6 @@
   
   include('Hearthstone.js');
   include('HearthstoneCards.js');
-  
-  var Actions = {
-    PLAY_CARD: 0,
-    MINION_ATTACK: 1,
-    HERO_ATTACK: 2,
-    USE_HERO_POWER: 3,
-    END_TURN: 4,
-    DRAFT: 5
-  };
 
   var HearthstoneInterface = function(playerNames, id, actionsRef, seed) {
     this.seed = seed;
