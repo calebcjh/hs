@@ -33,9 +33,9 @@
       try {
         
         tests[currTest]();
-        console.log_('%c[Pass]', 'color: green', new Date() - startTime + 'ms', currTest);
+        console.log_('%c[Pass]', new Date() - startTime + 'ms', 'color: green', currTest);
       } catch (err) {
-        console.log_('%c[Fail]', 'color: red', new Date() - startTime + 'ms', currTest);
+        console.log_('%c[Fail]', new Date() - startTime + 'ms', 'color: red', currTest);
         if (err.hasOwnProperty('expected') && err.hasOwnProperty('actual')) {
           console.log_('Expected', err.expected, 'but is', err.actual);
           console.log_(err.stack);

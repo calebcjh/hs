@@ -101,7 +101,6 @@ tests.testPuzzleSolverAdvanced = function() {
   var solver = new Solver(data, true);
   solver.solve();
   assert(4, solver.solutions.length);
-  console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);
@@ -144,7 +143,6 @@ tests.testPuzzleSolverSingle = function() {
   var solver = new Solver(data, false);
   solver.solve();
   assert(1, solver.solutions.length);
-  console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);

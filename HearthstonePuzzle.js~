@@ -70,7 +70,7 @@
   };
   
   var HearthstonePuzzle = function(data) {
-    this.constructorTime = 0;
+    var constructorTime = 0;
     var startTime = new Date();        
     var opponent = new Player([], new Heroes[data.opponent.heroClass]());
     var player = new Player([], new Heroes[data.player.heroClass]());
