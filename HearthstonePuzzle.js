@@ -14,7 +14,7 @@
     undefined, /* Druid */
     Hunter,
     Mage,
-    undefined, /* Paladin */
+    Paladin,
     undefined, /* Priest */
     undefined, /* Rogue */
     undefined, /* Shaman */
@@ -121,6 +121,7 @@
     };
     
     this.opponent = opponent;
+    this.player = player;
   };
   
   var Solver = function(data, findAll) {
@@ -129,6 +130,38 @@
     this.initTime = 0;
     this.replayTime = 0;
     this.solutions = [];
+    
+    var getStateValue = function(state) {
+      /*
+      var val = 0;
+      for (var i = 0; i < state.game.currentPlayer.minions.length; i++) {
+        var minion = state.game.currentPlayer.minions[i];
+        if (minion.attackCount == 0 || (minion.attackCount == 1 && minion.windfury)) {
+          val += minion.getCurrentAttack();
+        }
+      }
+      
+      for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
+        var minion = state.game.otherPlayer.minions[i];
+        if (minion.taunt) {
+          val -= minion.currentHp;
+        }
+      }
+      
+      return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp; + state.game.currentPlayer.currentMana;
+      */
+      
+      var val = 0;
+      for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
+        var minion = state.game.otherPlayer.minions[i];
+        if (minion.getCurrentAttack() > 0 && !minion.taunt) {
+          val += minion.currentHp;
+          val += (minion.divineShield ? 1 : 0);
+        }
+      }
+      return val - state.game.currentPlayer.hand.length - state.game.currentPlayer.currentMana;
+    };
+    
     this.solve = function(history, puzzle) {
       if (history == undefined) {
         history = [];
@@ -138,6 +171,7 @@
         puzzle.replay(history);
       }
       var possibleActions = puzzle.game.currentPlayer.turn.listAllActions();
+      var childStates = [];
       for (var i = 0; i < possibleActions.length; i++) {
         var startTime = new Date();        
         var clone = new HearthstonePuzzle(data);
@@ -148,12 +182,27 @@
         this.replayTime += (new Date() - startTime);
         execute(possibleActions[i], clone.game);
         this.statesChecked++;
-        if (clone.opponent.hero.hp <= 0) {
+        if (this.statesChecked % 10000 == 0) { console.log_('States checked:', this.statesChecked); }
+        if (clone.opponent.hero.hp <= 0 && clone.player.hero.hp > 0) {
+          window.boo = history.concat(possibleActions[i]);
           this.solutions.push(history.concat(possibleActions[i]));
-        } else if (possibleActions[i].actionId != Actions.END_TURN && (this.solutions.length == 0 || findAll)) {
-          this.solve(history.concat(possibleActions[i]), clone);
+        } else if (possibleActions[i].actionId != Actions.END_TURN && (this.solutions.length == 0 || findAll) && clone.player.hero.hp > 0) {
+          childStates.push({history: history.concat(possibleActions[i]), state: clone});
         }
       };
+      if ((this.solutions.length == 0 || findAll) && childStates.length > 0) {
+        if (!findAll) {
+          childStates.sort(function(state1, state2) {
+            return getStateValue(state2.state) - getStateValue(state1.state);
+          });
+        }
+        for (var i = 0; i < childStates.length; i++) {
+          this.solve(childStates[i].history, childStates[i].state);
+          if (this.solutions.length > 0 && !findAll) {
+            break;
+          }
+        }
+      }
     };
   };
   

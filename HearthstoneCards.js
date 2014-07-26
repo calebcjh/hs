@@ -265,7 +265,6 @@
       }
       
       this.applyEffects(game, unused_position, handlerParams.target);
-      
       // trigger after spell events
       game.handlers[Events.AFTER_SPELL].forEach(run(game, this, handlerParams.target));
     }
@@ -510,7 +509,7 @@
       this.remove(game);
     
       if (this.deathrattle) {
-        this.deathrattle(game);
+        this.deathrattle.bind(this)(game);
       }
     };
   };
@@ -656,6 +655,29 @@
   };
   
   var NeutralCards = {
+    CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
+      return target.type == TargetType.MINION;
+    }, activate: function(game, minion, position, target) {
+      var hp = target.currentHp;
+      var attack = target.getCurrentAttack();
+      target.enchantAttack = (hp - target.attack);
+      target.enchantHp += (attack - hp);
+      target.currentHp = attack;
+      target.updateStats(game, true);
+      if (target.currentHp <= 0) {
+        target.die(game);
+      }
+    }}}),
+    IronforgeRifleman: new Card('Ironforge Rifleman', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 3, {requiresTarget: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
+      game.dealDamage(target, 1, this);
+    }}}),
+    LeperGnome: new Card('Leper Gnome', 'Deathrattle: Deal 2 damage to the enemy hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 2, hp: 1, deathrattle: function(game) {
+      if (this.player == game.currentPlayer) {
+        game.dealDamage(game.otherPlayer.hero, 2, this);
+      } else {
+        game.dealDamage(game.currentPlayer.hero, 2, this);
+      }
+    }}),
     Nozdormu: new Card('Nozdormu', 'Players only have 15 seconds to take their turns.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 9, {attack: 8, hp: 8, tag: 'Dragon'}),
     PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
@@ -664,10 +686,23 @@
       }
     }}),
     Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, tag: 'Beast'}),
+    Shieldbearer: new Card('Shieldbearer', 'Taunt.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 0, hp: 4, taunt: true}),
     StonetuskBoar: new Card('Stonetusk Boar', 'Charge', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1, tag: 'Beast'}),
     TheCoin: new Card('The Coin', 'Gain 1 Mana Crystal this turn only.', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
     }}),
+    WildPyromancer: new Card('Wild Pyromancer', 'After you cast a spell, deal 1 damage to ALL minions.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {attack: 3, hp: 2, handlers: [{event: Events.AFTER_SPELL, handler: function(game, card, handlerParams) {
+      if (game.currentPlayer != this.owner.player) {
+        return;
+      }
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1, this);
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.currentPlayer.minions[i], 1, this);
+      }
+      game.simultaneousDamageDone();
+    }}]}),
     Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
   };
   
@@ -1070,7 +1105,7 @@
     TundraRhino: new Card('Tundra Rhino', 'Your Beasts have Charge.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 5, {attack: 2, hp: 5, tag: 'Beast', auras:[{charge: true, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity.isBeast;
     }}]}),
-    BeastialWrath: new Card('Beastial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, verify: function(game, unused_position, target) {
+    BeastialWrath: new Card('Beastial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, verify: function(game, unused_position, target) {
       return game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
     }, applyEffects: function(game, unused_position, target) {
       // change all secrets' cost to 0
@@ -1086,7 +1121,7 @@
       
       handler.register(game);
     }}),
-    DeadlyShot: new Card('Deadly Shot', 'Destroy a random enemy minion.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {verify: function(game, unused_position, unused_target) {
+    DeadlyShot: new Card('Deadly Shot', 'Destroy a random enemy minion.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {verify: function(game, unused_position, unused_target) {
       return game.otherPlayer.minions.length > 0;
     }, applyEffects: function(game, unused_position, unused_target) {
       var index = Math.floor(game.random() * game.otherPlayer.minions.length);
@@ -1094,9 +1129,35 @@
     }}),
   };
   
+  var PaladinCards = {
+    Consecration: new Card('Consecration', 'Deal 2 damage to all enemies.', Set.BASIC, CardType.SPELL, HeroClass.PALADIN, Rarity.FREE, 4, {applyEffects: function(game, unused_position, unused_target) {
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 2 + game.currentPlayer.spellDamage, this);
+      }
+      game.dealSimultaneousDamage(game.otherPlayer.hero, 2 + game.currentPlayer.spellDamage, this);
+      game.simultaneousDamageDone();
+    }}),
+    HandOfProtection: new Card('Hand of Protection', 'Give a minion Divine Shield.', Set.BASIC, CardType.SPELL, HeroClass.PALADIN, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      target.divineShield = true;
+    }}),
+    Humility: new Card('Humility', 'Change a minion\'s Attack to 1.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      // todo: interaction with enrage + attack
+      target.enchantAttack = 1 - target.attack;
+      target.updateStats(game, true);
+    }}),
+    SilverHandRecruit: new Card('Silver Hand Recruit', '', Set.BASIC, CardType.MINION, HeroClass.PALADIN, Rarity.FREE, 1, {draftable: false, hp: 1, attack: 1}),
+    ArgentProtector: new Card('Argent Protector', 'Battlecry: Give a friendly minion Divine Shield', Set.EXPERT, CardType.MINION, HeroClass.PALADIN, Rarity.FREE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
+      return game.currentPlayer.minions.indexOf(target) != -1;
+    }, activate: function(game, minion, position, target) {
+      target.divineShield = true;
+    }}}),
+    
+  };
+  
   var Cards = [];
   Cards[HeroClass.HUNTER] = HunterCards;
   Cards[HeroClass.MAGE] = MageCards;
+  Cards[HeroClass.PALADIN] = PaladinCards;
   Cards[HeroClass.NEUTRAL] = NeutralCards;
   
   var Mage = new Hero(new Card('Fireblast', 'Deal 1 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
@@ -1107,10 +1168,17 @@
   var Hunter = new Hero(new Card('Steady Shot', 'Deal 2 damage to the enemy hero.', Set.BASIC, CardType.HERO_POWER, HeroClass.HUNTER, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
     game.dealDamageToHero(game.otherPlayer.hero, 2);
   }}));
+  
+  var Paladin = new Hero(new Card('Reinforce', 'Summon a 1/1 Silver Hand Recruit.', Set.BASIC, CardType.HERO_POWER, HeroClass.PALADIN, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+    minion = new Minion(game.currentPlayer, 'Silver Hand Recruit', PaladinCards.SilverHandRecruit.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+    game.currentPlayer.minions.push(minion);
+    game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
+  }}));
 
   window.NeutralCards = NeutralCards;
   window.MageCards = MageCards;
   window.HunterCards = HunterCards;
+  window.PaladinCards = PaladinCards;
   window.Cards = Cards;
   window.Card = Card;
   window.Rarity = Rarity;
@@ -1118,6 +1186,7 @@
   window.HeroClass = HeroClass;
   window.Hunter = Hunter;
   window.Mage = Mage;
+  window.Paladin = Paladin;
   window.Events = Events;
   window.run = run;
   window.TargetType = TargetType;

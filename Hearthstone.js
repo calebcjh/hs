@@ -219,6 +219,9 @@
       // play cards
       for (var i = 0; i < player.hand.length; i++) {
         var card = game.currentPlayer.hand[i];
+        if (game.currentPlayer.currentMana < card.getCurrentMana()) {
+          continue;
+        }
         if (card.requiresPosition) {
           for (var j = 0; j <= player.minions.length; j++) {
             if (card.requiresTarget) {
@@ -417,7 +420,9 @@
         return;
       }
       
-      if (handlerParams.amount > 0 && !minion.immune) {
+      if (handlerParams.amount > 0 && minion.divineShield) {
+        minion.divineShield = false;
+      } else if (handlerParams.amount > 0 && !minion.immune) {
         minion.currentHp -= handlerParams.amount;
       
         // trigger damage handlers
@@ -440,7 +445,9 @@
         return;
       }
       
-      if (handlerParams.amount > 0 && !minion.immune) {
+      if (handlerParams.amount > 0 && minion.divineShield) {
+        minion.divineShield = false;
+      } else if (handlerParams.amount > 0 && !minion.immune) {
         minion.currentHp -= handlerParams.amount;
         this.simultaneouslyDamagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
       }
@@ -450,15 +457,10 @@
       for (var i = 0; i < this.simultaneouslyDamagedHeroes.length; i++) {
         var damagedHero = this.simultaneouslyDamagedHeroes[i];
         
-        if(this.checkEndGame()) {
-          return;
-        }
-        
         // trigger hero damage handlers
         this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.source));
       }
       this.simultaneouslyDamagedHeroes = [];
-      console.log('simul', this.simultaneouslyDamagedMinions);
       for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
         var damagedMinion = this.simultaneouslyDamagedMinions[i];
         // trigger damage handlers
@@ -475,7 +477,6 @@
         }
       }
       this.simultaneouslyDamagedMinions = [];
-      console.log('simultaneousDamageDone completed');
     }
     
     this.drawCard = function(player) {

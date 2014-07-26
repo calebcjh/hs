@@ -71,3 +71,7 @@ tests.testBeastialWrathVaporize = function() {
   assert(0, p2.minions.length);
   assert(0, p1.secrets.length);
 };
+
+tests.testBeastialWrathHandOfProtection = function() {
+  throw new Error('Not implemented');
+};
