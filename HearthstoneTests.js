@@ -27,7 +27,6 @@ tests.testTaunt = function() {
   p1.turn.endTurn();
   p2.hand.push(NeutralCards.StonetuskBoar.copy());
   p2.turn.playCard(p2.hand[1], 0);
-  assert('', p2.minions[0].listTargets(game));
   assert(2, p2.minions[0].listTargets(game).length);
   p2.turn.minionAttack(p2.minions[0], p1.hero);
   assert(29, p1.hero.hp);

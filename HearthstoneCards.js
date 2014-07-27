@@ -1105,7 +1105,7 @@
     TundraRhino: new Card('Tundra Rhino', 'Your Beasts have Charge.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 5, {attack: 2, hp: 5, tag: 'Beast', auras:[{charge: true, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity.isBeast;
     }}]}),
-    BeastialWrath: new Card('Beastial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, verify: function(game, unused_position, target) {
+    BestialWrath: new Card('Bestial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, verify: function(game, unused_position, target) {
       return game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
     }, applyEffects: function(game, unused_position, target) {
       // change all secrets' cost to 0

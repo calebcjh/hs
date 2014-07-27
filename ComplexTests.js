@@ -50,7 +50,7 @@ tests.testSorcerersApprenticeArchmageAntonidas = function() {
   assert(3, p1.hand[1].getCurrentMana());
 };
 
-tests.testBeastialWrathVaporize = function() {
+tests.testBestialWrathVaporize = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Hunter());
   var game = new Hearthstone([p1, p2], 0);
@@ -59,7 +59,7 @@ tests.testBeastialWrathVaporize = function() {
   p1.turn.playCard(p1.hand[0]);
   p1.turn.endTurn();
   p2.hand.push(NeutralCards.StonetuskBoar.copy());
-  p2.hand.push(HunterCards.BeastialWrath.copy());
+  p2.hand.push(HunterCards.BestialWrath.copy());
   p2.currentMana = 2;
   p2.turn.playCard(p2.hand[1], 0);
   p2.turn.playCard(p2.hand[1], undefined, p2.minions[0]);

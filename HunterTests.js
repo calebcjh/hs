@@ -331,13 +331,13 @@ tests.testTundraRhino = function() {
   assert(false, p1.minions[3].hasCharge());
 };
 
-tests.testBeastialWrath = function() {
+tests.testBestialWrath = function() {
   var p1 = new Player([], new Hunter());
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
   p1.hand.push(NeutralCards.Wisp.copy());
   p1.hand.push(NeutralCards.StonetuskBoar.copy());
-  p1.hand.push(HunterCards.BeastialWrath.copy());
+  p1.hand.push(HunterCards.BestialWrath.copy());
   p1.currentMana = 3;
   p1.turn.playCard(p1.hand[0], 0);
   p1.turn.playCard(p1.hand[0], 1);
