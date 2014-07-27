@@ -622,7 +622,7 @@
     }
     
     this.copy = function() {
-      return clone(this, []);
+      return new Card(this.name, this.description, this.set, this.type, this.heroClass, this.rarity, this.mana, overrides);
     }
   };
   

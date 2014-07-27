@@ -27,6 +27,7 @@ tests.testTaunt = function() {
   p1.turn.endTurn();
   p2.hand.push(NeutralCards.StonetuskBoar.copy());
   p2.turn.playCard(p2.hand[1], 0);
+  assert('', p2.minions[0].listTargets(game));
   assert(2, p2.minions[0].listTargets(game).length);
   p2.turn.minionAttack(p2.minions[0], p1.hero);
   assert(29, p1.hero.hp);
@@ -43,7 +44,7 @@ tests.testActions1 = function() {
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
   p1.hand.push(MageCards.MirrorImage.copy());
-  assert(2, p1.turn.listAllActions().length);
+  assert(2, p1.turn.listAllActions(true).length);
 };
 
 tests.testActions2 = function() {
@@ -54,7 +55,7 @@ tests.testActions2 = function() {
   p1.hand.push(NeutralCards.StonetuskBoar.copy());
   p1.hand.push(MageCards.WaterElemental.copy());
   p1.currentMana = 2;
-  assert(5, p1.turn.listAllActions().length);
+  assert(5, p1.turn.listAllActions(true).length);
 };
 
 tests.testActions3 = function() {
@@ -66,15 +67,15 @@ tests.testActions3 = function() {
   p1.hand.push(MageCards.WaterElemental.copy());
   p1.currentMana = 4;
   p1.turn.playCard(p1.hand[0]);
-  assert(8, p1.turn.listAllActions().length);
+  assert(8, p1.turn.listAllActions(true).length);
   p1.turn.playCard(p1.hand[0], 0);
-  assert(7, p1.turn.listAllActions().length);
+  assert(7, p1.turn.listAllActions(true).length);
   p1.turn.minionAttack(p1.minions[0], p2.hero);
-  assert(6, p1.turn.listAllActions().length);
+  assert(6, p1.turn.listAllActions(true).length);
   p1.turn.useHeroPower(p2.hero);
-  assert(1, p1.turn.listAllActions().length);
+  assert(1, p1.turn.listAllActions(true).length);
   p1.turn.endTurn();
-  assert(0, p1.turn.listAllActions());
+  assert(0, p1.turn.listAllActions(true));
 };
 
 tests.testMulligan = function() {

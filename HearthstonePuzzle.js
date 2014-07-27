@@ -71,6 +71,7 @@
   
   var HearthstonePuzzle = function(data) {
     this.constructorTime = 0;
+    this.cardCopyTime = 0;
     var startTime = new Date();        
     var opponent = new Player([], new Heroes[data.opponent.heroClass]());
     var player = new Player([], new Heroes[data.player.heroClass]());
@@ -82,6 +83,7 @@
     opponent.currentMana = data.opponent.currentMana;
     opponent.fatigue = data.opponent.fatigue;
     opponent.hand = [];
+    startTime = new Date();
     data.opponent.hand.forEach(function (card) {
       opponent.hand.push(card.copy());
     });
@@ -89,6 +91,7 @@
     data.opponent.deck.forEach(function (card) {
       opponent.deck.push(card.copy());
     });
+    this.cardCopyTime += (new Date() - startTime);
     data.opponent.actions.forEach(function (action) {
       execute(action, this.game, true);
     }.bind(this));
@@ -99,6 +102,7 @@
     player.currentMana = data.player.currentMana;
     player.fatigue = data.player.fatigue;
     player.hand = [];
+    startTime = new Date();
     data.player.hand.forEach(function (card) {
       player.hand.push(card.copy());
     });
@@ -106,6 +110,7 @@
     data.player.deck.forEach(function (card) {
       player.deck.push(card.copy());
     });
+    this.cardCopyTime += (new Date() - startTime);
     data.player.actions.forEach(function (action) {
       execute(action, this.game, true);
     }.bind(this));
@@ -128,11 +133,12 @@
     this.statesChecked = 0;
     this.constructorTime = 0;
     this.initTime = 0;
+    this.cardCopyTime = 0;
     this.replayTime = 0;
     this.solutions = [];
     
     var getStateValue = function(state) {
-      /*
+      
       var val = 0;
       for (var i = 0; i < state.game.currentPlayer.minions.length; i++) {
         var minion = state.game.currentPlayer.minions[i];
@@ -149,8 +155,8 @@
       }
       
       return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp; + state.game.currentPlayer.currentMana;
-      */
       
+      /*
       var val = 0;
       for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
         var minion = state.game.otherPlayer.minions[i];
@@ -160,6 +166,7 @@
         }
       }
       return val - state.game.currentPlayer.hand.length - state.game.currentPlayer.currentMana;
+      */
     };
     
     this.solve = function(history, puzzle) {
@@ -175,8 +182,9 @@
       for (var i = 0; i < possibleActions.length; i++) {
         var startTime = new Date();        
         var clone = new HearthstonePuzzle(data);
-        this.initTime += (new Date() - startTime - clone.constructorTime);
+        this.initTime += (new Date() - startTime - clone.constructorTime - clone.cardCopyTime);
         this.constructorTime += clone.constructorTime;
+        this.cardCopyTime += clone.cardCopyTime;
         startTime = new Date();
         clone.replay(history);
         this.replayTime += (new Date() - startTime);

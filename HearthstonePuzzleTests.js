@@ -103,6 +103,7 @@ tests.testPuzzleSolverAdvanced = function() {
   assert(4, solver.solutions.length);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);
 };
@@ -147,6 +148,7 @@ tests.testPuzzleSolverSingle = function() {
   // assert(1, solver.solutions.length);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);
 };
@@ -205,6 +207,7 @@ tests.testPuzzleSolverComplex = function() {
   // assert(1, solver.solutions.length);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);
 };

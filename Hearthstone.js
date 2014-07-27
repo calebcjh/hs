@@ -190,7 +190,7 @@
       game.endTurn();
     };
     
-    this.listAllActions = function() {
+    this.listAllActions = function(positionImportant) {
       if (this.ended) {
         return [];
       }
@@ -222,7 +222,7 @@
         if (game.currentPlayer.currentMana < card.getCurrentMana()) {
           continue;
         }
-        if (card.requiresPosition) {
+        if (card.requiresPosition && positionImportant) {
           for (var j = 0; j <= player.minions.length; j++) {
             if (card.requiresTarget) {
               for (var k = 0; k < targets.length; k++) {
@@ -247,9 +247,15 @@
                 ownerId: targets[k].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
                 index: targets[k].player.minions.indexOf(targets[k])
               };
-              actions.push({actionId: Actions.PLAY_CARD, card: i, target: target});
+              if (card.requiresPosition) {
+                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, position: 0});
+              } else {
+                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target});
+              }
             };
           };
+        } else if (card.requiresPosition) {
+          actions.push({actionId: Actions.PLAY_CARD, card: i, position: 0});
         } else {
           actions.push({actionId: Actions.PLAY_CARD, card: i});
         }
@@ -323,316 +329,316 @@
       this.handlers[Events[prop]] = [];
     }
     
-    this.checkEndGame = function() {
-     var player1Dead = this.players[0].hero.hp == 0;
-     var player2Dead = this.players[1].hero.hp == 0;
-      if (player1Dead && player2Dead) {
-        // TODO: tie
-        return true;
-      } else if (player1Dead) {
-        // TODO: player 2 wins
-        return true;
-      } else if (player2Dead) {
-        // TODO: player 1 wins
-        return true;
-      }
-      return false;
-    };
-    
-    this.dealDamage = function(target, amount, source) {
-      console.log(target);
-      if (target.type == TargetType.HERO) {
-        this.dealDamageToHero(target, amount, source);
-      } else {
-        this.dealDamageToMinion(target, amount, source);
-      }
-    };
-    
-    this.dealSimultaneousDamage = function(target, amount, source) {
-      if (target.type == TargetType.HERO) {
-        this.dealSimultaneousDamageToHero(target, amount, source);
-      } else {
-        this.dealSimultaneousDamageToMinion(target, amount, source);
-      }
-    };
+    this.startGame();
+  };
+  
+  Hearthstone.prototype.checkEndGame = function() {
+    var player1Dead = this.players[0].hero.hp == 0;
+    var player2Dead = this.players[1].hero.hp == 0;
+    if (player1Dead && player2Dead) {
+      // TODO: tie
+      return true;
+    } else if (player1Dead) {
+      // TODO: player 2 wins
+      return true;
+    } else if (player2Dead) {
+      // TODO: player 1 wins
+      return true;
+    }
+    return false;
+  };
+  
+  Hearthstone.prototype.dealDamage = function(target, amount, source) {
+    console.log(target);
+    if (target.type == TargetType.HERO) {
+      this.dealDamageToHero(target, amount, source);
+    } else {
+      this.dealDamageToMinion(target, amount, source);
+    }
+  };
+  
+  Hearthstone.prototype.dealSimultaneousDamage = function(target, amount, source) {
+    if (target.type == TargetType.HERO) {
+      this.dealSimultaneousDamageToHero(target, amount, source);
+    } else {
+      this.dealSimultaneousDamageToMinion(target, amount, source);
+    }
+  };
 
-    this.dealDamageToHero = function(hero, amount, source) {
-      // trigger before hero damage
-      var handlerParams = {cancel: false, amount: amount, source: source};
-      this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
-      if (handlerParams.cancel) {
-        return;
-      }
-      
-      var damageLeft = handlerParams.amount;
-      if (hero.immune) {
-        damageLeft = 0;
-      }
-      
-      if (hero.armor > 0) {
-        var damageAbsorbed = Math.min(hero.armor, damageLeft);
-        hero.armor -= damageAbsorbed;
-        damageLeft -= damageAbsorbed;
-      }
-      
-      if (damageLeft > 0) {
-        hero.hp -= damageLeft;
-      
-        if(this.checkEndGame()) {
-          return;
-        }
-        
-        // trigger hero damage handlers
-        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams.amount, source));
-      }
-    };
-    
-    this.dealSimultaneousDamageToHero = function(hero, amount, source) {
-      // trigger before hero damage
-      var handlerParams = {cancel: false, amount: amount, source: source};
-      this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
-      if (handlerParams.cancel) {
-        return;
-      }
-      
-      var damageLeft = handlerParams.amount;
-      if (hero.immune) {
-        damageLeft = 0;
-      }
-      
-      if (hero.armor > 0) {
-        var damageAbsorbed = Math.min(hero.armor, damageLeft);
-        hero.armor -= damageAbsorbed;
-        damageLeft -= damageAbsorbed;
-      }
-      
-      if (damageLeft > 0) {
-        hero.hp -= damageLeft;
-        this.simultaneouslyDamagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
-      }
-    };
-
-    this.dealDamageToMinion = function(minion, amount, source) {
-      // trigger before minion damage
-      var handlerParams = {cancel: false, amount: amount, source: source};
-      this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
-      if (handlerParams.cancel) {
-        return;
-      }
-      
-      if (handlerParams.amount > 0 && minion.divineShield) {
-        minion.divineShield = false;
-      } else if (handlerParams.amount > 0 && !minion.immune) {
-        minion.currentHp -= handlerParams.amount;
-      
-        // trigger damage handlers
-        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams.amount, source));
-
-        if (minion.currentHp <= 0) {
-          minion.die(this);
-        
-          // trigger minion death handlers
-          this.handlers[Events.MINION_DIES].forEach(run(this, minion));
-        }
-      }
-    };
-    
-    this.dealSimultaneousDamageToMinion = function(minion, amount, source) {
-      // trigger before minion damage
-      var handlerParams = {cancel: false, amount: amount, source: source};
-      this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
-      if (handlerParams.cancel) {
-        return;
-      }
-      
-      if (handlerParams.amount > 0 && minion.divineShield) {
-        minion.divineShield = false;
-      } else if (handlerParams.amount > 0 && !minion.immune) {
-        minion.currentHp -= handlerParams.amount;
-        this.simultaneouslyDamagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
-      }
-    };
-    
-    this.simultaneousDamageDone = function() {
-      for (var i = 0; i < this.simultaneouslyDamagedHeroes.length; i++) {
-        var damagedHero = this.simultaneouslyDamagedHeroes[i];
-        
-        // trigger hero damage handlers
-        this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.source));
-      }
-      this.simultaneouslyDamagedHeroes = [];
-      for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
-        var damagedMinion = this.simultaneouslyDamagedMinions[i];
-        // trigger damage handlers
-        this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount, damagedMinion.source));
-        console.log(damagedMinion);
-      }
-      for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
-        var damagedMinion = this.simultaneouslyDamagedMinions[i];
-        if (damagedMinion.minion.currentHp <= 0) {
-          damagedMinion.minion.die(this);
-        
-          // trigger minion death handlers
-          this.handlers[Events.MINION_DIES].forEach(run(this, damagedMinion.minion));
-        }
-      }
-      this.simultaneouslyDamagedMinions = [];
+  Hearthstone.prototype.dealDamageToHero = function(hero, amount, source) {
+    // trigger before hero damage
+    var handlerParams = {cancel: false, amount: amount, source: source};
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
+    if (handlerParams.cancel) {
+      return;
     }
     
-    this.drawCard = function(player) {
-      if (player.deck.length == 0) {
-        // fatigue
-        this.dealDamageToHero(player.hero, player.fatigue++);
-        return null;
+    var damageLeft = handlerParams.amount;
+    if (hero.immune) {
+      damageLeft = 0;
+    }
+    
+    if (hero.armor > 0) {
+      var damageAbsorbed = Math.min(hero.armor, damageLeft);
+      hero.armor -= damageAbsorbed;
+      damageLeft -= damageAbsorbed;
+    }
+    
+    if (damageLeft > 0) {
+      hero.hp -= damageLeft;
+    
+      if(this.checkEndGame()) {
+        return;
       }
       
-      var card = player.deck.pop().copy();
-      player.hand.push(card);
-      card.updateStats(this);
-      
-      // trigger card draw triggers
-      this.handlers[Events.AFTER_DRAW].forEach(run(this, player, card));
-      
-      return card;
-    };
+      // trigger hero damage handlers
+      this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams.amount, source));
+    }
+  };
+  
+  Hearthstone.prototype.dealSimultaneousDamageToHero = function(hero, amount, source) {
+    // trigger before hero damage
+    var handlerParams = {cancel: false, amount: amount, source: source};
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
+    if (handlerParams.cancel) {
+      return;
+    }
     
-    this.updateFreezeStatus = function(character) {
-      if (character.frozen) {
-        if (character.frostElapsed) {
-          character.frozen = false;
-        } else {
-          character.frostElapsed = true;
-        }
+    var damageLeft = handlerParams.amount;
+    if (hero.immune) {
+      damageLeft = 0;
+    }
+    
+    if (hero.armor > 0) {
+      var damageAbsorbed = Math.min(hero.armor, damageLeft);
+      hero.armor -= damageAbsorbed;
+      damageLeft -= damageAbsorbed;
+    }
+    
+    if (damageLeft > 0) {
+      hero.hp -= damageLeft;
+      this.simultaneouslyDamagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
+    }
+  };
+
+  Hearthstone.prototype.dealDamageToMinion = function(minion, amount, source) {
+    // trigger before minion damage
+    var handlerParams = {cancel: false, amount: amount, source: source};
+    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
+    if (handlerParams.cancel) {
+      return;
+    }
+    
+    if (handlerParams.amount > 0 && minion.divineShield) {
+      minion.divineShield = false;
+    } else if (handlerParams.amount > 0 && !minion.immune) {
+      minion.currentHp -= handlerParams.amount;
+    
+      // trigger damage handlers
+      this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams.amount, source));
+
+      if (minion.currentHp <= 0) {
+        minion.die(this);
+      
+        // trigger minion death handlers
+        this.handlers[Events.MINION_DIES].forEach(run(this, minion));
       }
-    };
+    }
+  };
+  
+  Hearthstone.prototype.dealSimultaneousDamageToMinion = function(minion, amount, source) {
+    // trigger before minion damage
+    var handlerParams = {cancel: false, amount: amount, source: source};
+    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
+    if (handlerParams.cancel) {
+      return;
+    }
     
-    this.startTurn = function() {
-      // determine next player
-      if (this.nextPlayers.length == 0) {
-        this.currentIndex = 1 - this.currentIndex;
+    if (handlerParams.amount > 0 && minion.divineShield) {
+      minion.divineShield = false;
+    } else if (handlerParams.amount > 0 && !minion.immune) {
+      minion.currentHp -= handlerParams.amount;
+      this.simultaneouslyDamagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
+    }
+  };
+  
+  Hearthstone.prototype.simultaneousDamageDone = function() {
+    for (var i = 0; i < this.simultaneouslyDamagedHeroes.length; i++) {
+      var damagedHero = this.simultaneouslyDamagedHeroes[i];
+      
+      // trigger hero damage handlers
+      this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.source));
+    }
+    this.simultaneouslyDamagedHeroes = [];
+    for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
+      var damagedMinion = this.simultaneouslyDamagedMinions[i];
+      // trigger damage handlers
+      this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount, damagedMinion.source));
+      console.log(damagedMinion);
+    }
+    for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
+      var damagedMinion = this.simultaneouslyDamagedMinions[i];
+      if (damagedMinion.minion.currentHp <= 0) {
+        damagedMinion.minion.die(this);
+      
+        // trigger minion death handlers
+        this.handlers[Events.MINION_DIES].forEach(run(this, damagedMinion.minion));
+      }
+    }
+    this.simultaneouslyDamagedMinions = [];
+  }
+  
+  Hearthstone.prototype.drawCard = function(player) {
+    if (player.deck.length == 0) {
+      // fatigue
+      this.dealDamageToHero(player.hero, player.fatigue++);
+      return null;
+    }
+    
+    var card = player.deck.pop().copy();
+    player.hand.push(card);
+    card.updateStats(this);
+    
+    // trigger card draw triggers
+    this.handlers[Events.AFTER_DRAW].forEach(run(this, player, card));
+    
+    return card;
+  };
+  
+  Hearthstone.prototype.updateFreezeStatus = function(character) {
+    if (character.frozen) {
+      if (character.frostElapsed) {
+        character.frozen = false;
       } else {
-        this.currentIndex = this.nextPlayers.shift();
+        character.frostElapsed = true;
       }
-      this.currentPlayer = this.players[this.currentIndex];
-      this.otherPlayer = this.players[1 - this.currentIndex];
-      
-      // increase and restore mana
-      this.currentPlayer.mana = Math.min(10, this.currentPlayer.mana + 1);
-      this.currentPlayer.currentMana = this.currentPlayer.mana;
-      this.currentPlayer.usedHeroPower = false;
-      
-      // trigger start handlers
-      this.handlers[Events.START_TURN].forEach(run(this));
-      
-      // unfreeze minions
-      for (var i = 0; i < this.currentPlayer.minions.length; i++) {
-        this.updateFreezeStatus(this.currentPlayer.minions[i]);
-      }
-      
-      // remove summoning sickness
-      this.currentPlayer.minions.forEach(function(minion) {
-        minion.sleeping = false;
-        minion.attackCount = 0;
-      });
-      
-      // unfreeze hero
-      this.updateFreezeStatus(this.currentPlayer.hero);
-      
-      // draw card
-      this.drawCard(this.currentPlayer);
-      
-      this.currentPlayer.usedHeroPower = false;
-      
-      // pass control to player
-      this.currentPlayer.play(new Turn(this));
-    };
+    }
+  };
+  
+  Hearthstone.prototype.startTurn = function() {
+    // determine next player
+    if (this.nextPlayers.length == 0) {
+      this.currentIndex = 1 - this.currentIndex;
+    } else {
+      this.currentIndex = this.nextPlayers.shift();
+    }
+    this.currentPlayer = this.players[this.currentIndex];
+    this.otherPlayer = this.players[1 - this.currentIndex];
     
-    this.endTurn = function() {
-      // trigger turn end handlers
-      this.handlers[Events.END_TURN].forEach(run(this));
-      
-      this.startTurn();
-    };
+    // increase and restore mana
+    this.currentPlayer.mana = Math.min(10, this.currentPlayer.mana + 1);
+    this.currentPlayer.currentMana = this.currentPlayer.mana;
+    this.currentPlayer.usedHeroPower = false;
     
-    this.startGame = function() {
-      var p1Options = [], p2Options = [];
-      for (var i = 0; i < 3; i++) {
-        if (this.players[0].deck.length) {
-          // this.players[0].hand.push(p1Options.push(this.players[0].deck.pop().copy()););
-          p1Options.push(this.players[0].deck.pop().copy());
-        }
-        if (this.players[1].deck.length) {
-          // this.players[1].hand.push(this.players[1].deck.pop().copy());
-          p2Options.push(this.players[1].deck.pop().copy());
-        }
+    // trigger start handlers
+    this.handlers[Events.START_TURN].forEach(run(this));
+    
+    // unfreeze minions
+    for (var i = 0; i < this.currentPlayer.minions.length; i++) {
+      this.updateFreezeStatus(this.currentPlayer.minions[i]);
+    }
+    
+    // remove summoning sickness
+    this.currentPlayer.minions.forEach(function(minion) {
+      minion.sleeping = false;
+      minion.attackCount = 0;
+    });
+    
+    // unfreeze hero
+    this.updateFreezeStatus(this.currentPlayer.hero);
+    
+    // draw card
+    this.drawCard(this.currentPlayer);
+    
+    this.currentPlayer.usedHeroPower = false;
+    
+    // pass control to player
+    this.currentPlayer.play(new Turn(this));
+  };
+  
+  Hearthstone.prototype.endTurn = function() {
+    // trigger turn end handlers
+    this.handlers[Events.END_TURN].forEach(run(this));
+    
+    this.startTurn();
+  };
+  
+  Hearthstone.prototype.startGame = function() {
+    var p1Options = [], p2Options = [];
+    for (var i = 0; i < 3; i++) {
+      if (this.players[0].deck.length) {
+        // this.players[0].hand.push(p1Options.push(this.players[0].deck.pop().copy()););
+        p1Options.push(this.players[0].deck.pop().copy());
       }
       if (this.players[1].deck.length) {
         // this.players[1].hand.push(this.players[1].deck.pop().copy());
         p2Options.push(this.players[1].deck.pop().copy());
       }
-      
-      if (p1Options.length) {
-        this.mulligansRequired++;
-      }
-      
-      if (p2Options.length) {
-        this.mulligansRequired++;
-      }
-      
-      if (p1Options.length) {
-        var p1DraftTurn = new Turn(this);
-        p1DraftTurn.draftOptions = p1Options;
-        p1DraftTurn.draftPicks = p1Options.length;
-        p1DraftTurn.drafting = true;
-        p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
-        this.players[0].play(p1DraftTurn);
-      }
-      
-      if (p2Options.length) {
-        var p2DraftTurn = new Turn(this);
-        p2DraftTurn.draftOptions = p2Options;
-        p2DraftTurn.draftPicks = p2Options.length;
-        p2DraftTurn.drafting = true;
-        p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
-        this.players[1].play(p2DraftTurn);
-      }
-      
-      this.players[1].hand.push(NeutralCards.TheCoin);
-      
-      if (this.mulligansRequired == 0) {
-        this.startTurn();
-      }
-    };
+    }
+    if (this.players[1].deck.length) {
+      // this.players[1].hand.push(this.players[1].deck.pop().copy());
+      p2Options.push(this.players[1].deck.pop().copy());
+    }
     
-    this.mulligan = function(player, options, selected) {
-      for (var i = 0; i < options.length; i++) {
-        var card = options[i];
-        if (selected.indexOf(card) == -1) {
-          // this card is retained
-          player.hand.push(card);
-        }
-      }
-      // additional card to be drawn
-      for (var i = 0; i < selected.length; i++) {
-        if (player.deck.length) {
-          player.hand.push(player.deck.pop().copy());
-        }
-      }
-      // return discarded cards
-      for (var i = 0; i < selected.length; i++) {
-        var index = Math.floor(this.random() * (player.deck.length + 1));
-        player.deck.splice(index, 0, selected[i]);
-      }
-      
-      player.turn.ended = true;
-      this.mulligansDone++;
-      
-      if (this.mulligansDone == this.mulligansRequired) {
-        this.startTurn();
-      }
-    };
+    if (p1Options.length) {
+      this.mulligansRequired++;
+    }
     
-    this.startGame();
+    if (p2Options.length) {
+      this.mulligansRequired++;
+    }
+    
+    if (p1Options.length) {
+      var p1DraftTurn = new Turn(this);
+      p1DraftTurn.draftOptions = p1Options;
+      p1DraftTurn.draftPicks = p1Options.length;
+      p1DraftTurn.drafting = true;
+      p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
+      this.players[0].play(p1DraftTurn);
+    }
+    
+    if (p2Options.length) {
+      var p2DraftTurn = new Turn(this);
+      p2DraftTurn.draftOptions = p2Options;
+      p2DraftTurn.draftPicks = p2Options.length;
+      p2DraftTurn.drafting = true;
+      p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
+      this.players[1].play(p2DraftTurn);
+    }
+    
+    this.players[1].hand.push(NeutralCards.TheCoin);
+    
+    if (this.mulligansRequired == 0) {
+      this.startTurn();
+    }
+  };
+  
+  Hearthstone.prototype.mulligan = function(player, options, selected) {
+    for (var i = 0; i < options.length; i++) {
+      var card = options[i];
+      if (selected.indexOf(card) == -1) {
+        // this card is retained
+        player.hand.push(card);
+      }
+    }
+    // additional card to be drawn
+    for (var i = 0; i < selected.length; i++) {
+      if (player.deck.length) {
+        player.hand.push(player.deck.pop().copy());
+      }
+    }
+    // return discarded cards
+    for (var i = 0; i < selected.length; i++) {
+      var index = Math.floor(this.random() * (player.deck.length + 1));
+      player.deck.splice(index, 0, selected[i]);
+    }
+    
+    player.turn.ended = true;
+    this.mulligansDone++;
+    
+    if (this.mulligansDone == this.mulligansRequired) {
+      this.startTurn();
+    }
   };
   
   window.Hearthstone = Hearthstone;
