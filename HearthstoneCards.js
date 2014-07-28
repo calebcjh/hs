@@ -283,14 +283,18 @@
     appliedAuras: [],
     verify: function(game, opt_target) {
       // verify sufficient mana
-      if (game.currenPlayer.currentMana < this.getCurrentMana()) {
+      if (game.currentPlayer.currentMana < this.getCurrentMana()) {
         return false;
       }
+      
+      return true;
     },
     activate: function(game, opt_target) {
       // spend mana
       game.currentPlayer.currentMana -= this.getCurrentMana();
-      game.currentPlayer.hero.weapon = new Weapon(this.attack, this.durability, this.windfury, this.handlers);
+      game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, this.attack, this.durability, this.windfury, this.handlers);
+      game.currentPlayer.hero.weapon.registerHandlers(game);
+      game.currentPlayer.hero.weapon.updateStats(game);
     }
   };
   BasicCards[CardType.HERO_POWER] = {
@@ -542,7 +546,7 @@
       game.auras.push(this);
       this.owner.registeredAuras.push(this);
       
-      // apply to all minions and cards
+      // apply to all minions, cards, heros, weapons
       for (var i = 0; i < game.currentPlayer.minions.length; i++) {
         game.currentPlayer.minions[i].updateStats(game);
       }
@@ -555,8 +559,105 @@
       for (var i = 0; i < game.otherPlayer.hand.length; i++) {
         game.otherPlayer.hand[i].updateStats(game);
       }
+      game.currentPlayer.hero.updateStats(game);
+      game.otherPlayer.hero.updateStats(game);
+      if (game.currentPlayer.hero.weapon) {
+        game.currentPlayer.hero.weapon.updateStats(game);
+      }
+      if (game.otherPlayer.hero.weapon) {
+        game.otherPlayer.hero.weapon.updateStats(game);
+      }
       
       console.log('Aura registered');
+    };
+  };
+  
+  var Weapon = function(player, attack, durability, windfury, eventHandlers) {
+    this.player = player;
+    this.attack = attack;
+    this.enchantAttack = 0;
+    this.durability = durability;
+    this.windfury = windfury;
+    this.eventHandlers = eventHandlers;
+    this.deathrattle = false;
+    this.appliedAuras = [];
+    this.registeredAuras = [];
+    this.registeredHandlers = [];
+    
+    this.getCurrentAttack = function() {
+      var attackFromAuras = 0;
+      for (var i = 0; i < this.appliedAuras.length; i++) {
+        var aura = this.appliedAuras[i];
+        attackFromAuras += aura.attack;
+      }
+      return this.attack + this.enchantAttack + attackFromAuras;
+    };
+    
+    this.updateStats = function(game, reapply) {
+      if (reapply) {
+        while(this.appliedAuras.length) {
+          this.appliedAuras[0].removeTarget(this);
+        }
+      }
+
+      for (var i = 0; i < game.auras.length; i++) {
+        var aura = game.auras[i];
+        var index = this.appliedAuras.indexOf(aura);
+        if (index != -1) {
+          // weapon already has aura
+          if (aura.eligible(this)) {
+            // keep aura
+            continue;
+          } else {
+            // remove aura
+            aura.removeTarget(this);
+          }
+        } else if (aura.eligible(this)) {
+          // add aura effects
+          this.appliedAuras.push(aura);
+          aura.targets.push(this);
+        }
+      }
+    };
+    
+    /*
+    this.registerAuras = function(game) {
+      for (var i = 0; i < this.auras.length; i++) {
+        var aura = new Aura(this, this.auras[i].attack || 0, this.auras[i].hp || 0, this.auras[i].mana || 0, this.auras[i].charge || false, this.auras[i].eligible);
+        aura.register(game);
+      }
+    };
+    */
+    
+    this.registerHandlers = function(game) {
+      for (var i = 0; i < this.eventHandlers.length; i++) {
+        var handler = new EventHandler(this, this.eventHandlers[i].event, this.eventHandlers[i].handler);
+        game.handlers[this.eventHandlers[i].event].push(handler);
+        this.registeredHandlers.push(handler);
+      }
+    };
+    
+    this.remove = function(game) {
+      this.player.hero.weapon = false;
+      
+      // remove auras
+      for (var i = 0; i < this.registeredAuras.length; i++) {
+        this.registeredAuras[i].remove(game);
+      }
+      
+      // remove handlers
+      for (var i = 0; i < this.registeredHandlers.length; i++) {
+        var index = game.handlers[this.registeredHandlers[i].event].indexOf(this.registeredHandlers[i]);
+        delete game.handlers[this.registeredHandlers[i].event][index]; // delete must be used because handlers can be removed while being iterated over
+      }
+    };
+    
+    this.die = function(game) {
+      this.remove(game);
+    
+      if (this.deathrattle) {
+        this.deathrattle.bind(this)(game);
+      }
     };
   };
   
@@ -564,9 +665,71 @@
     type: TargetType.HERO,
     hp: 30,
     attack: 0,
+    enchantAttack: 0,
+    attackCount: 0,
     armor: 0,
     frozen: false,
-    registeredHandlers: []
+    appliedAuras: [],
+    registeredHandlers: [],
+    getCurrentAttack: function() {
+      var attackFromAuras = 0;
+      for (var i = 0; i < this.appliedAuras.length; i++) {
+        var aura = this.appliedAuras[i];
+        attackFromAuras += aura.attack;
+      }
+      var attackFromWeapon = 0;
+      if (this.weapon) {
+        attackFromWeapon += this.weapon.getCurrentAttack();
+      }
+      return this.attack + this.enchantAttack + attackFromAuras + attackFromWeapon;
+    },
+    listTargets: function(game) {
+      var opponent;
+      if (this.player == game.currentPlayer) {
+        opponent = game.otherPlayer;
+      } else {
+        opponent = game.currentPlayer;
+      }
+      var targets = [];
+      for (var i = 0; i < opponent.minions.length; i++) {
+        if (opponent.minions[i].taunt) {
+          targets.push(opponent.minions[i]);
+        }
+      }
+      if (targets.length > 0) {
+        return targets;
+      } else {
+        targets = opponent.minions.slice(0);
+        targets.push(opponent.hero);
+      }
+      return targets;
+    },
+    updateStats: function(game, reapply) {
+      if (reapply) {
+        while(this.appliedAuras.length) {
+          this.appliedAuras[0].removeTarget(this);
+        }
+      }
+
+      for (var i = 0; i < game.auras.length; i++) {
+        var aura = game.auras[i];
+        var index = this.appliedAuras.indexOf(aura);
+        if (index != -1) {
+          // hero already has aura
+          if (aura.eligible(this)) {
+            // keep aura
+            continue;
+          } else {
+            // remove aura
+            aura.removeTarget(this);
+          }
+        } else if (aura.eligible(this)) {
+          // add aura effects
+          this.appliedAuras.push(aura);
+          aura.targets.push(this);
+        }
+      }
+    }
   };
   
   var Hero = function(heroPower) {
@@ -1145,6 +1308,7 @@
       target.enchantAttack = 1 - target.attack;
       target.updateStats(game, true);
     }}),
+    LightsJustice: new Card('Light\'s Justice', '', Set.BASIC, CardType.WEAPON, HeroClass.PALADIN, Rarity.FREE, 1, {attack: 1, durability: 4}),
     SilverHandRecruit: new Card('Silver Hand Recruit', '', Set.BASIC, CardType.MINION, HeroClass.PALADIN, Rarity.FREE, 1, {draftable: false, hp: 1, attack: 1}),
     ArgentProtector: new Card('Argent Protector', 'Battlecry: Give a friendly minion Divine Shield', Set.EXPERT, CardType.MINION, HeroClass.PALADIN, Rarity.FREE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
       return game.currentPlayer.minions.indexOf(target) != -1;

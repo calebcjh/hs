@@ -121,17 +121,19 @@
     };
     
     this.heroAttack = function(hero, target) {
+      console.log('heroAttack', hero, target);
       if (this.drafting || this.ended) {
         return;
       }
       
       // todo: check if hero has attack
-      if (hero.attack == 0 && !hero.weapon) {
+      if (hero.getCurrentAttack() == 0) {
+        console.log('hero cannot attack');
         return;
       }
       
       // check if hero can attack
-      if (hero.attackCount > 0 && (!hero.windfury || hero.attackCount > 1)) {
+      if (hero.attackCount > 0 && (!hero.weapon || !hero.weapon.windfury || hero.attackCount > 1)) {
         console.log('hero has already attacked');
         return;
       }
@@ -145,15 +147,33 @@
       var handlerParams = {cancel: false, target: target};
       game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(run(game, hero, handlerParams));
       if (handlerParams.cancel) {
+        console.log('attack canceled');
         return;
       }
       target = handlerParams.target;
       
-      // todo: do damage
+      // increment hero's attack count
+      hero.attackCount++;
+
+      // perform attack
+      if (target.type == TargetType.MINION) {
+        game.dealSimultaneousDamageToMinion(target, hero.getCurrentAttack(), hero);
+        game.dealSimultaneousDamageToHero(hero, target.getCurrentAttack(), target);
+      } else if (target.type == TargetType.HERO) {
+        game.dealSimultaneousDamageToHero(target, hero.getCurrentAttack(), hero);
+      }
+      game.simultaneousDamageDone();
       
-      // todo: reduce weapon durability, or destroy weapon
+      // reduce weapon durability, or destroy weapon
+      if (hero.weapon) {
+        hero.weapon.durability--;
+        if (hero.weapon.durability <= 0) {
+          hero.weapon.die(game);
+        }
+      }
       
       game.handlers[Events.AFTER_HERO_ATTACKS].forEach(run(game, hero, target));
+      console.log('done');
     };
     
     this.useHeroPower = function(opt_target) {
@@ -546,6 +566,7 @@
     
     // unfreeze hero
     this.updateFreezeStatus(this.currentPlayer.hero);
+    this.currentPlayer.hero.attackCount = 0;
     
     // draw card
     this.drawCard(this.currentPlayer);

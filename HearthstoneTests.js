@@ -102,3 +102,26 @@ tests.testMulligan = function() {
   assert('Frost Bolt', p2.hand[3].name);
   assert('Cone of Cold', p2.hand[4].name);
 };
+
+tests.testHeroAttack = function() {
+  var p1 = new Player([], new Paladin);
+  var p2 = new Player([], new Hunter);
+  var game = new Hearthstone([p1, p2], 0);
+  p1.currentMana = 2;
+  p1.turn.useHeroPower();
+  p1.turn.endTurn();
+  assert(29, p2.hero.hp);
+  assert(1, p1.minions.length);
+  p2.hero.attack = 5;
+  p2.turn.heroAttack(p2.hero, p1.minions[0]);
+  assert(28, p2.hero.hp);
+  assert(0, p1.minions.length);
+  assert(29, p1.hero.hp);
+  p2.turn.heroAttack(p2.hero, p1.hero);
+  assert(29, p1.hero.hp);
+  p2.turn.endTurn();
+  p1.turn.endTurn();
+  assert(27, p1.hero.hp);
+  p2.turn.heroAttack(p2.hero, p1.hero);
+  assert(22, p1.hero.hp);
+};
