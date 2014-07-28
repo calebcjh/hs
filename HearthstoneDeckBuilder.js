@@ -157,8 +157,10 @@
       
       if (card.type == CardType.SPELL) {
         base.className += ' spell';
-      } else {
+      } else if (card.type == CardType.MINION) {
         base.className += ' minion';
+      } else {
+        base.className += ' weapon';
       }
       
       var imageContainer = document.createElement('div');
@@ -186,7 +188,11 @@
       
         var hp = document.createElement('div');
         hp.className = 'hp';
-        hp.innerHTML = card.hp;
+        if (card.type == CardType.MINION) {
+          hp.innerHTML = card.hp;
+        } else if (card.type == CardType.WEAPON) {
+          hp.innerHTML = card.durability;
+        }
         base.appendChild(hp);
       }
       

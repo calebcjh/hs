@@ -123,6 +123,13 @@
     background-image: url('http://www.hsdeck.com/images/cardframe_spell_03.png');
   }
   
+  .card.weapon .overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('http://www.hsdeck.com/images/cardframe_equipment_03.png');
+  }
+  
   .card.spell .image {
     position: absolute;
     left: 25px;
@@ -133,6 +140,12 @@
     position: absolute;
     left: 40px;
     top: 5px;
+  }
+  
+  .card.weapon .image {
+    position: absolute;
+    left: 32px;
+    top: 18px;
   }
   
   .card .mana, .card .attack, .card .hp {
@@ -160,6 +173,16 @@
     right: 4px;
   }
   
+  .card.weapon .attack {
+    bottom: 10px;
+    left: 5px;
+  }
+  
+  .card.weapon .hp {
+    bottom: 10px;
+    right: 5px;
+  }
+  
   .card.minion .title {
     display: block;
     position: absolute;
@@ -171,6 +194,13 @@
     display: block;
     position: absolute;
     top: 108px;
+    left: 9px;
+  }
+  
+  .card.weapon .title {
+    display: block;
+    position: absolute;
+    top: 114px;
     left: 9px;
   }
   
@@ -186,6 +216,16 @@
   
   .card.minion .rarity {
     background-image: url('http://www.hsdeck.com/images/sprites/rarity_minion.png');
+    width: 51px;
+    height: 20px;
+    display: block;
+    position: absolute;
+    top: 138px;
+    left: 68px;
+  }
+  
+  .card.weapon .rarity {
+    background-image: url('http://www.hsdeck.com/images/sprites/rarity_equipment.png');
     width: 51px;
     height: 20px;
     display: block;
@@ -226,6 +266,22 @@
     background-position: 0 -90px;
   }
   
+  .weapon .rarity.common {
+    background-position: 0 0;
+  }
+  
+  .weapon .rarity.rare {
+    background-position: 0 -22px;
+  }
+  
+  .weapon .rarity.epic {
+    background-position: 0 -44px;
+  }
+  
+  .weapon .rarity.legendary {
+    background-position: 0 -66px;
+  }
+  
   .card .description {
     font-family: helvetica;
     display: table;
@@ -235,7 +291,7 @@
     line-height: 12px;
   }
   
-  .card.minion .description {
+  .card.minion .description, .card.weapon .description {
     top: 160px;
     left: 32px;
     width: 115px;
