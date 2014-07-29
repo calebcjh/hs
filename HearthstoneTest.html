@@ -29,6 +29,7 @@
   console.log_ = console.log;
   console.log = function() { };
   for (prop in tests) {
+    console.log = function() { };
     if (prop.indexOf('test') == 0) {
       var currTest = prop;
       var startTime = new Date();

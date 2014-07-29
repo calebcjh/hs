@@ -34,7 +34,9 @@
       copy.__proto__ = obj.__proto__;
       for (var attr in obj) {
         if (exceptions.indexOf(attr) == -1) {
-          if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr], exceptions);
+          if (obj.hasOwnProperty(attr)) {
+            copy[attr] = clone(obj[attr], exceptions);
+          }
         }
       }
       return copy;
@@ -59,7 +61,8 @@
     AFTER_MINION_SUMMONED: 14,
     AFTER_MINION_PLAYED_FROM_HAND: 15,
     BEFORE_HERO_POWER: 16,
-    AFTER_HERO_POWER: 17
+    AFTER_HERO_POWER: 17,
+    SECRET_TRIGGERED: 18,
   }
   
   var EventHandler = function(owner, event, handler) {
@@ -184,6 +187,12 @@
         return false;
       }
       
+      // verify target
+      if (opt_target && opt_target.stealth) {
+        console.log('cannot target stealthed minions');
+        return false;
+      }
+      
       // verify battlecry target
       if (this.battlecry && this.battlecry.verify) {
         return this.battlecry.verify(game, position, opt_target);
@@ -238,6 +247,12 @@
       // verify target is not magic immune
       if (opt_target && opt_target.magicImmune) {
         console.log('target is magic immune');
+        return false;
+      }
+      
+      // verify target is not stealthed
+      if (opt_target && opt_target.stealth) {
+        console.log('target is stealthed');
         return false;
       }
       
@@ -815,6 +830,11 @@
         this.registeredHandlers[i].remove(game);
       }
     };
+    
+    this.triggered = function(game) {
+      game.handlers[Events.SECRET_TRIGGERED].forEach(run(game, this));
+      this.remove(game);
+    };
   };
   
   var NeutralCards = {
@@ -867,6 +887,7 @@
       game.simultaneousDamageDone();
     }}]}),
     Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
+    WorgenInfiltrator: new Card('Worgen Infiltrator', 'Stealth', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {hp: 1, attack: 2, stealth: true}),
   };
   
   var MageCards = {
@@ -997,7 +1018,7 @@
           console.log('countered!');
           handlerParams.cancel = true;
           
-          this.owner.remove(game);
+          this.owner.triggered(game);
         }
       }}]);
       
@@ -1016,12 +1037,12 @@
       var iceBarrier = new Secret(game.currentPlayer, 'Ice Barrier', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
           this.owner.player.hero.armor += 8;
-          this.owner.remove(game);
+          this.owner.triggered(game);
         }
       }}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
           this.owner.player.hero.armor += 8;
-          this.owner.remove(game);
+          this.owner.triggered(game);
         }
       }}]);
       
@@ -1111,19 +1132,21 @@
         console.log('mirror entity', arguments, this);
         if (game.currentPlayer != this.owner.player && player != this.owner.player) {
           // play card without triggering the usual
-          var clonedMinion = clone(minion, ['player', 'registeredHandlers', 'registeredAuras']);
+          var clonedMinion = clone(minion, ['player', 'registeredHandlers', 'registeredAuras', 'appliedAuras']);
           clonedMinion.player = this.owner.player;
           clonedMinion.registeredHandlers = [];
           this.owner.player.minions.push(clonedMinion);
           clonedMinion.registeredHandlers = [];
           clonedMinion.registerHandlers(game);
           clonedMinion.registeredAuras = [];
+          clonedMinion.appliedAuras = [];
           clonedMinion.registerAuras(game);
+          clonedMinion.updateStats(game);
           
           game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, clonedMinion));
 
           // todo: aura buffs
-          this.owner.remove(game);
+          this.owner.triggered(game);
         }
       }}]);
       
@@ -1150,7 +1173,7 @@
           
           handlerParams.target = bender;
           
-          this.owner.remove(game);
+          this.owner.triggered(game);
         }
       }}]);
       
@@ -1162,7 +1185,7 @@
           minion.die(game);
           handlerParams.cancel = true;
           
-          this.owner.remove(game);
+          this.owner.triggered(game);
         }
       }}]);
       vaporize.activate(game);
@@ -1289,6 +1312,57 @@
     }, applyEffects: function(game, unused_position, unused_target) {
       var index = Math.floor(game.random() * game.otherPlayer.minions.length);
       game.otherPlayer.minions[index].die(game);
+    }}),
+    EaglehornBow: new Card('Eaglehorn Bow', 'Whenever a friendly Secret is revealed, gain +1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.HUNTER, Rarity.RARE, 3, {attack: 3, durability: 2, handlers: [{event: Events.SECRET_TRIGGERED, handler: function(game, secret) {
+      if (secret.player == this.owner.player) {
+        this.owner.durability++;
+      }
+    }}]}),
+    ExplosiveShot: new Card('Explosive Shot', 'Deal 5 damage to a minion and 2 damage to adjacent ones.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.RARE, 5, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      var primaryDamage = 5 + game.currentPlayer.spellDamage;
+      var secondaryDamage = 2 + game.currentPlayer.spellDamage;
+      game.dealSimultaneousDamage(target, primaryDamage, this);
+      var index = target.player.minions.indexOf(target);
+      if (index - 1 >= 0) {
+        var minion = target.player.minions[index - 1];
+        game.dealSimultaneousDamage(minion, secondaryDamage, this);
+      }
+      if (index + 1 <= target.player.minions.length - 1) {
+        var minion = target.player.minions[index + 1];
+        game.dealSimultaneousDamage(minion, secondaryDamage, this);
+      }
+      game.simultaneousDamageDone();
+    }}),
+    ExplosiveTrap: new Card('Explosive Trap', 'Secret: When your hero is attacked, deal 2 damage to all enemies.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var explosiveTrap = new Secret(game.currentPlayer, 'Explosive Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+            game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2, this);
+          }
+          game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
+          game.simultaneousDamageDone();
+          if (minion.currentHp <= 0) {
+            handlerParams.cancel = true;
+          }
+          this.owner.triggered(game);
+        }
+      }}]);
+      explosiveTrap.activate(game);
+    }}),
+    Flare: new Card('Flare', 'All minions lose Stealth. Destroy all enemy Secrets. Draw a card.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.RARE, 1, {applyEffects: function(game, unused_position, unused_target) {
+      // All minions lose stealth.
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.otherPlayer.minions[i].stealth = false;
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.currentPlayer.minions[i].stealth = false;
+      }
+      // Destroy all enemy secrets. Reverse order because they are removed by splice.
+      for (var i = game.otherPlayer.secrets.length - 1; i >= 0; i--) {
+        game.otherPlayer.secrets[i].remove(game);
+      }
+      // Draw a card.
+      game.drawCard(game.currentPlayer);
     }}),
   };
   
