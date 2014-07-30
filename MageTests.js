@@ -36,7 +36,7 @@ tests.testArcaneIntellect = function() {
 tests.testArcaneMissiles = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());
-  var game = new Hearthstone([p1, p2], Math.random() * 50000);
+  var game = new Hearthstone([p1, p2], 0);
   p1.hand.push(MageCards.WaterElemental.copy());
   p1.currentMana = 4;
   p1.turn.playCard(p1.hand[0], 0);

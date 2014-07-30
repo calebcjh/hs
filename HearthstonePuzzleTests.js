@@ -24,8 +24,9 @@ tests.testPuzzleSolverBasic = function() {
     }
   }
   var solver = new Solver(data, true);
-  solver.solve();
-  assert(1, solver.solutions.length);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
 };
 
 tests.testPuzzleSolverIntermediate = function() {
@@ -60,55 +61,12 @@ tests.testPuzzleSolverIntermediate = function() {
     }
   }
   var solver = new Solver(data, true);
-  solver.solve();
-  assert(1, solver.solutions.length);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
 };
 
-tests.testPuzzleSolverAdvanced = function() {
-  var data = {
-    opponent: {
-      heroClass: 2,
-      hp: 19,
-      armor: 0,
-      mana: 3,
-      currentMana: 0,
-      fatigue: 1,
-      hand: [],
-      deck: [NeutralCards.Wisp.copy()],
-      actions: []
-    },
-    player: {
-      heroClass: 2,
-      hp: 1,
-      armor: 0,
-      mana: 4,
-      currentMana: 4,
-      fatigue: 1,
-      hand: [
-        MageCards.ManaWyrm.copy(),
-        MageCards.ManaWyrm.copy(),
-        MageCards.IceLance.copy(),
-        MageCards.FrostBolt.copy(),
-        MageCards.IceLance.copy()
-      ],
-      deck: [],
-      actions: [
-        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
-        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
-      ]
-    }
-  }
-  var solver = new Solver(data, true);
-  solver.solve();
-  assert(4, solver.solutions.length);
-  console.log_('Constructor time:', solver.constructorTime);
-  console.log_('Init time:', solver.initTime);
-  console.log_('Card copy time:', solver.cardCopyTime);
-  console.log_('Replay time:', solver.replayTime);
-  console.log_('States checked:', solver.statesChecked);
-};
-
-tests.testPuzzleSolverSingle = function() {
+tests.testPuzzleSolverAdvance = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -143,9 +101,9 @@ tests.testPuzzleSolverSingle = function() {
     }
   }
   var solver = new Solver(data, false);
-  solver.solve();
-  console.log_(solver.solutions);
-  // assert(1, solver.solutions.length);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
   console.log_('Card copy time:', solver.cardCopyTime);
@@ -153,7 +111,7 @@ tests.testPuzzleSolverSingle = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverComplex = function() {
+tests.xtestPuzzleSolverComplex = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -202,9 +160,134 @@ tests.testPuzzleSolverComplex = function() {
     }
   }
   var solver = new Solver(data, false);
-  solver.solve();
-  console.log_(solver.solutions);
-  // assert(1, solver.solutions.length);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};
+
+tests.testPuzzleSolverBasicRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 3,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: []
+    },
+    player: {
+      heroClass: 2,
+      hp: 3,
+      armor: 0,
+      mana: 1,
+      currentMana: 1,
+      fatigue: 1,
+      hand: [
+        MageCards.ArcaneMissiles.copy()
+      ],
+      deck: [],
+      actions: []
+    }
+  }
+  var solver = new Solver(data, false);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};
+
+tests.testPuzzleSolverIntermediateRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 3,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        NeutralCards.Abomination.copy(),
+        MageCards.WaterElemental.copy(),
+        MageCards.WaterElemental.copy()
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+      ]
+    },
+    player: {
+      heroClass: 2,
+      hp: 3,
+      armor: 0,
+      mana: 9,
+      currentMana: 11,
+      fatigue: 1,
+      hand: [
+        HunterCards.DeadlyShot.copy(),
+        HunterCards.DeadlyShot.copy(),
+        HunterCards.DeadlyShot.copy(),
+      ],
+      deck: [],
+      actions: []
+    }
+  }
+  var solver = new Solver(data, false);
+  var solution = solver.solve();
+  // assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};
+
+tests.testPuzzleSolverAdvancedRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 3,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [NeutralCards.Abomination.copy()],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [{actionId: Actions.PLAY_CARD, card: 0, position: 0}]
+    },
+    player: {
+      heroClass: 2,
+      hp: 3,
+      armor: 0,
+      mana: 4,
+      currentMana: 4,
+      fatigue: 1,
+      hand: [
+        NeutralCards.StonetuskBoar.copy(),
+        MageCards.ArcaneMissiles.copy()
+      ],
+      deck: [],
+      actions: []
+    }
+  }
+  var solver = new Solver(data, false);
+  var solution = solver.solve();
+  // assert(true, !!solution);
+  console.log_(solution);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
   console.log_('Card copy time:', solver.cardCopyTime);

@@ -58,11 +58,11 @@ tests.testAnimalCompanion = function() {
   p1.turn.playCard(p1.hand[0]);
   assert(1, p1.minions.length);
   assert('Huffer', p1.minions[0].name);
-  game.random = function() { return 0.4; };
+  game.random = function() { return 1; };
   p1.turn.playCard(p1.hand[0]);
   assert(2, p1.minions.length);
   assert('Leokk', p1.minions[1].name);
-  game.random = function() { return 0.7; };
+  game.random = function() { return 2; };
   p1.turn.playCard(p1.hand[0]);
   assert(3, p1.minions.length);
   assert('Misha', p1.minions[2].name);
@@ -150,7 +150,7 @@ tests.testMultiShot = function() {
   var p1 = new Player([], new Hunter());
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
-  game.random = function() { return 0.6 };
+  game.random = function() { return 1 };
   p1.hand.push(HunterCards.MultiShot.copy());
   p1.currentMana = 3;
   p1.turn.playCard(p1.hand[0]);
@@ -380,7 +380,7 @@ tests.testDeadlyShot = function() {
   p1.hand.push(HunterCards.DeadlyShot.copy());
   p1.hand.push(HunterCards.DeadlyShot.copy());
   p1.currentMana = 9;
-  game.random = function() { return 0.7; };
+  game.random = function(n) { return n - 1; };
   p1.turn.playCard(p1.hand[0]);
   assert(6, p1.currentMana);
   assert(2, p2.minions.length);
@@ -391,7 +391,7 @@ tests.testDeadlyShot = function() {
   assert(3, p1.currentMana);
   assert(1, p2.minions.length);
   assert('Stonetusk Boar', p2.minions[0].name);
-  game.random = function() { return 0.3; };
+  game.random = function(n) { return n - 1; };
   p1.turn.playCard(p1.hand[0]);
   assert(0, p1.currentMana);
   assert(0, p2.minions.length);

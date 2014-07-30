@@ -1,3 +1,32 @@
+tests.testAbomination = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.Misha.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.Abomination.copy());
+  p2.hand.push(MageCards.MirrorImage.copy());
+  p2.hand.push(MageCards.WaterElemental.copy());
+  p2.hand.push(MageCards.Fireball.copy());
+  p2.currentMana = 13;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1]);
+  p2.turn.playCard(p2.hand[1], 2);
+  assert(4, p2.minions.length);
+  assert(29, p2.hero.hp);
+  assert(1, p1.minions.length);
+  assert(29, p1.hero.hp);
+  p2.turn.playCard(p2.hand[1], undefined, p2.minions[0]);
+  assert(1, p2.minions.length);
+  assert(4, p2.minions[0].currentHp);
+  assert(27, p2.hero.hp);
+  assert(1, p1.minions.length);
+  assert(2, p1.minions[0].currentHp);
+  assert(27, p1.hero.hp);
+}; 
+
 tests.testCrazedAlchemist = function() {
   var p1 = new Player([], new Hunter());
   var p2 = new Player([], new Mage());

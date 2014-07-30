@@ -81,7 +81,7 @@
     this.shuffle = function(deck) {
       for (var i = 0; i < 30; i++) {
         for (var j = 0; j < deck.length; j++) {
-          if (this.random() < 0.5) {
+          if (this.random(2) == 0) {
             var card = deck[j];
             deck.splice(j, 1);
             deck.push(card);

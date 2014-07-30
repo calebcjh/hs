@@ -838,6 +838,17 @@
   };
   
   var NeutralCards = {
+    Abomination: new Card('Abomination', 'Taunt. Deathrattle: Deal 2 damage to ALL characters.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 4, {attack: 4, hp: 4, deathrattle: function(game) {
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 2, this);
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2, this);
+      }
+      game.dealSimultaneousDamage(game.otherPlayer.hero, 2, this);
+      game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
+      game.simultaneousDamageDone();
+    }}),
     CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
       return target.type == TargetType.MINION;
     }, activate: function(game, minion, position, target) {
@@ -905,19 +916,15 @@
     }}),
     ArcaneMissiles: new Card('Arcane Missiles', 'Deal 3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < 3 + game.currentPlayer.spellDamage; i++) {
-        var numTargets = 1 + game.otherPlayer.minions.length;
-        var selectedTarget = Math.floor(game.random() * numTargets);
+        var numTargets = game.otherPlayer.minions.length + (game.otherPlayer.hero.hp > 0 ? 1 : 0);
+        var selectedTarget = game.random(numTargets);
         var target;
         if (selectedTarget == numTargets - 1) {
           target = game.otherPlayer.hero;
         } else {
           target = game.otherPlayer.minions[selectedTarget];
-          if (target.currentHp == 0) {
-            i--;
-            continue;
-          }
         }
-        console.log('hitting', target.currentHp, target);
+        console.log('hitting', target, selectedTarget);
         game.dealDamage(target, 1, this);
       }
     }}),
@@ -1199,7 +1206,7 @@
     }}]}),
     Misha: new Card('Misha', 'Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 4, taunt: true, tag: 'Beast'}),
     AnimalCompanion: new Card('Animal Companion', 'Summon a random Beast Companion', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
-      var selectedMinion = Math.floor(game.random() * 3);
+      var selectedMinion = game.random(3);
       var minion;
       if (selectedMinion == 0) {
         minion = new Minion(game.currentPlayer, 'Huffer', HunterCards.Huffer.copy(), 4, 2, true /* charge */, false, false, false, false, false, false, [], []);
@@ -1242,14 +1249,27 @@
     }, applyEffects: function(game, unused_position, unused_target) {
       var targets = 0;
       var len = game.otherPlayer.minions.length;
+      var combinations = 1;
+      for (var i = len; i > 2 && i > (len - 2); i--) {
+        combinations *= i;
+      }
+      for (var i = Math.min(len - 2, 2); i > 1; i--) {
+        combinations /= i;
+      }
+      var selectedCase = game.random(combinations);
+      var k = 0;
       for (var i = 0; i < len; i++) {
-        var probability = (2 - targets) / (len - i);
-        if (game.random() < probability) {
-          targets++;
-          game.dealSimultaneousDamage(game.otherPlayer.minions[i], 3 + game.currentPlayer.spellDamage, this);
+        for (var j = i + 1; j < len; j++) {
+          if (k == selectedCase) {
+            game.dealSimultaneousDamage(game.otherPlayer.minions[i], 3 + game.currentPlayer.spellDamage, this);
+            game.dealSimultaneousDamage(game.otherPlayer.minions[j], 3 + game.currentPlayer.spellDamage, this);
+            game.simultaneousDamageDone();
+            return;
+          } else {
+            k++;
+          }
         }
       }
-      game.simultaneousDamageDone();
     }}),
     StarvingBuzzard: new Card('Starving Buzzard', 'Whenever you summon a Beast, draw a card.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 2, {attack: 2, hp: 1, tag: 'Beast', handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
       if (minion != this.owner && minion.player == this.owner.player && minion.isBeast) {
@@ -1310,7 +1330,7 @@
     DeadlyShot: new Card('Deadly Shot', 'Destroy a random enemy minion.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {verify: function(game, unused_position, unused_target) {
       return game.otherPlayer.minions.length > 0;
     }, applyEffects: function(game, unused_position, unused_target) {
-      var index = Math.floor(game.random() * game.otherPlayer.minions.length);
+      var index = game.random(game.otherPlayer.minions.length);
       game.otherPlayer.minions[index].die(game);
     }}),
     EaglehornBow: new Card('Eaglehorn Bow', 'Whenever a friendly Secret is revealed, gain +1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.HUNTER, Rarity.RARE, 3, {attack: 3, durability: 2, handlers: [{event: Events.SECRET_TRIGGERED, handler: function(game, secret) {

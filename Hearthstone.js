@@ -326,9 +326,9 @@
 
   var Hearthstone = function(players, seed) {
     this.seed = seed;
-    this.random = function () {
+    this.random = function (space) {
       var x = Math.sin(this.seed++) * 10000;
-      return x - Math.floor(x);
+      return Math.floor((x - Math.floor(x)) * space);
     }
     
     this.players = players;
@@ -650,7 +650,7 @@
     }
     // return discarded cards
     for (var i = 0; i < selected.length; i++) {
-      var index = Math.floor(this.random() * (player.deck.length + 1));
+      var index = this.random(player.deck.length + 1);
       player.deck.splice(index, 0, selected[i]);
     }
     
