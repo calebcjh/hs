@@ -66,7 +66,7 @@ tests.testPuzzleSolverIntermediate = function() {
   console.log_(solution);
 };
 
-tests.testPuzzleSolverAdvance = function() {
+tests.xtestPuzzleSolverAdvance = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -219,12 +219,10 @@ tests.testPuzzleSolverIntermediateRandom = function() {
       fatigue: 1,
       hand: [
         NeutralCards.Abomination.copy(),
-        MageCards.WaterElemental.copy(),
         MageCards.WaterElemental.copy()
       ],
       deck: [NeutralCards.Wisp.copy()],
       actions: [
-        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
         {actionId: Actions.PLAY_CARD, card: 0, position: 0},
         {actionId: Actions.PLAY_CARD, card: 0, position: 0},
       ]
@@ -233,13 +231,12 @@ tests.testPuzzleSolverIntermediateRandom = function() {
       heroClass: 2,
       hp: 3,
       armor: 0,
-      mana: 9,
-      currentMana: 11,
+      mana: 8,
+      currentMana: 8,
       fatigue: 1,
       hand: [
         HunterCards.DeadlyShot.copy(),
-        HunterCards.DeadlyShot.copy(),
-        HunterCards.DeadlyShot.copy(),
+        HunterCards.DeadlyShot.copy()
       ],
       deck: [],
       actions: []

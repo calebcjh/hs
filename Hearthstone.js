@@ -494,10 +494,11 @@
       var damagedMinion = this.simultaneouslyDamagedMinions[i];
       // trigger damage handlers
       this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount, damagedMinion.source));
-      console.log(damagedMinion);
     }
-    for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
-      var damagedMinion = this.simultaneouslyDamagedMinions[i];
+    var damagedMinions = this.simultaneouslyDamagedMinions.slice(0);
+    this.simultaneouslyDamagedMinions = []; 
+    for (var i = 0; i < damagedMinions.length; i++) {
+      var damagedMinion = damagedMinions[i];
       if (damagedMinion.minion.currentHp <= 0) {
         damagedMinion.minion.die(this);
       
@@ -505,7 +506,6 @@
         this.handlers[Events.MINION_DIES].forEach(run(this, damagedMinion.minion));
       }
     }
-    this.simultaneouslyDamagedMinions = [];
   }
   
   Hearthstone.prototype.drawCard = function(player) {

@@ -525,6 +525,11 @@
     };
     
     this.die = function(game) {
+      if (this.removed) {
+        return;
+      }
+      
+      this.removed = true;
       this.remove(game);
     
       if (this.deathrattle) {
@@ -838,7 +843,7 @@
   };
   
   var NeutralCards = {
-    Abomination: new Card('Abomination', 'Taunt. Deathrattle: Deal 2 damage to ALL characters.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 4, {attack: 4, hp: 4, deathrattle: function(game) {
+    Abomination: new Card('Abomination', 'Taunt. Deathrattle: Deal 2 damage to ALL characters.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 4, {attack: 4, hp: 4, taunt: true, deathrattle: function(game) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.dealSimultaneousDamage(game.otherPlayer.minions[i], 2, this);
       }

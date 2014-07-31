@@ -172,6 +172,33 @@
       */
     };
     
+    var prepareRandom = function(puzzle, history, forksContainer) {
+      var rngHistory = history.rngHistory.slice(0);
+      puzzle.history = {actions: history.actions.slice(0), rngHistory: history.rngHistory.slice(0)};
+      puzzle.game.random = function(n) {
+        if (rngHistory.length > 0) {
+          return rngHistory.splice(0, 1)[0];
+        } else {
+          // need to fork.
+          // if forks is empty, copy puzzle into forks.
+          if (forksContainer.forks.length == 0) {
+            forksContainer.forks.push(puzzle);
+          }
+
+          // otherwise, the current fork is already in forks, clone for other outcomes and add to forks.
+          for (var i = 1; i < n; i++) {
+            var fork = new HearthstonePuzzle(data);
+            prepareRandom(fork, {actions: puzzle.history.actions.slice(0), rngHistory: puzzle.history.rngHistory.concat(i)}, forksContainer);
+            forksContainer.forks.push(fork);
+            fork.replay(puzzle.history.actions);
+          };
+          
+          puzzle.history.rngHistory.push(0);
+          return 0;
+        };
+      };
+    };
+    
     this.solve = function(history, puzzle) {
       if (history == undefined) {
         history = {actions: [], rngHistory: []};
@@ -182,82 +209,56 @@
       var possibleActions = puzzle.game.currentPlayer.turn.listAllActions();
       var childStates = [];
       for (var i = 0; i < possibleActions.length; i++) {
-        var forks = false;
+        var forksContainer = {forks: []};
       
         var startTime = new Date();        
         var clone = new HearthstonePuzzle(data);
+        var cloneHistory = {actions: history.actions.concat(possibleActions[i]), rngHistory: history.rngHistory.slice(0)};
+        prepareRandom(clone, cloneHistory, forksContainer);
         
-        clone.game.random = function(rngHistory) {
-          return function(n) {
-            if (rngHistory.length > 0) {
-              return rngHistory.splice(0, 1)[0];
-            } else {
-              // out of rng, need to fork
-              forks = n;
-              return 0;
-            };
-          };
-        }(history.rngHistory.slice(0)); 
-      
         this.initTime += (new Date() - startTime - clone.constructorTime - clone.cardCopyTime);
         this.constructorTime += clone.constructorTime;
         this.cardCopyTime += clone.cardCopyTime;
         startTime = new Date();
-        clone.replay(history.actions);
+        
+        clone.replay(cloneHistory.actions);
+        
         this.replayTime += (new Date() - startTime);
-        execute(possibleActions[i], clone.game);
         this.statesChecked++;
         if (this.statesChecked % 10000 == 0) { console.log_('States checked:', this.statesChecked); }
-          
-        if (forks !== false && forks != 0) {
-          // forks needed.
-          var clones = [clone];
-          for (var j = 1; j < forks; j++) {
-            var fork = new HearthstonePuzzle(data);
-            fork.game.random = function(rngHistory) {
-              return function(n) {
-                return rngHistory.splice(0, 1)[0];
-              };
-            }(history.rngHistory.slice(0).concat(j));
-            fork.replay(history.actions);
-            execute(possibleActions[i], fork.game);
-            clones.push(fork);
-          }
-          
+
+        
+        var forks = forksContainer.forks;
+        if (forks.length > 1) {
           // check if all forks solve the puzzle
           var solved = true;
           var solvable = true;
           var unsolvedChildStates = [];
           var solvedChildren = [];
-          for (var j = 0; j < forks; j++) {
-            var childSolved = clones[j].opponent.hero.hp <= 0 && clones[j].player.hero.hp > 0;
+          for (var j = 0; j < forks.length; j++) {
+            var childSolved = forks[j].opponent.hero.hp <= 0 && forks[j].player.hero.hp > 0;
             if (!childSolved) {
               solved = false;
-              if (possibleActions[i].actionsId != Actions.END_TURN && clones[j].player.hero.hp > 0) {
-                unsolvedChildStates.push({forkId: j, history: {actions: history.actions.concat(possibleActions[i]), rngHistory: history.rngHistory.concat(j)}, state: clones[j]});
+              if (possibleActions[i].actionsId != Actions.END_TURN && forks[j].player.hero.hp > 0) {
+                unsolvedChildStates.push(forks[j]);
               } else {
-                console.log('not solvable');
                 solvable = false;
               }
             } else {
-              solvedChildren.push(['#' + j].concat(history.actions.concat(possibleActions[i])));
+              solvedChildren.push(forks[j]);
             }
           }
           if (solved) {
-            return history.actions.concat(possibleActions[i]);
+            childStates = [{unsolved: unsolvedChildStates, solved: solvedChildren}];
+            break;
           } else if (solvable) {
-            childStates.push({unsolvedStates: unsolvedChildStates, solvedChildren: solvedChildren});
+            childStates.push({unsolved: unsolvedChildStates, solved: solvedChildren});
           }
         } else {
-          if (forks !== false && forks == 0) {
-            // don't actually need to fork, just add 0 to the rngHistory
-            history.rngHistory.push(0);
-          }
-          
           if (clone.opponent.hero.hp <= 0 && clone.player.hero.hp > 0) {
-            return history.actions.concat(possibleActions[i]);
+            return cloneHistory;
           } else if (possibleActions[i].actionId != Actions.END_TURN && clone.player.hero.hp > 0) {
-            childStates.push({history: {actions: history.actions.concat(possibleActions[i]), rngHistory: history.rngHistory.slice(0)}, state: clone});
+            childStates.push(clone);
           }
         }
       };
@@ -267,13 +268,15 @@
           return getStateValue(state2.state) - getStateValue(state1.state);
         });
         for (var i = 0; i < childStates.length; i++) {
-          if (childStates[i].unsolvedStates) {
-            var solutions = childStates[i].solvedChildren.slice(0);
+          if (childStates[i].unsolved) {
+            var solutions = childStates[i].solved.map(function(state) {
+              return state.history;
+            });
             var solved = true;
-            for (var j = 0; j < childStates[i].unsolvedStates.length; j++) {
-              var forkSolution = this.solve(childStates[i].unsolvedStates[j].history, childStates[i].unsolvedStates[j].state);
+            for (var j = 0; j < childStates[i].unsolved.length; j++) {
+              var forkSolution = this.solve(childStates[i].unsolved[j].history, childStates[i].unsolved[j]);
               if (forkSolution) {
-                solutions.push(['#' + childStates[i].unsolvedStates[j].forkId].concat(forkSolution));
+                solutions.push(forkSolution);
               } else {
                 solved = false;
                 break;
@@ -283,7 +286,7 @@
               return solutions;
             }
           } else {
-            var solution = this.solve(childStates[i].history, childStates[i].state);
+            var solution = this.solve(childStates[i].history, childStates[i]);
             if (solution) {
               return solution;
             }
