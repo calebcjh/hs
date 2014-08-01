@@ -335,6 +335,8 @@
     this.currentIndex = 1;
     
     this.nextPlayers = [];
+
+    this.playOrderIndex = 0;
     
     this.simultaneouslyDamagedMinions = [];
     this.simultaneouslyDamagedHeroes = [];
@@ -458,10 +460,7 @@
       this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams.amount, source));
 
       if (minion.currentHp <= 0) {
-        minion.die(this);
-      
-        // trigger minion death handlers
-        this.handlers[Events.MINION_DIES].forEach(run(this, minion));
+        this.kill(minion);
       }
     }
   };
@@ -490,6 +489,11 @@
       this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.source));
     }
     this.simultaneouslyDamagedHeroes = [];
+
+    this.simultaneouslyDamagedMinions.sort(function(minion1, minion2) {
+      return minion1.minion.playOrderIndex - minion2.minion.playOrderIndex;
+    });
+
     for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
       var damagedMinion = this.simultaneouslyDamagedMinions[i];
       // trigger damage handlers
@@ -497,17 +501,42 @@
     }
     var damagedMinions = this.simultaneouslyDamagedMinions.slice(0);
     this.simultaneouslyDamagedMinions = []; 
+    var deathrattles = [];
     for (var i = 0; i < damagedMinions.length; i++) {
       var damagedMinion = damagedMinions[i];
       if (damagedMinion.minion.currentHp <= 0) {
-        damagedMinion.minion.die(this);
-      
+        var minion = damagedMinion.minion;
+        var position = minion.player.minions.indexOf(minion);
+        minion.die(this);
+
         // trigger minion death handlers
-        this.handlers[Events.MINION_DIES].forEach(run(this, damagedMinion.minion));
+        this.handlers[Events.MINION_DIES].forEach(run(this, minion));
+
+        if (minion.deathrattle) {
+          deathrattles.push(minion.deathrattle.bind(minion, this, position));
+        }
       }
     }
+
+    // todo: sort deathrattles
+    for (var i = 0; i < deathrattles.length; i++) {
+      deathrattles[i]();
+    }
   }
-  
+
+  Hearthstone.prototype.kill = function(minion) {
+    var position = minion.player.minions.indexOf(minion);
+
+    minion.die(this);
+
+    // trigger minion death handlers
+    this.handlers[Events.MINION_DIES].forEach(run(this, minion));
+    
+    if (minion.deathrattle) {
+      minion.deathrattle.bind(minion)(this, position);
+    }
+  };
+
   Hearthstone.prototype.drawCard = function(player) {
     if (player.deck.length == 0) {
       // fatigue

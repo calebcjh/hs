@@ -109,11 +109,17 @@ tests.testMirrorImage = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.DireWolfAlpha.copy());
   p1.hand.push(MageCards.MirrorImage.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0], 0);
   p1.turn.playCard(p1.hand[0]);
-  assert(2, p1.minions.length);
-  assert('Mirror Image', p1.minions[0].name);
+  assert(3, p1.minions.length);
+  assert('Dire Wolf Alpha', p1.minions[0].name);
   assert('Mirror Image', p1.minions[1].name);
+  assert('Mirror Image', p1.minions[2].name);
+  assert(1, p1.minions[1].getCurrentAttack());
+  assert(0, p1.minions[2].getCurrentAttack());
 };
 
 tests.testPolymorph = function() {
@@ -121,15 +127,18 @@ tests.testPolymorph = function() {
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
   p1.hand.push(MageCards.WaterElemental.copy());
-  p1.currentMana = 4;
+  p1.hand.push(HunterCards.TimberWolf.copy());
+  p1.currentMana = 5;
   p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
   p1.turn.endTurn();
   p2.hand.push(MageCards.Polymorph.copy());
   p2.currentMana = 4;
   p2.turn.playCard(p2.hand[1], undefined, p1.minions[0]);
-  assert(1, p1.minions.length);
+  assert(2, p1.minions.length);
   assert('Sheep', p1.minions[0].name);
   assert(true, p1.minions[0].isBeast);
+  assert(2, p1.minions[0].getCurrentAttack());
 };
 
 tests.testWaterElemental = function() {
@@ -316,6 +325,62 @@ tests.testIceBlock = function() {
   assert(1, p2.hero.hp);
 };
 
+tests.testIceBlock__fatigueKills = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.IceBlock.copy());
+  p1.currentMana = 3;
+  p1.hero.hp = 1;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.currentMana = 2;
+  p2.turn.useHeroPower(p1.hero);
+  assert(0, p1.secrets.length);
+  assert(true, p1.hero.immune);
+  p2.turn.endTurn();
+  assert(-1, p1.hero.hp);
+};
+
+tests.testIceBlock__fatigueDoesNotTrigger = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.IceBlock.copy());
+  p1.currentMana = 3;
+  p1.hero.hp = 1;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.turn.endTurn();
+  assert(1, p1.secrets.length);
+  assert(-1, p1.hero.hp);
+};
+
+tests.testIceBlock__LeperGnomePowerOverwhelming = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.IceBlock.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0]);
+  assert(1, p1.secrets.length);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.LeperGnome.copy());
+  p2.hand.push(WarlockCards.PowerOverwhelming.copy());
+  p2.currentMana = 4;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], undefined, p2.minions[0]);
+  p1.hero.hp = 1;
+  p2.turn.useHeroPower(p1.hero);
+  assert(0, p1.secrets.length);
+  assert(true, p1.hero.immune);
+  assert(1, p1.hero.hp);
+  p1.deck.push(NeutralCards.TheCoin.copy());
+  p2.turn.endTurn();
+  assert(0, p2.minions.length);
+  assert(1, p1.hero.hp);
+};
+
 tests.testIceLance = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());
@@ -372,16 +437,19 @@ tests.testMirrorEntity = function() {
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
   p1.hand.push(MageCards.MirrorEntity.copy());
-  p1.currentMana = 3;
+  p1.hand.push(NeutralCards.DireWolfAlpha.copy());
+  p1.currentMana = 5;
   p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0], 0);
   assert(1, p1.secrets.length);
-  assert(0, p1.minions.length);
+  assert(1, p1.minions.length);
   p1.turn.endTurn();
   p2.hand.push(NeutralCards.StonetuskBoar.copy());
   p2.turn.playCard(p2.hand[1], 0);
   assert(0, p1.secrets.length);
-  assert(1, p1.minions.length);
-  assert('Stonetusk Boar', p1.minions[0].name);
+  assert(2, p1.minions.length);
+  assert('Stonetusk Boar', p1.minions[1].name);
+  assert(2, p1.minions[1].getCurrentAttack());
   assert(1, p2.minions.length);
   assert('Stonetusk Boar', p2.minions[0].name);
 };
@@ -422,11 +490,13 @@ tests.testSpellBender = function() {
   var game = new Hearthstone([p1, p2], 0);
   p1.hand.push(MageCards.MirrorImage.copy());
   p1.hand.push(MageCards.WaterElemental.copy());
+  p1.hand.push(NeutralCards.DireWolfAlpha.copy());
   p1.hand.push(MageCards.Spellbender.copy());
-  p1.currentMana = 8;
+  p1.currentMana = 10;
   p1.turn.playCard(p1.hand[0]);
   p1.turn.playCard(p1.hand[0], 1);
-  assert(3, p1.minions.length);
+  p1.turn.playCard(p1.hand[0], 3);
+  assert(4, p1.minions.length);
   p1.turn.playCard(p1.hand[0]);
   assert(1, p1.secrets.length);
   p1.turn.endTurn();
@@ -434,7 +504,7 @@ tests.testSpellBender = function() {
   p2.currentMana = 4;
   p2.turn.playCard(p2.hand[1], undefined, p1.minions[1]);
   assert(0, p1.secrets.length);
-  assert(4, p1.minions.length);
+  assert(5, p1.minions.length);
   assert('Mirror Image', p1.minions[0].name);
   assert(2, p1.minions[0].currentHp);
   assert(false, p1.minions[0].frozen);
@@ -442,11 +512,15 @@ tests.testSpellBender = function() {
   assert(6, p1.minions[1].currentHp);
   assert(false, p1.minions[1].frozen);
   assert('Mirror Image', p1.minions[2].name);
-  assert(1, p1.minions[2].currentHp);
-  assert(true, p1.minions[2].frozen);
-  assert('Spellbender', p1.minions[3].name);
-  assert(2, p1.minions[3].currentHp);
+  assert(2, p1.minions[2].currentHp);
+  assert(false, p1.minions[2].frozen);
+  assert('Dire Wolf Alpha', p1.minions[3].name);
+  assert(1, p1.minions[3].currentHp);
   assert(true, p1.minions[3].frozen);
+  assert('Spellbender', p1.minions[4].name);
+  assert(2, p1.minions[4].currentHp);
+  assert(true, p1.minions[4].frozen);
+  assert(2, p1.minions[4].getCurrentAttack());
 };
 
 tests.testVaporize = function() {

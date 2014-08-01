@@ -58,14 +58,20 @@ tests.testAnimalCompanion = function() {
   p1.turn.playCard(p1.hand[0]);
   assert(1, p1.minions.length);
   assert('Huffer', p1.minions[0].name);
+  assert(4, p1.minions[0].getCurrentAttack());
   game.random = function() { return 1; };
   p1.turn.playCard(p1.hand[0]);
   assert(2, p1.minions.length);
   assert('Leokk', p1.minions[1].name);
+  assert(5, p1.minions[0].getCurrentAttack());
+  assert(2, p1.minions[1].getCurrentAttack());
   game.random = function() { return 2; };
   p1.turn.playCard(p1.hand[0]);
   assert(3, p1.minions.length);
   assert('Misha', p1.minions[2].name);
+  assert(5, p1.minions[0].getCurrentAttack());
+  assert(2, p1.minions[1].getCurrentAttack());
+  assert(5, p1.minions[2].getCurrentAttack());
 };
 
 tests.testArcaneShot = function() {

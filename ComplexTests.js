@@ -75,3 +75,119 @@ tests.testBestialWrathVaporize = function() {
 tests.testBeastialWrathHandOfProtection = function() {
   throw new Error('Not implemented');
 };
+
+// p1 plays Abomination and Leper Gnome.
+// p2 plays Sylvanas.
+// p1 pings Sylvanas and runs Abomination into her.
+// Leper Gnome should not be stolen.
+tests.testDeathrattleOrder1 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  game.random = function(n) {
+    assert('game.random not to be called', 'called');
+  };
+  p1.hand.push(NeutralCards.Abomination.copy());
+  p1.hand.push(NeutralCards.LeperGnome.copy());
+  p1.currentMana = 5;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.SylvanasWindrunner.copy());
+  p2.currentMana = 6;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.endTurn();
+  p1.currentMana = 2;
+  p1.turn.useHeroPower(p2.minions[0]);
+  p1.turn.minionAttack(p1.minions[1], p2.minions[0]);
+  assert(25, p1.hero.hp);
+  assert(25, p2.hero.hp);
+};
+
+// p1 plays Sylvanas.
+// p2 plays Abomination and Leper Gnome.
+// p2 pings Sylvanas.
+// p1 runs Sylvanas into Abomination.
+// Leper Gnome should be stolen.
+tests.testDeathrattleOrder2 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  var randomCalled = false;
+  game.random = function(n) {
+    randomCalled = true;
+    return 0;
+  };
+  p1.hand.push(NeutralCards.SylvanasWindrunner.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.Abomination.copy());
+  p2.hand.push(NeutralCards.LeperGnome.copy());
+  p2.currentMana = 7;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.useHeroPower(p1.minions[0]);
+  p2.turn.endTurn();
+  p1.turn.minionAttack(p1.minions[0], p2.minions[1]);
+  assert(true, randomCalled);
+  assert(25, p1.hero.hp);
+  assert(25, p2.hero.hp);
+};
+
+// p1 plays Sylvanas.
+// p2 plays Cairne and pings Sylvanas.
+// p1 runs Sylvanas into Cairne.
+// Baine not stolen.
+tests.testDeathrattleOrder3 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  game.random = function(n) {
+    assert('game.random not to be called', 'called');
+  };
+  p1.hand.push(NeutralCards.SylvanasWindrunner.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.CairneBloodhoof.copy());
+  p2.currentMana = 8;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.useHeroPower(p1.minions[0]);
+  p2.turn.endTurn();
+  p1.turn.minionAttack(p1.minions[0], p2.minions[0]);
+  assert(0, p1.minions.length);
+  assert(1, p2.minions.length);
+}
+
+// p1 plays Cairne.
+// p2 plays Sylvanas.
+// p1 pings Sylvanas.
+// p2 runs Sylvanas into Cairne.
+// Baine stolen.
+tests.testDeathrattleOrder4 = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  var randomCalled = false;
+  game.random = function(n) {
+    randomCalled = true;
+    return 0;
+  };
+  p1.hand.push(NeutralCards.CairneBloodhoof.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.SylvanasWindrunner.copy());
+  p2.currentMana = 6;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.endTurn();
+  p1.turn.useHeroPower(p2.minions[0]);
+  p1.turn.endTurn();
+  p2.turn.minionAttack(p2.minions[0], p1.minions[0]);
+  assert(true, randomCalled);
+  assert(0, p1.minions.length);
+  assert(1, p2.minions.length);
+}
+
+
