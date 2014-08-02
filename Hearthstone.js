@@ -164,6 +164,8 @@
       }
       game.simultaneousDamageDone();
       
+      game.handlers[Events.AFTER_HERO_ATTACKS].forEach(run(game, hero, target));
+      
       // reduce weapon durability, or destroy weapon
       if (hero.weapon) {
         hero.weapon.durability--;
@@ -171,9 +173,6 @@
           hero.weapon.die(game);
         }
       }
-      
-      game.handlers[Events.AFTER_HERO_ATTACKS].forEach(run(game, hero, target));
-      console.log('done');
     };
     
     this.useHeroPower = function(opt_target) {
@@ -396,21 +395,19 @@
     }
     
     var damageLeft = handlerParams.amount;
-    if (hero.immune) {
-      damageLeft = 0;
-    }
-    
-    if (hero.armor > 0) {
-      var damageAbsorbed = Math.min(hero.armor, damageLeft);
-      hero.armor -= damageAbsorbed;
-      damageLeft -= damageAbsorbed;
-    }
-    
-    if (damageLeft > 0) {
-      hero.hp -= damageLeft;
-    
-      if(this.checkEndGame()) {
-        return;
+    if (!hero.immune) {
+      if (hero.armor > 0) {
+        var damageAbsorbed = Math.min(hero.armor, damageLeft);
+        hero.armor -= damageAbsorbed;
+        damageLeft -= damageAbsorbed;
+      }
+      
+      if (damageLeft > 0) {
+        hero.hp -= damageLeft;
+      
+        if(this.checkEndGame()) {
+          return;
+        }
       }
       
       // trigger hero damage handlers
@@ -427,18 +424,17 @@
     }
     
     var damageLeft = handlerParams.amount;
-    if (hero.immune) {
-      damageLeft = 0;
-    }
-    
-    if (hero.armor > 0) {
-      var damageAbsorbed = Math.min(hero.armor, damageLeft);
-      hero.armor -= damageAbsorbed;
-      damageLeft -= damageAbsorbed;
-    }
-    
-    if (damageLeft > 0) {
-      hero.hp -= damageLeft;
+    if (!hero.immune) {
+      if (hero.armor > 0) {
+        var damageAbsorbed = Math.min(hero.armor, damageLeft);
+        hero.armor -= damageAbsorbed;
+        damageLeft -= damageAbsorbed;
+      }
+      
+      if (damageLeft > 0) {
+        hero.hp -= damageLeft;
+      }
+      
       this.simultaneouslyDamagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
     }
   };

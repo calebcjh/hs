@@ -869,7 +869,7 @@
       game.simultaneousDamageDone();
     }}),
     BaineBloodhoof: new Card('Baine Bloodhoof', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 4, {draftable: false, attack: 4, hp: 5}),
-    CairneBloodhoof: new Card('Cairne Bloodhoof', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 4, hp: 5, deathrattle: function(game, position) {
+    CairneBloodhoof: new Card('Cairne Bloodhoof', 'Deathrattle: Summon a 4/5 Baine Bloodhoof.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 4, hp: 5, deathrattle: function(game, position) {
       baine = new Minion(this.player, 'Baine Bloodhoof', NeutralCards.BaineBloodhoof.copy(), 4, 5, false, false, false, false, false, false, false, [], []);
       this.player.minions.splice(position + 1, 0, baine);
       baine.playOrderIndex = game.playOrderIndex++;
@@ -894,6 +894,14 @@
       var entityIndex = this.owner.player.minions.indexOf(entity);
       return entityIndex >= 0 && entityIndex == wolfIndex - 1 || entityIndex == wolfIndex + 1;
     }}]}),
+    DamagedGolem: new Card('Damaged Golem', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 2, hp: 1}),
+    HarvestGolem: new Card('Harvest Golem', 'Deathrattle: Summon a 2/1 Damaged Golem.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 2, hp: 3, deathrattle: function(game, position) {
+      damaged = new Minion(this.player, 'Damaged Golem', NeutralCards.DamagedGolem.copy(), 2, 1, false, false, false, false, false, false, false, [], []);
+      this.player.minions.splice(position + 1, 0, damaged);
+      damaged.playOrderIndex = game.playOrderIndex++;
+      damaged.updateStats(game);
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position + 1, damaged));
+    }}),
     IronforgeRifleman: new Card('Ironforge Rifleman', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 3, {requiresTarget: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
       game.dealDamage(target, 1, this);
     }}}),
@@ -1450,6 +1458,30 @@
       // Draw a card.
       game.drawCard(game.currentPlayer);
     }}),
+    FreezingTrap: new Card('Freezing Trap', 'Secret: When an enemy minion attacks, return it to its owner\'s hand and it costs (2) more.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var freezingTrap = new Secret(game.currentPlayer, 'Freezing Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+        if (game.currentPlayer != this.owner.player) {
+          minion.remove(game);
+          var card = minion.card.copy();
+          card.enchantMana = 2;
+          minion.player.hand.push(card);
+          card.updateStats(game);
+          handlerParams.cancel = true;
+          
+          this.owner.triggered(game);
+        }
+      }}]);
+      freezingTrap.activate(game);
+    }}),
+    GladiatorsLongbow: new Card('Gladiator\'s Longbow', '', Set.EXPERT, CardType.WEAPON, HeroClass.HUNTER, Rarity.EPIC, 7, {attack: 5, durability: 2, handlers: [{event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
+      if (hero == this.owner.player.hero) {
+        this.owner.player.hero.immune = true;
+      }
+    }}, {event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
+      if (hero == this.owner.player.hero) {
+        this.owner.player.hero.immune = false;
+      }
+    }}]}),
   };
   
   var PaladinCards = {

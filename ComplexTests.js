@@ -190,4 +190,27 @@ tests.testDeathrattleOrder4 = function() {
   assert(1, p2.minions.length);
 }
 
-
+tests.testFreezingTrapSummoningPortal = function() {
+  var p1 = new Player([], new Warlock());
+  var p2 = new Player([], new Hunter());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarlockCards.SummoningPortal.copy());
+  p1.hand.push(NeutralCards.PriestessOfElune.copy());
+  p1.currentMana = 8;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(HunterCards.FreezingTrap.copy());
+  p2.currentMana = 2;
+  p2.turn.playCard(p2.hand[1]);
+  p2.turn.endTurn();
+  assert(0, p1.hand.length);
+  assert(2, p1.minions.length);
+  assert(1, p2.secrets.length);
+  p1.turn.minionAttack(p1.minions[0], p2.hero);
+  assert(1, p1.hand.length);
+  assert(1, p1.minions.length);
+  assert(0, p2.secrets.length);
+  assert(6, p1.hand[0].getCurrentMana());
+  assert(29, p2.hero.hp);
+};
