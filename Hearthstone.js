@@ -96,7 +96,7 @@
       
       // before attack
       var handlerParams = {cancel: false, target: target};
-      game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(run(game, minion, handlerParams));
+      game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(runIfNotCanceled(game, minion, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
@@ -110,8 +110,8 @@
         game.dealSimultaneousDamageToMinion(target, minion.getCurrentAttack(), minion);
         game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
       } else if (target.type == TargetType.HERO) {
-        if (target == game.currentPlayer.hero && target.weapon) {
-          game.dealSimultaneousDamageToMinion(minion, target.weapon.getCurrentAttack(), target);
+        if (target == game.currentPlayer.hero && target.getCurrentAttack() > 0) {
+          game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
         }
         game.dealSimultaneousDamageToHero(target, minion.getCurrentAttack(), minion);
       }
@@ -145,7 +145,7 @@
       
       // before attack
       var handlerParams = {cancel: false, target: target};
-      game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(run(game, hero, handlerParams));
+      game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(runIfNotCanceled(game, hero, handlerParams));
       if (handlerParams.cancel) {
         console.log('attack canceled');
         return;
@@ -164,6 +164,7 @@
       }
       game.simultaneousDamageDone();
       
+      // todo: where to trigger after hero attacks?
       game.handlers[Events.AFTER_HERO_ATTACKS].forEach(run(game, hero, target));
       
       // reduce weapon durability, or destroy weapon
@@ -389,7 +390,7 @@
   Hearthstone.prototype.dealDamageToHero = function(hero, amount, source) {
     // trigger before hero damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(runIfNotCanceled(this, hero, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -418,7 +419,7 @@
   Hearthstone.prototype.dealSimultaneousDamageToHero = function(hero, amount, source) {
     // trigger before hero damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(runIfNotCanceled(this, hero, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -442,7 +443,7 @@
   Hearthstone.prototype.dealDamageToMinion = function(minion, amount, source) {
     // trigger before minion damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
+    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(runIfNotCanceled(this, minion, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -464,7 +465,7 @@
   Hearthstone.prototype.dealSimultaneousDamageToMinion = function(minion, amount, source) {
     // trigger before minion damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
+    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(runIfNotCanceled(this, minion, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -497,6 +498,9 @@
     }
     var damagedMinions = this.simultaneouslyDamagedMinions.slice(0);
     this.simultaneouslyDamagedMinions = []; 
+    
+    // possibly split function here depending on ordering of after_takes_damage events and after_attack events.
+    
     var deathrattles = [];
     for (var i = 0; i < damagedMinions.length; i++) {
       var damagedMinion = damagedMinions[i];

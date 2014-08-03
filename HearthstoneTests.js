@@ -124,4 +124,12 @@ tests.testHeroAttack = function() {
   assert(27, p1.hero.hp);
   p2.turn.heroAttack(p2.hero, p1.hero);
   assert(22, p1.hero.hp);
+  p2.turn.endTurn();
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.currentMana = 1;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  assert(19, p1.hero.hp);
+  p2.turn.heroAttack(p2.hero, p1.hero);
+  assert(19, p1.hero.hp);
 };

@@ -16,6 +16,15 @@
     };
   };
   
+  var runIfNotCanceled = function(game, entity, handlerParams) {
+    var args = Array.prototype.slice.call(arguments);
+    return function(f) {
+      if (f && !handlerParams.cancel) {
+        f.run(args);
+      }
+    };
+  };
+  
   var clone = function(obj, exceptions) {
     if (obj == null || typeof obj != 'object') {
       return obj;
@@ -283,7 +292,7 @@
       // trigger before spell events
       var handlerParams = {cancel: false, target: opt_target};
       console.log('events', game, Events.BEFORE_SPELL);
-      game.handlers[Events.BEFORE_SPELL].forEach(run(game, this, handlerParams));
+      game.handlers[Events.BEFORE_SPELL].forEach(runIfNotCanceled(game, this, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
@@ -351,7 +360,7 @@
       
       // trigger before hero power events
       var handlerParams = {cancel: false, target: opt_target};
-      game.handlers[Events.BEFORE_HERO_POWER].forEach(run(game, handlerParams));
+      game.handlers[Events.BEFORE_HERO_POWER].forEach(runIfNotCanceled(game, game.currentPlayer.hero, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
@@ -1473,7 +1482,7 @@
       }}]);
       freezingTrap.activate(game);
     }}),
-    GladiatorsLongbow: new Card('Gladiator\'s Longbow', '', Set.EXPERT, CardType.WEAPON, HeroClass.HUNTER, Rarity.EPIC, 7, {attack: 5, durability: 2, handlers: [{event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
+    GladiatorsLongbow: new Card('Gladiator\'s Longbow', 'Your hero is immune while attacking.', Set.EXPERT, CardType.WEAPON, HeroClass.HUNTER, Rarity.EPIC, 7, {attack: 5, durability: 2, handlers: [{event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
       if (hero == this.owner.player.hero) {
         this.owner.player.hero.immune = true;
       }
@@ -1482,6 +1491,47 @@
         this.owner.player.hero.immune = false;
       }
     }}]}),
+    KingKrush: new Card('King Krush', 'Charge', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.LEGENDARY, 9, {charge: true, hp: 8, attack: 8, tag: 'Beast'}),
+    Misdirection: new Card('Misdirection', 'Secret: When a character attacks your hero, instead he attacks another random character.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.RARE, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var misdirection = new Secret(game.currentPlayer, 'Misdirectons', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          // pick between opponent hero, other opponent minions, or secret owner minions
+          var index = game.random(game.currentPlayer.minions.length + game.otherPlayer.minions.length);
+          var newTarget;
+          // secret owner minions first
+          if (index < game.otherPlayer.minions.length) {
+            newTarget = game.otherPlayer.minions[index];
+          } else if (index == game.otherPlayer.minions.length) {
+            newTarget = game.currentPlayer.hero;
+          } else {
+            index -= (game.otherPlayer.minions.length + 1);
+            var attackerIndex = game.currentPlayer.minions.indexOf(this.owner);
+            if (index >= attackIndex) {
+              index++;
+            }
+            newTarget = game.currentPlayer.minions[index];
+          }
+          handlerParams.target = newTarget;
+          game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(runIfNotCanceled(game, minion, handlerParams));
+          this.owner.triggered(game);
+      }}}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          // pick between all minions
+          var index = game.random(game.currentPlayer.minions.length + game.otherPlayer.minions.length);
+          var newTarget;
+          // secret owner minions first
+          if (index < game.otherPlayer.minions.length) {
+            newTarget = game.otherPlayer.minions[index];
+          } else {
+            index -= game.otherPlayer.minions.length;
+            newTarget = game.currentPlayer.minions[index];
+          }
+          handlerParams.target = newTarget;
+          game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(runIfNotCanceled(game, hero, handlerParams));
+          this.owner.triggered(game);
+      }}}]);
+      misdirection.activate(game);
+    }}),
   };
   
   var PaladinCards = {
@@ -1601,6 +1651,7 @@
   window.Warlock = Warlock;
   window.Events = Events;
   window.run = run;
+  window.runIfNotCanceled = runIfNotCanceled;
   window.TargetType = TargetType;
   window.Set = Set;
 })(window, document);
