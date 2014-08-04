@@ -18,8 +18,8 @@
     undefined, /* Priest */
     undefined, /* Rogue */
     undefined, /* Shaman */
-    undefined, /* Warlock */
-    undefined, /* Warrior */
+    Warlock,
+    Warrior,
   ];
   
   var DummyCard = new Card('Dummy Card', '', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false});
@@ -129,7 +129,7 @@
     this.player = player;
   };
   
-  var Solver = function(data) {
+  var Solver = function(data, positionImportant) {
     this.statesChecked = 0;
     this.constructorTime = 0;
     this.initTime = 0;
@@ -145,7 +145,7 @@
       var val = 0;
       for (var i = 0; i < state.game.currentPlayer.minions.length; i++) {
         var minion = state.game.currentPlayer.minions[i];
-        if (minion.attackCount == 0 || (minion.attackCount == 1 && minion.windfury)) {
+        if ((minion.hasCharge() || !minion.sleeping) && (minion.attackCount == 0 || (minion.attackCount == 1 && minion.windfury))) {
           val += minion.getCurrentAttack();
         }
       }
@@ -206,7 +206,7 @@
       if (puzzle == undefined) {
         puzzle = new HearthstonePuzzle(data);
       }
-      var possibleActions = puzzle.game.currentPlayer.turn.listAllActions();
+      var possibleActions = puzzle.game.currentPlayer.turn.listAllActions(positionImportant);
       var childStates = [];
       for (var i = 0; i < possibleActions.length; i++) {
         var forksContainer = {forks: []};

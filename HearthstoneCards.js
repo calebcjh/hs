@@ -187,6 +187,11 @@
         return false;
       }
       
+      if (this.requiresTarget && !opt_target) {
+        console.log('requires target');
+        return false;
+      }
+      
       // verify target
       if (opt_target && opt_target.stealth) {
         console.log('cannot target stealthed minions');
@@ -946,6 +951,14 @@
     }}]}),
     Wisp: new Card('Wisp', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {hp: 1, attack: 1}),
     WorgenInfiltrator: new Card('Worgen Infiltrator', 'Stealth', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {hp: 1, attack: 2, stealth: true}),
+    YouthfulBrewmaster: new Card('Youthful Brewmaster', 'Battlecry: Return a friendly minion from the battlefield to your hand.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 2, {requiresTarget: true, attack: 3, hp: 2, battlecry: {verify: function(game, position, target) {
+      return game.currentPlayer.minions.indexOf(target) != -1;
+    }, activate: function(game, minion, position, target) {
+      target.remove(game);
+      var card = target.card.copy();
+      minion.player.hand.push(card);
+      game.updateStats();
+    }}}),
   };
   
   var MageCards = {
@@ -1461,7 +1474,7 @@
           var card = minion.card.copy();
           card.enchantMana = 2;
           minion.player.hand.push(card);
-          card.updateStats(game);
+          game.updateStats();
           handlerParams.cancel = true;
           
           this.owner.triggered(game);
@@ -1626,11 +1639,39 @@
     }}),
   };
   
+  var WarriorCards = {
+    Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
+      return game.currentPlayer.minions.indexOf(target) != -1;
+    }, applyEffects: function(game, unused_position, target) {
+      target.enchantAttack += 2;
+      target.charge = true;
+    }}),
+    WarsongCommander: new Card('Warsong Commander', 'Whenever you summon a minion with 3 or less Attack, give it Charge.', Set.BASIC, CardType.MINION, HeroClass.WARRIOR, Rarity.FREE, 3, {hp: 3, attack: 2, handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
+      if (minion != this.owner && minion.player == this.owner.player && minion.getCurrentAttack() <= 3) {
+        minion.charge = true;
+      }
+    }}]}),
+    CruelTaskmaster: new Card('Cruel Taskmaster', 'Battlecry: Deal 1 damage to a minion and give it +2 Attack.', Set.EXPERT, CardType.MINION, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
+      return target.type == TargetType.MINION;
+    }, activate: function(game, minion, position, target) {
+      game.dealDamage(target, 1, this);
+      target.enchantAttack += 2;
+    }}}),
+    ShieldSlam: new Card('Shield Slam', 'Deal 1 damage to a minion for each Armor you have.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      var damage = 0;
+      if (game.currentPlayer.hero.armor > 0) {
+        damage = game.currentPlayer.hero.armor + game.currentPlayer.spellDamage;
+      }
+      game.dealDamage(target, damage, this);
+    }}),
+  };
+  
   var Cards = [];
   Cards[HeroClass.HUNTER] = HunterCards;
   Cards[HeroClass.MAGE] = MageCards;
   Cards[HeroClass.PALADIN] = PaladinCards;
   Cards[HeroClass.WARLOCK] = WarlockCards;
+  Cards[HeroClass.WARRIOR] = WarriorCards;
   Cards[HeroClass.NEUTRAL] = NeutralCards;
   
   var Mage = new Hero(new Card('Fireblast', 'Deal 1 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
@@ -1654,12 +1695,17 @@
     game.drawCard(game.currentPlayer);
     game.dealDamageToHero(game.currentPlayer.hero, 2);
   }}));
+  
+  var Warrior = new Hero(new Card('Armor Up', 'Gain 2 Armor.', Set.BASIC, CardType.HERO_POWER, HeroClass.WARLOCK, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+    game.currentPlayer.hero.armor += 2;
+  }}));
 
   window.NeutralCards = NeutralCards;
   window.MageCards = MageCards;
   window.HunterCards = HunterCards;
   window.PaladinCards = PaladinCards;
   window.WarlockCards = WarlockCards;
+  window.WarriorCards = WarriorCards;
   window.Cards = Cards;
   window.Card = Card;
   window.Rarity = Rarity;
@@ -1669,6 +1715,7 @@
   window.Mage = Mage;
   window.Paladin = Paladin;
   window.Warlock = Warlock;
+  window.Warrior = Warrior;
   window.Events = Events;
   window.run = run;
   window.TargetType = TargetType;

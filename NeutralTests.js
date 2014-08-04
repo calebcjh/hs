@@ -229,3 +229,19 @@ tests.testWildPyromancer = function() {
   assert(29, p2.hero.hp);
   assert(27, p1.hero.hp);
 };
+
+tests.testYouthfulBrewmaster = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(NeutralCards.YouthfulBrewmaster.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.minionAttack(p1.minions[0], p2.hero);
+  p1.turn.playCard(p1.hand[0], 0, p1.minions[0]);
+  assert(1, p1.hand.length);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.minionAttack(p1.minions[0], p2.hero);
+  assert(28, p2.hero.hp);
+};

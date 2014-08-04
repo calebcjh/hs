@@ -244,7 +244,7 @@ tests.testPuzzleSolverIntermediateRandom = function() {
   }
   var solver = new Solver(data, false);
   var solution = solver.solve();
-  // assert(true, !!solution);
+  assert(true, !!solution);
   console.log_(solution);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
@@ -283,7 +283,120 @@ tests.testPuzzleSolverAdvancedRandom = function() {
   }
   var solver = new Solver(data, false);
   var solution = solver.solve();
-  // assert(true, !!solution);
+  assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};
+
+tests.testPuzzleSolverAdvancedRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 1,
+      hp: 16,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        HunterCards.KingKrush.copy(),
+        MageCards.ArchmageAntonidas.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+      ]
+    },
+    player: {
+      heroClass: 8,
+      hp: 11,
+      armor: 2,
+      mana: 10,
+      currentMana: 10,
+      fatigue: 1,
+      hand: [
+        NeutralCards.SylvanasWindrunner.copy(),
+        WarriorCards.Charge.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        NeutralCards.TheCoin.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+      ]
+    }
+  }
+  var solver = new Solver(data, true);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};
+
+tests.xtestPuzzleSolverEpicRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 7,
+      hp: 30,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        WarlockCards.SummoningPortal.copy(),
+        NeutralCards.Nozdormu.copy(),
+        NeutralCards.StonetuskBoar.copy(),
+        WarlockCards.VoidTerror.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+      ]
+    },
+    player: {
+      heroClass: 8,
+      hp: 11,
+      armor: 2,
+      mana: 5,
+      currentMana: 5,
+      fatigue: 1,
+      hand: [
+        WarriorCards.WarsongCommander.copy(),
+        NeutralCards.SylvanasWindrunner.copy(),
+        WarriorCards.ShieldSlam.copy(),
+        // puzzle cards
+        WarriorCards.ShieldSlam.copy(),
+        WarriorCards.CruelTaskmaster.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        WarriorCards.Charge.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 1,
+          index: 1,
+        }},
+      ]
+    }
+  }
+  var solver = new Solver(data, true);
+  var solution = solver.solve();
+  assert(true, !!solution);
   console.log_(solution);
   console.log_('Constructor time:', solver.constructorTime);
   console.log_('Init time:', solver.initTime);
