@@ -214,3 +214,246 @@ tests.testFreezingTrapSummoningPortal = function() {
   assert(6, p1.hand[0].getCurrentMana());
   assert(29, p2.hero.hp);
 };
+
+// Misdirection conserved
+tests.testFreezingTrapMisdirection = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.FreezingTrap.copy());
+  p1.hand.push(HunterCards.Misdirection.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 1;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(1, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(0, p2.minions.length);
+  assert(2, p2.hand.length);
+  assert(3, p2.hand[1].getCurrentMana());
+};
+
+// Misdirection wasted
+tests.testMisdirectionFreezingTrap = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.Misdirection.copy());
+  p1.hand.push(HunterCards.FreezingTrap.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 1;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(0, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(0, p2.minions.length);
+  assert(2, p2.hand.length);
+  assert(3, p2.hand[1].getCurrentMana());
+};
+
+// Enemy hero attacks
+// Explosive trap triggers, kill all minions
+// Misdirection does not trigger due to lack of targets
+tests.testExplosiveTrapMisdirection__heroAttack = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.hand.push(HunterCards.Misdirection.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(HunterCards.EaglehornBow.copy());
+  p2.currentMana = 4;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1]);
+  assert(2, p1.secrets.length);
+  assert(0, p2.hero.attackCount);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(1, p2.minions.length);
+  p2.turn.heroAttack(p2.hero, p1.hero);
+  assert(1, p1.secrets.length);
+  assert('Misdirection', p1.secrets[0].name);
+  assert(1, p2.hero.attackCount);
+  assert(26, p1.hero.hp);
+  assert(27, p2.hero.hp);
+  assert(0, p2.minions.length);
+};
+
+// As above, but misdirection is consumed, hero still can attack.
+tests.testMisdirectionExplosiveTrap__heroAttack = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.Misdirection.copy());
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(HunterCards.EaglehornBow.copy());
+  p2.currentMana = 4;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1]);
+  assert(2, p1.secrets.length);
+  assert(0, p2.hero.attackCount);
+  assert(29, p1.hero.hp);
+  assert(1, p2.minions.length);
+  p2.turn.heroAttack(p2.hero, p1.hero);
+  assert(0, p1.secrets.length);
+  assert(0, p2.hero.attackCount);
+  assert(29, p1.hero.hp);
+  assert(0, p2.minions.length);
+};
+
+// Enemy minion attacks
+// Explosive trap triggers, killing the minion
+// Misdirection does not trigger due to minion being removed
+tests.testExplosiveTrapMisdirection__minionAttack = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.hand.push(HunterCards.Misdirection.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 1;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(1, p2.minions.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(1, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(27, p2.hero.hp);
+  assert(0, p2.minions.length);
+};
+
+// As above, but misdirection is wasted.
+tests.testMisdirectionExplosiveTrap__minionAttack = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.Misdirection.copy());
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 1;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(1, p2.minions.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(0, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(27, p2.hero.hp);
+  assert(0, p2.minions.length);
+};
+
+// Explosive trap will trigger, and if minion is alive, freezing trap will trigger.
+tests.testExplosiveTrapFreezingTrap__minionLives = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.hand.push(HunterCards.FreezingTrap.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(HunterCards.KingKrush.copy());
+  p2.currentMana = 9;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(1, p2.minions.length);
+  assert(1, p2.hand.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(0, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(27, p2.hero.hp);
+  assert(0, p2.minions.length);
+  assert(2, p2.hand.length);
+  assert(11, p2.hand[1].getCurrentMana());
+};
+
+// Explosive trap will trigger, and if minion is alive, freezing trap will trigger.
+tests.testExplosiveTrapFreezingTrap__minionDies = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.hand.push(HunterCards.FreezingTrap.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 9;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(1, p2.minions.length);
+  assert(1, p2.hand.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  console.log_(p2.hero);
+  assert(1, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(27, p2.hero.hp);
+  assert(0, p2.minions.length);
+  assert(1, p2.hand.length);
+};
+
+// Explosive trap will trigger.
+tests.testFreezingTrapExplosiveTrap = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.FreezingTrap.copy());
+  p1.hand.push(HunterCards.ExplosiveTrap.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 9;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(29, p2.hero.hp);
+  assert(1, p2.minions.length);
+  assert(1, p2.hand.length);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(0, p1.secrets.length);
+  assert(29, p1.hero.hp);
+  assert(27, p2.hero.hp);
+  assert(0, p2.minions.length);
+  assert(2, p2.hand.length);
+  assert(3, p2.hand[1].getCurrentMana());
+};

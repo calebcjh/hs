@@ -16,15 +16,6 @@
     };
   };
   
-  var runIfNotCanceled = function(game, entity, handlerParams) {
-    var args = Array.prototype.slice.call(arguments);
-    return function(f) {
-      if (f && !handlerParams.cancel) {
-        f.run(args);
-      }
-    };
-  };
-  
   var clone = function(obj, exceptions) {
     if (obj == null || typeof obj != 'object') {
       return obj;
@@ -226,12 +217,7 @@
       minion.playOrderIndex = game.playOrderIndex++;
 
       // Update stats for all minions (positional auras)
-      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
-        game.currentPlayer.minions[i].updateStats(game);
-      }
-      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
-        game.otherPlayer.minions[i].updateStats(game);
-      }
+      game.updateStats();
       
       // trigger events
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
@@ -292,7 +278,7 @@
       // trigger before spell events
       var handlerParams = {cancel: false, target: opt_target};
       console.log('events', game, Events.BEFORE_SPELL);
-      game.handlers[Events.BEFORE_SPELL].forEach(runIfNotCanceled(game, this, handlerParams));
+      game.handlers[Events.BEFORE_SPELL].forEach(run(game, this, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
@@ -360,7 +346,7 @@
       
       // trigger before hero power events
       var handlerParams = {cancel: false, target: opt_target};
-      game.handlers[Events.BEFORE_HERO_POWER].forEach(runIfNotCanceled(game, game.currentPlayer.hero, handlerParams));
+      game.handlers[Events.BEFORE_HERO_POWER].forEach(run(game, game.currentPlayer.hero, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
@@ -542,12 +528,7 @@
       }
 
       // update states for all minions due to positional auras
-      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
-        game.currentPlayer.minions[i].updateStats(game);
-      }
-      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
-        game.otherPlayer.minions[i].updateStats(game);
-      }
+      game.updateStats();
     };
 
     this.die = function(game) {
@@ -590,26 +571,7 @@
       this.owner.registeredAuras.push(this);
       
       // apply to all minions, cards, heros, weapons
-      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
-        game.currentPlayer.minions[i].updateStats(game);
-      }
-      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
-        game.otherPlayer.minions[i].updateStats(game);
-      }
-      for (var i = 0; i < game.currentPlayer.hand.length; i++) {
-        game.currentPlayer.hand[i].updateStats(game);
-      }
-      for (var i = 0; i < game.otherPlayer.hand.length; i++) {
-        game.otherPlayer.hand[i].updateStats(game);
-      }
-      game.currentPlayer.hero.updateStats(game);
-      game.otherPlayer.hero.updateStats(game);
-      if (game.currentPlayer.hero.weapon) {
-        game.currentPlayer.hero.weapon.updateStats(game);
-      }
-      if (game.otherPlayer.hero.weapon) {
-        game.otherPlayer.hero.weapon.updateStats(game);
-      }
+      game.updateStats();
       
       console.log('Aura registered');
     };
@@ -880,10 +842,10 @@
     BaineBloodhoof: new Card('Baine Bloodhoof', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 4, {draftable: false, attack: 4, hp: 5}),
     CairneBloodhoof: new Card('Cairne Bloodhoof', 'Deathrattle: Summon a 4/5 Baine Bloodhoof.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 4, hp: 5, deathrattle: function(game, position) {
       baine = new Minion(this.player, 'Baine Bloodhoof', NeutralCards.BaineBloodhoof.copy(), 4, 5, false, false, false, false, false, false, false, [], []);
-      this.player.minions.splice(position + 1, 0, baine);
+      this.player.minions.splice(position, 0, baine);
       baine.playOrderIndex = game.playOrderIndex++;
-      baine.updateStats(game);
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position + 1, minion));
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
     }}),
     CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
       return target.type == TargetType.MINION;
@@ -906,10 +868,10 @@
     DamagedGolem: new Card('Damaged Golem', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 2, hp: 1}),
     HarvestGolem: new Card('Harvest Golem', 'Deathrattle: Summon a 2/1 Damaged Golem.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 2, hp: 3, deathrattle: function(game, position) {
       damaged = new Minion(this.player, 'Damaged Golem', NeutralCards.DamagedGolem.copy(), 2, 1, false, false, false, false, false, false, false, [], []);
-      this.player.minions.splice(position + 1, 0, damaged);
+      this.player.minions.splice(position, 0, damaged);
       damaged.playOrderIndex = game.playOrderIndex++;
-      damaged.updateStats(game);
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position + 1, damaged));
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, damaged));
     }}),
     IronforgeRifleman: new Card('Ironforge Rifleman', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 3, {requiresTarget: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
       game.dealDamage(target, 1, this);
@@ -947,12 +909,7 @@
       }
 
       // update states for all minions due to positional auras
-      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
-        game.currentPlayer.minions[i].updateStats(game);
-      }
-      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
-        game.otherPlayer.minions[i].updateStats(game);
-      }
+      game.updateStats();
     }}),
     TheCoin: new Card('The Coin', 'Gain 1 Mana Crystal this turn only.', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
@@ -1028,13 +985,13 @@
       var image1 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, [], []);
       game.currentPlayer.minions.push(image1);
       image1.playOrderIndex = game.playOrderIndex++;
-      image1.updateStats(game);
+      game.updateStats();
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image1));
       
       var image2 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, false, true /* taunt */, false, [], []);
       game.currentPlayer.minions.push(image2);
       image2.playOrderIndex = game.playOrderIndex++;
-      image2.updateStats(game);
+      game.updateStats();
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
     }}),
     Polymorph: new Card('Polymorph', 'Transform a minion into a 1/1 Sheep.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
@@ -1043,7 +1000,7 @@
       var sheep = new Minion(target.player, 'Sheep', NeutralCards.Sheep.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
       target.player.minions.splice(index, 0, sheep);
       sheep.playOrderIndex = game.playOrderIndex++;
-      sheep.updateStats(game);
+      game.updateStats();
     }}),
     WaterElemental: new Card('Water Elemental', 'Freeze any character damaged by this minion.', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 4, {attack: 3, hp: 6, handlers: [{event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
       if (source == this.owner && amount > 0) {
@@ -1226,7 +1183,7 @@
           clonedMinion.registeredAuras = [];
           clonedMinion.appliedAuras = [];
           clonedMinion.registerAuras(game);
-          clonedMinion.updateStats(game);
+          game.updateStats();
           
           game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, clonedMinion));
 
@@ -1254,7 +1211,7 @@
           var bender = new Minion(this.owner.player, 'Spellbender', MageCards.SpellbenderMinion.copy(), 1, 3, false, false, false, false, false, false, false, [], []);
           this.owner.player.minions.push(bender);
           bender.playOrderIndex = game.playOrderIndex++;
-          bender.updateStats(game);
+          game.updateStats();
           
           game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, bender));
           
@@ -1300,7 +1257,7 @@
       game.currentPlayer.minions.push(minion);
       minion.registerAuras(game);
       minion.playOrderIndex = game.playOrderIndex++;
-      minion.updateStats(game);
+      game.updateStats();
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
     }}),
     ArcaneShot: new Card('Arcane Shot', 'Deal 2 damage', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
@@ -1438,13 +1395,25 @@
     }}),
     ExplosiveTrap: new Card('Explosive Trap', 'Secret: When your hero is attacked, deal 2 damage to all enemies.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var explosiveTrap = new Secret(game.currentPlayer, 'Explosive Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
-        if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+        if (game.currentPlayer != this.owner.player && (handlerParams.target == this.owner.player.hero || handlerParams.originalTarget == this.owner.player.hero)) {
           for (var i = 0; i < game.currentPlayer.minions.length; i++) {
             game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2, this);
           }
           game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
           game.simultaneousDamageDone();
           if (minion.currentHp <= 0) {
+            handlerParams.cancel = true;
+          }
+          this.owner.triggered(game);
+        }
+      }}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
+        if (game.currentPlayer != this.owner.player && (handlerParams.target == this.owner.player.hero || handlerParams.originalTarget == this.owner.player.hero)) {
+          for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+            game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2, this);
+          }
+          game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
+          game.simultaneousDamageDone();
+          if (hero.hp <= 0) {
             handlerParams.cancel = true;
           }
           this.owner.triggered(game);
@@ -1469,7 +1438,7 @@
     }}),
     FreezingTrap: new Card('Freezing Trap', 'Secret: When an enemy minion attacks, return it to its owner\'s hand and it costs (2) more.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var freezingTrap = new Secret(game.currentPlayer, 'Freezing Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
-        if (game.currentPlayer != this.owner.player) {
+        if (game.currentPlayer != this.owner.player && !handlerParams.cancel) {
           minion.remove(game);
           var card = minion.card.copy();
           card.enchantMana = 2;
@@ -1493,8 +1462,13 @@
     }}]}),
     KingKrush: new Card('King Krush', 'Charge', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.LEGENDARY, 9, {charge: true, hp: 8, attack: 8, tag: 'Beast'}),
     Misdirection: new Card('Misdirection', 'Secret: When a character attacks your hero, instead he attacks another random character.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.RARE, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
-      var misdirection = new Secret(game.currentPlayer, 'Misdirectons', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+      var misdirection = new Secret(game.currentPlayer, 'Misdirection', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          // verify that the minion is still available for attacking (could be returned via freezing trap or killed by explosive trap)
+          if (handlerParams.cancel /* || minion.player.minions.indexOf(minion) == -1 */) {
+            return;
+          }
+          
           // pick between opponent hero, other opponent minions, or secret owner minions
           var index = game.random(game.currentPlayer.minions.length + game.otherPlayer.minions.length);
           var newTarget;
@@ -1511,13 +1485,19 @@
             }
             newTarget = game.currentPlayer.minions[index];
           }
+          handlerParams.originalTarget = handlerParams.target;
           handlerParams.target = newTarget;
-          game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(runIfNotCanceled(game, minion, handlerParams));
+          game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(run(game, minion, handlerParams));
           this.owner.triggered(game);
       }}}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
         if (game.currentPlayer != this.owner.player && handlerParams.target == this.owner.player.hero) {
+          var numTargets = game.currentPlayer.minions.length + game.otherPlayer.minions.length;
+          if (numTargets == 0) {
+            return;
+          }
+        
           // pick between all minions
-          var index = game.random(game.currentPlayer.minions.length + game.otherPlayer.minions.length);
+          var index = game.random(numTargets);
           var newTarget;
           // secret owner minions first
           if (index < game.otherPlayer.minions.length) {
@@ -1526,11 +1506,26 @@
             index -= game.otherPlayer.minions.length;
             newTarget = game.currentPlayer.minions[index];
           }
+          handlerParams.originalTarget = handlerParams.target;
           handlerParams.target = newTarget;
-          game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(runIfNotCanceled(game, hero, handlerParams));
+          game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(run(game, hero, handlerParams));
           this.owner.triggered(game);
       }}}]);
       misdirection.activate(game);
+    }}),
+    Hyena: new Card('Hyena', '', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.RARE, 2, {draftable: false, attack: 2, hp: 2, tag: 'Beast'}),
+    SavannahHighmane: new Card('Savannah Highmane', 'Deathrattle: Summon two 2/2 Hyenas.', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.RARE, 6, {attack: 6, hp: 5, tag: 'Beast', deathrattle: function(game, position) {
+      hyena1 = new Minion(this.player, 'Hyena', HunterCards.Hyena.copy(), 2, 2, false, false, false, false, false, false, false, [], []);
+      this.player.minions.splice(position, 0, hyena1);
+      hyena1.playOrderIndex = game.playOrderIndex++;
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
+      
+      hyena2 = new Minion(this.player, 'Hyena', HunterCards.Hyena.copy(), 2, 2, false, false, false, false, false, false, false, [], []);
+      this.player.minions.splice(position + 1, 0, hyena2);
+      hyena2.playOrderIndex = game.playOrderIndex++;
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position + 1, minion));
     }}),
   };
   
@@ -1577,9 +1572,9 @@
       handler.register(game);
     }}),
     SummoningPortal: new Card('Summoning Portal', 'Your minions cost(2) less, but not less than (1).', Set.EXPERT, CardType.MINION, HeroClass.WARLOCK, Rarity.COMMON, 4, {hp: 4, attack: 0, auras: [{mana: -1, eligible: function(entity) {
-      return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.MINION && entity.getCurrentMana() > 1;
+      return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.MINION && (entity.appliedAuras.indexOf(this) > -1 || entity.getCurrentMana() > 1);
     }}, {mana: -1, eligible: function(entity) {
-      return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.MINION && entity.getCurrentMana() > 1;
+      return this.owner.player.hand.indexOf(entity) != -1 && entity.type == CardType.MINION && (entity.appliedAuras.indexOf(this) > -1 || entity.getCurrentMana() > 1);
     }}]}),
     VoidTerror: new Card('Void Terror', 'Battlecry: Destroy the minions on either side of this minion and gain their Attack and Health.', Set.EXPERT, CardType.MINION, HeroClass.WARLOCK, Rarity.RARE, 3, {hp: 3, attack: 3, tag: 'Demon', battlecry: {
       activate: function(game, minion, position, target) {
@@ -1626,7 +1621,7 @@
     minion = new Minion(game.currentPlayer, 'Silver Hand Recruit', PaladinCards.SilverHandRecruit.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
     game.currentPlayer.minions.push(minion);
     minion.playOrderIndex = game.playOrderIndex++;
-    minion.updateStats(game);
+    game.updateStats();
     game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
   }}));
 
@@ -1651,7 +1646,6 @@
   window.Warlock = Warlock;
   window.Events = Events;
   window.run = run;
-  window.runIfNotCanceled = runIfNotCanceled;
   window.TargetType = TargetType;
   window.Set = Set;
 })(window, document);

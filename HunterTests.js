@@ -714,3 +714,25 @@ tests.testMisdirection__noTrigger = function() {
   assert(1, p2.secrets.length);
   assert(3, p1.hero.weapon.durability);
 };
+
+tests.testSavannahHighmane = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Hunter());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.DireWolfAlpha.copy());
+  p1.hand.push(HunterCards.TimberWolf.copy());
+  p1.hand.push(HunterCards.SavannahHighmane.copy());
+  p1.hand.push(HunterCards.KillCommand.copy());
+  p1.currentMana = 12;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[1]);
+  assert(4, p1.minions.length);
+  assert('Dire Wolf Alpha', p1.minions[0].name);
+  assert('Hyena', p1.minions[1].name);
+  assert('Hyena', p1.minions[2].name);
+  assert('Timber Wolf', p1.minions[3].name);
+  assert(4, p1.minions[1].getCurrentAttack());
+  assert(3, p1.minions[2].getCurrentAttack());
+};

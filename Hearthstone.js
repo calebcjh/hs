@@ -96,20 +96,27 @@
       
       // before attack
       var handlerParams = {cancel: false, target: target};
-      game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(runIfNotCanceled(game, minion, handlerParams));
+      game.handlers[Events.BEFORE_MINION_ATTACKS].forEach(run(game, minion, handlerParams));
       if (handlerParams.cancel) {
         return;
       }
       target = handlerParams.target;
       
-      // increment minion's attack count
-      minion.attackCount++;
+      
 
       // perform attack
       if (target.type == TargetType.MINION) {
-        game.dealSimultaneousDamageToMinion(target, minion.getCurrentAttack(), minion);
-        game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
+        if (target.currentHp > 0) {
+          // increment minion's attack count
+          minion.attackCount++;
+          game.dealSimultaneousDamageToMinion(target, minion.getCurrentAttack(), minion);
+          game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
+        } else {
+          return;
+        }
       } else if (target.type == TargetType.HERO) {
+        // increment minion's attack count
+        minion.attackCount++;
         if (target == game.currentPlayer.hero && target.getCurrentAttack() > 0) {
           game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
         }
@@ -145,21 +152,26 @@
       
       // before attack
       var handlerParams = {cancel: false, target: target};
-      game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(runIfNotCanceled(game, hero, handlerParams));
+      game.handlers[Events.BEFORE_HERO_ATTACKS].forEach(run(game, hero, handlerParams));
       if (handlerParams.cancel) {
         console.log('attack canceled');
         return;
       }
       target = handlerParams.target;
       
-      // increment hero's attack count
-      hero.attackCount++;
-
       // perform attack
       if (target.type == TargetType.MINION) {
-        game.dealSimultaneousDamageToMinion(target, hero.getCurrentAttack(), hero);
-        game.dealSimultaneousDamageToHero(hero, target.getCurrentAttack(), target);
+        if (target.currentHp > 0) {
+          // increment hero's attack count
+          hero.attackCount++;
+          game.dealSimultaneousDamageToMinion(target, hero.getCurrentAttack(), hero);
+          game.dealSimultaneousDamageToHero(hero, target.getCurrentAttack(), target);
+        } else {
+          return;
+        }
       } else if (target.type == TargetType.HERO) {
+        // increment hero's attack count
+        hero.attackCount++;
         game.dealSimultaneousDamageToHero(target, hero.getCurrentAttack(), hero);
       }
       game.simultaneousDamageDone();
@@ -390,7 +402,7 @@
   Hearthstone.prototype.dealDamageToHero = function(hero, amount, source) {
     // trigger before hero damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(runIfNotCanceled(this, hero, handlerParams));
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -419,7 +431,7 @@
   Hearthstone.prototype.dealSimultaneousDamageToHero = function(hero, amount, source) {
     // trigger before hero damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(runIfNotCanceled(this, hero, handlerParams));
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -443,7 +455,7 @@
   Hearthstone.prototype.dealDamageToMinion = function(minion, amount, source) {
     // trigger before minion damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(runIfNotCanceled(this, minion, handlerParams));
+    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -465,7 +477,7 @@
   Hearthstone.prototype.dealSimultaneousDamageToMinion = function(minion, amount, source) {
     // trigger before minion damage
     var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(runIfNotCanceled(this, minion, handlerParams));
+    this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
     if (handlerParams.cancel) {
       return;
     }
@@ -690,6 +702,21 @@
       this.startTurn();
     }
   };
+  
+  Hearthstone.prototype.updateStats = function() {
+    var updateStatsFn = function(entity) {
+      entity.updateStats(this);
+    }.bind(this);
+  
+    for (var i = 0; i < 2; i++) {
+      this.players[i].minions.forEach(updateStatsFn);
+      this.players[i].hand.forEach(updateStatsFn);
+      this.players[i].hero.updateStats(this);
+      if (this.players[i].hero.weapon) {
+        this.players[i].hero.weapon.updateStats(this);
+      }
+    }
+  }
   
   window.Hearthstone = Hearthstone;
   window.Player = Player;
