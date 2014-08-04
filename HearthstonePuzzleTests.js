@@ -341,7 +341,7 @@ tests.testPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolutionEpicRandom = function() {
+tests.testPuzzleSolutionEpicRandom__VoidTerror = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -430,7 +430,7 @@ tests.testPuzzleSolutionEpicRandom = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.testPuzzleSolverEpicRandom = function() {
+tests.testPuzzleSolutionEpicRandom__SummoningPortal = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -483,7 +483,128 @@ tests.testPuzzleSolverEpicRandom = function() {
       ]
     }
   }
-  var solver = new Solver(data, true);
+  var puzzle = new HearthstonePuzzle(data);
+  var p = puzzle.player;
+  assert('Cruel Taskmaster', p.hand[1].name);
+  assert('Sylvanas Windrunner', p.minions[1].name);
+  assert(8, p.currentMana);
+  p.turn.playCard(p.hand[1], 2, p.minions[1]);
+  assert(6, p.currentMana);
+  p.turn.minionAttack(p.minions[1], puzzle.opponent.hero);
+  assert(21, puzzle.opponent.hero.hp);
+  puzzle.game.random = function(n) {
+    assert(2, n);
+    return 0; // steal summoning portal.
+  };
+  assert('Shield Slam', p.hand[0].name);
+  p.turn.playCard(p.hand[0], undefined, p.minions[1]);
+  assert(5, p.currentMana);
+  assert(3, p.minions.length);
+  assert('Summoning Portal', p.minions[2].name);
+  
+  assert('Cruel Taskmaster', p.minions[1].name);
+  p.turn.minionAttack(p.minions[1], puzzle.opponent.hero);
+  assert(19, puzzle.opponent.hero.hp);
+  
+  assert('Youthful Brewmaster', p.hand[1].name);
+  assert(1, p.hand[1].getCurrentMana());
+  assert('Cruel Taskmaster', p.minions[1].name);
+  p.turn.playCard(p.hand[1], 3, p.minions[1]);
+  assert(4, p.currentMana);
+  p.turn.minionAttack(p.minions[2], puzzle.opponent.hero);
+  assert(16, puzzle.opponent.hero.hp);
+  
+  assert('Youthful Brewmaster', p.hand[0].name);
+  assert(1, p.hand[0].getCurrentMana());
+  assert('Youthful Brewmaster', p.minions[2].name);
+  p.turn.playCard(p.hand[0], 3, p.minions[2]);
+  assert(3, p.currentMana);
+  p.turn.minionAttack(p.minions[2], puzzle.opponent.hero);
+  assert(13, puzzle.opponent.hero.hp);
+  
+  assert('Cruel Taskmaster', p.hand[1].name);
+  assert(1, p.hand[1].getCurrentMana());
+  assert('Warsong Commander', p.minions[0].name);
+  p.turn.playCard(p.hand[1], 2, p.minions[0]);
+  assert(2, p.currentMana);
+  p.turn.minionAttack(p.minions[2], puzzle.opponent.hero);
+  assert(11, puzzle.opponent.hero.hp);
+  
+  assert('Youthful Brewmaster', p.hand[1].name);
+  assert(1, p.hand[1].getCurrentMana());
+  assert('Cruel Taskmaster', p.minions[2].name);
+  p.turn.playCard(p.hand[1], 4, p.minions[2]);
+  assert(1, p.currentMana);
+  p.turn.minionAttack(p.minions[3], puzzle.opponent.hero);
+  assert(8, puzzle.opponent.hero.hp);
+  
+  assert('Cruel Taskmaster', p.hand[1].name);
+  assert(1, p.hand[1].getCurrentMana());
+  assert('Warsong Commander', p.minions[0].name);
+  p.turn.playCard(p.hand[1], 2, p.minions[0]);
+  assert(0, p.currentMana);
+  p.turn.minionAttack(p.minions[2], puzzle.opponent.hero);
+  assert(6, puzzle.opponent.hero.hp);
+  
+  assert(6, p.minions[0].getCurrentAttack());
+  p.turn.minionAttack(p.minions[0], puzzle.opponent.hero);
+  assert(0, puzzle.opponent.hero.hp);
+};
+
+tests.xtestPuzzleSolverEpicRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 7,
+      hp: 28,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        WarlockCards.SummoningPortal.copy(),
+        NeutralCards.Nozdormu.copy(),
+        NeutralCards.StonetuskBoar.copy(),
+        WarlockCards.VoidTerror.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+      ]
+    },
+    player: {
+      heroClass: 8,
+      hp: 11,
+      armor: 2,
+      mana: 8,
+      currentMana: 8,
+      fatigue: 1,
+      hand: [
+        WarriorCards.WarsongCommander.copy(),
+        NeutralCards.SylvanasWindrunner.copy(),
+        WarriorCards.ShieldSlam.copy(),
+        // puzzle cards
+        WarriorCards.ShieldSlam.copy(),
+        WarriorCards.CruelTaskmaster.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        WarriorCards.Charge.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 1,
+          index: 1,
+        }},
+      ]
+    }
+  }
+  var solver = new Solver(data, false);
   var solution = solver.solve();
   assert(true, !!solution);
   console.log_(solution);
