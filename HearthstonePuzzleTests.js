@@ -341,11 +341,11 @@ tests.testPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverEpicRandom = function() {
+tests.testPuzzleSolutionEpicRandom = function() {
   var data = {
     opponent: {
       heroClass: 7,
-      hp: 30,
+      hp: 28,
       armor: 0,
       mana: 1,
       currentMana: 0,
@@ -361,15 +361,104 @@ tests.xtestPuzzleSolverEpicRandom = function() {
         {actionId: Actions.PLAY_CARD, card: 0, position: 0},
         {actionId: Actions.PLAY_CARD, card: 0, position: 1},
         {actionId: Actions.PLAY_CARD, card: 0, position: 2},
-        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
       ]
     },
     player: {
       heroClass: 8,
       hp: 11,
       armor: 2,
-      mana: 5,
-      currentMana: 5,
+      mana: 8,
+      currentMana: 8,
+      fatigue: 1,
+      hand: [
+        WarriorCards.WarsongCommander.copy(),
+        NeutralCards.SylvanasWindrunner.copy(),
+        WarriorCards.ShieldSlam.copy(),
+        // puzzle cards
+        WarriorCards.ShieldSlam.copy(),
+        WarriorCards.CruelTaskmaster.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        NeutralCards.YouthfulBrewmaster.copy(),
+        WarriorCards.Charge.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 1,
+          index: 1,
+        }},
+      ]
+    }
+  }
+  var puzzle = new HearthstonePuzzle(data);
+  var p = puzzle.player;
+  assert('Cruel Taskmaster', p.hand[1].name);
+  assert('Sylvanas Windrunner', p.minions[1].name);
+  assert(8, p.currentMana);
+  p.turn.playCard(p.hand[1], 2, p.minions[1]);
+  assert(6, p.currentMana);
+  p.turn.minionAttack(p.minions[1], puzzle.opponent.hero);
+  assert(21, puzzle.opponent.hero.hp);
+  puzzle.game.random = function(n) {
+    assert(2, n);
+    return 1; // steal void terror.
+  };
+  assert('Shield Slam', p.hand[0].name);
+  p.turn.playCard(p.hand[0], undefined, p.minions[1]);
+  assert(5, p.currentMana);
+  assert(3, p.minions.length);
+  assert('Void Terror', p.minions[2].name);
+  assert('Charge', p.hand[2].name);
+  p.turn.playCard(p.hand[2], undefined, p.minions[2]);
+  assert(2, p.currentMana);
+  p.turn.minionAttack(p.minions[2], puzzle.opponent.hero);
+  assert(7, puzzle.opponent.hero.hp);
+  assert('Youthful Brewmaster', p.hand[0].name);
+  p.turn.playCard(p.hand[0], 3, p.minions[2]);
+  assert(0, p.currentMana);
+  assert(3, p.minions.length);
+  assert('Warsong Commander', p.minions[0].name);
+  p.turn.minionAttack(p.minions[0], puzzle.opponent.hero);
+  assert('Cruel Taskmaster', p.minions[1].name);
+  p.turn.minionAttack(p.minions[1], puzzle.opponent.hero);
+  assert('Youthful Brewmaster', p.minions[2].name);
+  p.turn.minionAttack(p.minions[2], puzzle.opponent.hero);
+  assert(0, puzzle.opponent.hero.hp);
+};
+
+tests.testPuzzleSolverEpicRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 7,
+      hp: 28,
+      armor: 0,
+      mana: 1,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        WarlockCards.SummoningPortal.copy(),
+        NeutralCards.Nozdormu.copy(),
+        NeutralCards.StonetuskBoar.copy(),
+        WarlockCards.VoidTerror.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+      ]
+    },
+    player: {
+      heroClass: 8,
+      hp: 11,
+      armor: 2,
+      mana: 8,
+      currentMana: 8,
       fatigue: 1,
       hand: [
         WarriorCards.WarsongCommander.copy(),
@@ -404,3 +493,5 @@ tests.xtestPuzzleSolverEpicRandom = function() {
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);
 };
+
+

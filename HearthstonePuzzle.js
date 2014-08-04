@@ -137,9 +137,15 @@
     this.replayTime = 0;
     
     var getStateValue = function(state) {
-    
-      if (state == undefined) {
-        return -999;
+      if (!state.game) {
+        var val = 0;
+        for (var i = 0; i < state.unsolved.length; i++) {
+          val += getStateValue(state.unsolved[i]);
+        }
+        for (var i = 0; i < state.solved.length; i++) {
+          val += getStateValue(state.solved[i]);
+        }
+        return val / (state.unsolved.length + state.solved.length);
       };
       
       var val = 0;
@@ -265,8 +271,10 @@
       
       if (childStates.length > 0) {
         childStates.sort(function(state1, state2) {
-          return getStateValue(state2.state) - getStateValue(state1.state);
+          return getStateValue(state2) - getStateValue(state1);
         });
+        // console.log_(puzzle, history, childStates.map(function(state) { if (state.history) { return [getStateValue(state), state.history.actions[0]] } else { return [getStateValue(state), state] }}));
+        // if (childStates[0].history.actions.length == 5) { console.log_(puzzle); debugger; return; }
         for (var i = 0; i < childStates.length; i++) {
           if (childStates[i].unsolved) {
             var solutions = childStates[i].solved.map(function(state) {

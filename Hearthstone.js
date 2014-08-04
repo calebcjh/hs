@@ -254,7 +254,7 @@
         if (game.currentPlayer.currentMana < card.getCurrentMana()) {
           continue;
         }
-        if (card.requiresPosition && positionImportant) {
+        if (card.requiresPosition && positionImportant && player.minions.length > 1) {
           for (var j = 0; j <= player.minions.length; j++) {
             if (card.requiresTarget) {
               for (var k = 0; k < targets.length; k++) {
