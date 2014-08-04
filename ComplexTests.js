@@ -190,6 +190,67 @@ tests.testDeathrattleOrder4 = function() {
   assert(1, p2.minions.length);
 }
 
+// p1 plays Abomination, Scavanging Hyena, Timberwolf, Timberwolf.
+// p2 plays Frost Bolt on Abomination, then Arcane Explosion.
+// Scavanging Hyena should live.
+tests.testDeathrattleOrder5 = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.Abomination.copy());
+  p1.hand.push(HunterCards.ScavangingHyena.copy());
+  p1.hand.push(HunterCards.TimberWolf.copy());
+  p1.hand.push(HunterCards.TimberWolf.copy());
+  p1.currentMana = 9;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.FrostBolt.copy());
+  p2.hand.push(MageCards.ArcaneExplosion.copy());
+  p2.currentMana = 4;
+  p2.turn.playCard(p2.hand[1], undefined, p1.minions[3]);
+  assert(4, p1.minions.length);
+  assert(2, p1.minions[2].currentHp);
+  assert(4, p1.minions[2].getCurrentAttack());
+  p2.turn.playCard(p2.hand[1]);
+  assert(1, p1.minions.length);
+  assert(1, p1.minions[0].currentHp);
+  assert(6, p1.minions[0].getCurrentAttack());
+};
+
+// p1 plays Savannah Highmane, Haunted Creeper, Harvest Golem, 2 Elven Archers on Savannah Highmane.
+// Position: Savannah Highmane, Elven Archer, Haunted Creeper, Elven Archer, Harvest Golem.
+// p2 plays Flamestrike.
+// Resulting minions: Hyena, Spectral Spider, Damaged Golem, Spectral Spider, Hyena.
+tests.testDeathrattleOrder6 = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.SavannahHighmane.copy());
+  p1.hand.push(NeutralCards.HauntedCreeper.copy());
+  p1.hand.push(NeutralCards.HarvestGolem.copy());
+  p1.hand.push(NeutralCards.ElvenArcher.copy());
+  p1.hand.push(NeutralCards.ElvenArcher.copy());
+  p1.currentMana = 13;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0], 2);
+  p1.turn.playCard(p1.hand[0], 1, p1.minions[0]);
+  p1.turn.playCard(p1.hand[0], 3, p1.minions[0]);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.Flamestrike.copy());
+  p2.currentMana = 7;
+  p2.turn.playCard(p2.hand[1]);
+  assert(5, p1.minions.length);
+  assert('Hyena', p1.minions[0].name);
+  assert('Spectral Spider', p1.minions[1].name);
+  assert('Damaged Golem', p1.minions[2].name);
+  assert('Spectral Spider', p1.minions[3].name);
+  assert('Hyena', p1.minions[4].name);
+};
+
 tests.testFreezingTrapSummoningPortal = function() {
   var p1 = new Player([], new Warlock());
   var p2 = new Player([], new Hunter());

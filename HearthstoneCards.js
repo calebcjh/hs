@@ -756,6 +756,7 @@
   var Set = {
     BASIC: 0,
     EXPERT: 1,
+    NAXXRAMAS: 2,
   }
   
   var HeroClass = {
@@ -845,7 +846,7 @@
       this.player.minions.splice(position, 0, baine);
       baine.playOrderIndex = game.playOrderIndex++;
       game.updateStats();
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, minion));
     }}),
     CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
       return target.type == TargetType.MINION;
@@ -865,15 +866,32 @@
       var entityIndex = this.owner.player.minions.indexOf(entity);
       return entityIndex >= 0 && entityIndex == wolfIndex - 1 || entityIndex == wolfIndex + 1;
     }}]}),
+    ElvenArcher: new Card('Elven Archer', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {requiresTarget: true, attack: 1, hp: 1, battlecry: {activate: function(game, minion, position, target) {
+      game.dealDamage(target, 1, this);
+    }}}),
     DamagedGolem: new Card('Damaged Golem', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 2, hp: 1}),
     HarvestGolem: new Card('Harvest Golem', 'Deathrattle: Summon a 2/1 Damaged Golem.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 2, hp: 3, deathrattle: function(game, position) {
       damaged = new Minion(this.player, 'Damaged Golem', NeutralCards.DamagedGolem.copy(), 2, 1, false, false, false, false, false, false, false, [], []);
       this.player.minions.splice(position, 0, damaged);
       damaged.playOrderIndex = game.playOrderIndex++;
       game.updateStats();
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, damaged));
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, damaged));
     }}),
-    IronforgeRifleman: new Card('Ironforge Rifleman', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 3, {requiresTarget: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
+    SpectralSpider: new Card('Spectral Spider', '', Set.NAXXRAMAS, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 1, hp: 1}),
+    HauntedCreeper: new Card('Haunted Creeper', 'Deathrattle: Summon two 1/1 Spectral Spiders.', Set.NAXXRAMAS, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 2, {attack: 1, hp: 2, tag: 'Beast', deathrattle: function(game, position) {
+      spider1 = new Minion(this.player, 'Spectral Spider', NeutralCards.SpectralSpider.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+      this.player.minions.splice(position, 0, spider1);
+      spider1.playOrderIndex = game.playOrderIndex++;
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, spider1));
+      
+      spider2 = new Minion(this.player, 'Spectral Spider', NeutralCards.SpectralSpider.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+      this.player.minions.splice(position + 1, 0, spider2);
+      spider2.playOrderIndex = game.playOrderIndex++;
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position + 1, spider2));
+    }}),
+    IronforgeRifleman: new Card('Ironforge Rifleman', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {requiresTarget: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
       game.dealDamage(target, 1, this);
     }}}),
     LeperGnome: new Card('Leper Gnome', 'Deathrattle: Deal 2 damage to the enemy hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 2, hp: 1, deathrattle: function(game) {
@@ -1066,7 +1084,7 @@
       
       counterspell.activate(game);
     }}),
-    EtherealArcanist: new Card('Ethereal Arcanist', 'If you control a Secret at the end of your turn, gain +2/+2.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3,  handlers: [{event: Events.END_TURN, handler: function(game) {
+    EtherealArcanist: new Card('Ethereal Arcanist', 'If you control a Secret at the end of your turn, gain +2/+2.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 4, {attack: 3, hp: 3, handlers: [{event: Events.END_TURN, handler: function(game) {
       console.log('EA', game.currentPlayer == this.owner.player, this.owner.player.secrets);
       if (game.currentPlayer == this.owner.player && this.owner.player.secrets.length > 0) {
         // todo: silence, remove after death
@@ -1519,14 +1537,21 @@
       this.player.minions.splice(position, 0, hyena1);
       hyena1.playOrderIndex = game.playOrderIndex++;
       game.updateStats();
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position, minion));
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, hyena1));
       
       hyena2 = new Minion(this.player, 'Hyena', HunterCards.Hyena.copy(), 2, 2, false, false, false, false, false, false, false, [], []);
       this.player.minions.splice(position + 1, 0, hyena2);
       hyena2.playOrderIndex = game.playOrderIndex++;
       game.updateStats();
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, position + 1, minion));
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position + 1, hyena2));
     }}),
+    ScavangingHyena: new Card('Scavenging Hyena', 'Whenever a friendly Beast dies, gain +2/+1.', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.COMMON, 2, {attack: 2, hp: 2, tag: 'Beast', handlers: [{event: Events.MINION_DIES, handler: function(game, minion) {
+      if (minion.player == this.owner.player && minion.isBeast) {
+        this.owner.enchantAttack += 2;
+        this.owner.currentHp += 1;
+        this.owner.enchantHp += 1;
+      }
+    }}]}),
   };
   
   var PaladinCards = {

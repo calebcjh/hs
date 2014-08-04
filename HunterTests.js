@@ -736,3 +736,29 @@ tests.testSavannahHighmane = function() {
   assert(4, p1.minions[1].getCurrentAttack());
   assert(3, p1.minions[2].getCurrentAttack());
 };
+
+tests.testScavangingHyena = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Hunter());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.Wisp.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(HunterCards.ScavangingHyena.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(HunterCards.ArcaneShot.copy());
+  p2.currentMana = 3;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.minions[0].currentHp);
+  assert(2, p1.minions[0].getCurrentAttack());
+  p2.turn.minionAttack(p2.minions[0], p1.minions[2]);
+  assert(2, p1.minions[0].currentHp);
+  assert(2, p1.minions[0].getCurrentAttack());
+  p2.turn.playCard(p2.hand[1], undefined, p1.minions[1]);
+  assert(3, p1.minions[0].currentHp);
+  assert(4, p1.minions[0].getCurrentAttack());
+};

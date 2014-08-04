@@ -204,7 +204,7 @@
       title.src = 'http://www.hsdeck.com/images/cards/titles/' + card.getReference() + '.png';
       titleContainer.appendChild(title);
       
-      if (card.rarity != Rarity.FREE) {
+      if (card.rarity != Rarity.FREE && card.set != Set.BASIC) {
         var rarity = document.createElement('div');
         rarity.className = 'rarity';
         switch (card.rarity) {
