@@ -874,6 +874,7 @@
     ElvenArcher: new Card('Elven Archer', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {requiresTarget: true, attack: 1, hp: 1, battlecry: {activate: function(game, minion, position, target) {
       game.dealDamage(target, 1, this);
     }}}),
+    FenCreeper: new Card('Fen Creeper', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 5, {attack: 3, hp: 6, taunt: true}),
     DamagedGolem: new Card('Damaged Golem', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 2, hp: 1}),
     HarvestGolem: new Card('Harvest Golem', 'Deathrattle: Summon a 2/1 Damaged Golem.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 2, hp: 3, deathrattle: function(game, position) {
       damaged = new Minion(this.player, 'Damaged Golem', NeutralCards.DamagedGolem.copy(), 2, 1, false, false, false, false, false, false, false, [], []);
