@@ -66,7 +66,7 @@ tests.testPuzzleSolverIntermediate = function() {
   console.log_(solution);
 };
 
-tests.xtestPuzzleSolverAdvance = function() {
+tests.testPuzzleSolverAdvance = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -551,7 +551,7 @@ tests.testPuzzleSolutionEpicRandom__SummoningPortal = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.xtestPuzzleSolverEpicRandom = function() {
+tests.testPuzzleSolverEpicRandom = function() {
   var data = {
     opponent: {
       heroClass: 7,

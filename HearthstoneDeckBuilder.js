@@ -168,6 +168,7 @@
       base.appendChild(imageContainer);
       
       var image = document.createElement('img');
+      console.log(card);
       image.src = 'http://www.hsdeck.com/images/cards/' + card.getReference() + '.png';
       imageContainer.appendChild(image);
       

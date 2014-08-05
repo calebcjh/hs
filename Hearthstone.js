@@ -264,11 +264,11 @@
                     ownerId: targets[k].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
                     index: targets[k].player.minions.indexOf(targets[k])
                   };
-                  actions.push({actionId: Actions.PLAY_CARD, card: i, position: j, target: target});
+                  actions.push({actionId: Actions.PLAY_CARD, card: i, position: j, target: target, comment: 'Play ' + card.name + ' on ' + targets[k].name});
                 };
               };
             } else if (card.verify(game, j)) {
-              actions.push({actionId: Actions.PLAY_CARD, card: i, position: j});
+              actions.push({actionId: Actions.PLAY_CARD, card: i, position: j, comment: 'Play ' + card.name});
             }
           }
         } else if (card.requiresTarget) {
@@ -280,16 +280,16 @@
                 index: targets[k].player.minions.indexOf(targets[k])
               };
               if (card.requiresPosition) {
-                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, position: 0});
+                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, position: 0, comment: 'Play ' + card.name + ' on ' + targets[k].name});
               } else {
-                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target});
+                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, comment: 'Play ' + card.name + ' on ' + targets[k].name});
               }
             };
           };
         } else if (card.requiresPosition) {
-          actions.push({actionId: Actions.PLAY_CARD, card: i, position: 0});
+          actions.push({actionId: Actions.PLAY_CARD, card: i, position: 0, comment: 'Play ' + card.name});
         } else {
-          actions.push({actionId: Actions.PLAY_CARD, card: i});
+          actions.push({actionId: Actions.PLAY_CARD, card: i, comment: 'Play ' + card.name});
         }
       }
       
@@ -304,7 +304,7 @@
               ownerId: possibleTargets[j].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
               index: possibleTargets[j].player.minions.indexOf(possibleTargets[j])
             };
-            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target});
+            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target, comment: 'Attack ' + target.name + ' with ' + minion.name});
           }
         }
       }
@@ -319,18 +319,18 @@
                 ownerId: targets[i].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
                 index: targets[i].player.minions.indexOf(targets[i])
               };
-              actions.push({actionId: Actions.USE_HERO_POWER, target: target});
+              actions.push({actionId: Actions.USE_HERO_POWER, target: target, comment: 'Use hero power on ' + target.name});
             }
           }
         } else if (heroPower.verify(game)) {
-          actions.push({actionId: Actions.USE_HERO_POWER});
+          actions.push({actionId: Actions.USE_HERO_POWER, comment: 'Use hero power'});
         }
       }
       
       // todo: hero attack
       
       // end turn
-      actions.push({actionId: Actions.END_TURN});
+      actions.push({actionId: Actions.END_TURN, comment: 'End turn'});
       
       return actions;
     };

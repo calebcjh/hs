@@ -154,6 +154,9 @@
         if ((minion.hasCharge() || !minion.sleeping) && (minion.attackCount == 0 || (minion.attackCount == 1 && minion.windfury))) {
           val += minion.getCurrentAttack();
         }
+        if (minion.deathrattle) {
+          val -= minion.currentHp;
+        }
       }
       
       for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
@@ -163,7 +166,7 @@
         }
       }
       
-      return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp; + state.game.currentPlayer.currentMana;
+      return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp + state.game.currentPlayer.currentMana * 2;
       
       /*
       var val = 0;
@@ -274,7 +277,8 @@
           return getStateValue(state2) - getStateValue(state1);
         });
         // console.log_(puzzle, history, childStates.map(function(state) { if (state.history) { return [getStateValue(state), state.history.actions[0]] } else { return [getStateValue(state), state] }}));
-        // if (childStates[0].history.actions.length == 5) { console.log_(puzzle); debugger; return; }
+        // if (history.actions.length > 10) debugger;
+        // if (childStates[0].history.actions.length == 7) { console.log_(puzzle); debugger; return; }
         for (var i = 0; i < childStates.length; i++) {
           if (childStates[i].unsolved) {
             var solutions = childStates[i].solved.map(function(state) {

@@ -906,6 +906,7 @@
         game.dealDamage(game.currentPlayer.hero, 2, this);
       }
     }}),
+    MogushanWarden: new Card('Mogushan Warden', 'Taunt', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 4, {attack: 1, hp: 7, taunt: true}),
     Nozdormu: new Card('Nozdormu', 'Players only have 15 seconds to take their turns.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 9, {attack: 8, hp: 8, tag: 'Dragon'}),
     PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
@@ -913,9 +914,26 @@
         // todo: trigger heal events
       }
     }}),
+    RagnarosTheFirelord: new Card('Ragnaros the Firelord', 'Can\'t Attack. At the end of your turn, deal 8 damage to a random enemy.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 8, {attack: 8, hp: 8, listTargets: function() { return []; }, handlers: [{event: Events.END_TURN, handler: function(game) {
+      if (game.currentPlayer == this.owner.player) {
+        var numTargets = game.otherPlayer.minions.length + 1;
+        var selectedTarget = game.random(numTargets);
+        var target;
+        if (selectedTarget == numTargets - 1) {
+          target = game.otherPlayer.hero;
+        } else {
+          target = game.otherPlayer.minions[selectedTarget];
+        }
+        game.dealDamage(target, 8, this);
+      }
+    }}]}),
+    SenjinShieldmasta: new Card('Sen\'jin Shieldmasta', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 4, {attack: 3, hp: 5, taunt: true}),
     Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, tag: 'Beast'}),
     Shieldbearer: new Card('Shieldbearer', 'Taunt.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 0, hp: 4, taunt: true}),
     StonetuskBoar: new Card('Stonetusk Boar', 'Charge', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1, tag: 'Beast'}),
+    StormwindChampion: new Card('Stormwind Champion', 'Your other minions have +1/+1.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 7, {attack: 6, hp: 6, auras: [{attack: 1, hp: 1, eligible: function(entity) {
+      return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner;
+    }}]}),
     SylvanasWindrunner: new Card('Sylvanas Windrunner', 'Deathrattle: Take control of a random enemy minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 5, hp: 5, deathrattle: function(game) {
       var opponent;
       if (this.player == game.currentPlayer) {
