@@ -1,4 +1,4 @@
-tests.testPuzzleSolverBasic = function() {
+tests.xtestPuzzleSolverBasic = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -29,7 +29,7 @@ tests.testPuzzleSolverBasic = function() {
   console.log_(solution);
 };
 
-tests.testPuzzleSolverIntermediate = function() {
+tests.xtestPuzzleSolverIntermediate = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -66,7 +66,7 @@ tests.testPuzzleSolverIntermediate = function() {
   console.log_(solution);
 };
 
-tests.testPuzzleSolverAdvance = function() {
+tests.xtestPuzzleSolverAdvance = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -170,7 +170,7 @@ tests.xtestPuzzleSolverComplex = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverBasicRandom = function() {
+tests.xtestPuzzleSolverBasicRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -208,7 +208,7 @@ tests.testPuzzleSolverBasicRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverIntermediateRandom = function() {
+tests.xtestPuzzleSolverIntermediateRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -253,7 +253,7 @@ tests.testPuzzleSolverIntermediateRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverAdvancedRandom = function() {
+tests.xtestPuzzleSolverAdvancedRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -292,7 +292,7 @@ tests.testPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverAdvancedRandom = function() {
+tests.xtestPuzzleSolverAdvancedRandom = function() {
   var data = {
     opponent: {
       heroClass: 1,
@@ -551,7 +551,7 @@ tests.testPuzzleSolutionEpicRandom__SummoningPortal = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.testPuzzleSolverEpicRandom = function() {
+tests.xtestPuzzleSolverEpicRandom = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -601,6 +601,72 @@ tests.testPuzzleSolverEpicRandom = function() {
           ownerId: 1,
           index: 1,
         }},
+      ]
+    }
+  }
+  var solver = new Solver(data, false);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};
+
+tests.xtestPuzzleSolverLegendaryRandom = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 28,
+      armor: 0,
+      mana: 10,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        NeutralCards.Abomination.copy(),
+        NeutralCards.RagnarosTheFirelord.copy(),
+        NeutralCards.MogushanWarden.copy(),
+        NeutralCards.Shieldbearer.copy(),
+        NeutralCards.SenjinShieldmasta.copy(),
+        NeutralCards.FenCreeper.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 3},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 4},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 5},
+      ]
+    },
+    player: {
+      heroClass: 8,
+      hp: 4,
+      armor: 0,
+      mana: 10,
+      currentMana: 10,
+      fatigue: 1,
+      hand: [
+        NeutralCards.SylvanasWindrunner.copy(),
+        WarriorCards.Gorehowl.copy(),
+        // puzzle cards
+        NeutralCards.WildPyromancer.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.Rampage.copy(),
+        WarriorCards.ShieldSlam.copy(),
+        WarriorCards.WarsongCommander.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.Upgrade.copy(),
+        NeutralCards.WildPyromancer.copy(),
+        NeutralCards.SouthseaDeckhand.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0},
       ]
     }
   }

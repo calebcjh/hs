@@ -156,8 +156,48 @@ tests.testRagnarosTheFirelord = function() {
   assert(1, p2.minions.length);
 };
 
-test.testRagnarosTheFirelord__silenced = function() {
+tests.testRagnarosTheFirelord__silenced = function() {
   throw new Error('Not implemented');
+};
+
+tests.testSouthseaDeckhand = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.SouthseaDeckhand.copy());
+  p1.hand.push(NeutralCards.Wisp.copy());
+  p1.hand.push(WarriorCards.Upgrade.copy());
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(false, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  p1.turn.playCard(p1.hand[0]);
+  assert(true, !!p1.hero.weapon);
+  assert(true, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  p1.turn.heroAttack(p1.hero, p2.hero);
+  assert(true, !!p1.hero.weapon);
+  assert(true, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  p1.turn.endTurn();
+  p2.turn.endTurn();
+  assert(true, !!p1.hero.weapon);
+  assert(true, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  p1.turn.heroAttack(p1.hero, p2.hero);
+  assert(true, !!p1.hero.weapon);
+  assert(true, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  p1.turn.endTurn();
+  p2.turn.endTurn();
+  assert(true, !!p1.hero.weapon);
+  assert(true, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
+  p1.turn.heroAttack(p1.hero, p2.hero);
+  assert(false, p1.hero.weapon);
+  assert(false, p1.minions[0].hasCharge());
+  assert(false, p1.minions[1].hasCharge());
 };
 
 tests.testStormwindChampion = function() {

@@ -16,41 +16,6 @@ tests.testCharge = function() {
   assert(26, p2.hero.hp);
 }
 
-tests.testShieldSlam = function() {
-  var p1 = new Player([], new Warrior());
-  var p2 = new Player([], new Mage());
-  var game = new Hearthstone([p1, p2], 0);
-  p1.hand.push(NeutralCards.HarvestGolem.copy());
-  p1.hand.push(WarriorCards.ShieldSlam.copy());
-  p1.currentMana = 6;
-  p1.turn.playCard(p1.hand[0], 0);
-  p1.turn.useHeroPower();
-  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
-  assert(1, p1.minions[0].currentHp);
-  assert(0, p1.hand.length);
-};
-
-tests.testShieldSlam__noArmor = function() {
-  var p1 = new Player([], new Warrior());
-  var p2 = new Player([], new Mage());
-  var game = new Hearthstone([p1, p2], 0);
-  p1.hand.push(NeutralCards.HarvestGolem.copy());
-  p1.hand.push(WarriorCards.ShieldSlam.copy());
-  p1.currentMana = 4;
-  p1.turn.playCard(p1.hand[0], 0);
-  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
-  assert(3, p1.minions[0].currentHp);
-  assert(0, p1.hand.length);
-};
-
-tests.testShieldSlam__spellDamage = function() {
-  throw new Error('Not implemented');
-};
-
-tests.testShieldSlam__noArmorSpellDamage = function() {
-  throw new Error('Not implemented');
-};
-
 tests.testWarsongCommander = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());
@@ -146,4 +111,104 @@ tests.testCruelTaskmaster = function() {
   assert(2, p1.minions.length);
   assert(4, p1.minions[0].getCurrentAttack());
   assert(1, p1.minions[0].currentHp);
+};
+
+tests.testInnerRage = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.Wisp.copy());
+  p1.hand.push(NeutralCards.PriestessOfElune.copy());
+  p1.hand.push(WarriorCards.InnerRage.copy());
+  p1.hand.push(WarriorCards.InnerRage.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(2, p1.minions.length);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.minions.length);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(7, p1.minions[0].getCurrentAttack());
+  assert(3, p1.minions[0].currentHp);
+};
+
+tests.testRampage = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.PriestessOfElune.copy());
+  p1.hand.push(WarriorCards.Rampage.copy());
+  p1.hand.push(WarriorCards.InnerRage.copy());
+  p1.currentMana = 8;
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(5, p1.minions[0].getCurrentAttack());
+  assert(4, p1.minions[0].currentHp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(2, p1.hand.length);
+  assert(5, p1.minions[0].getCurrentAttack());
+  assert(4, p1.minions[0].currentHp);
+  p1.turn.playCard(p1.hand[1], undefined, p1.minions[0]);
+  assert(1, p1.hand.length);
+  assert(7, p1.minions[0].getCurrentAttack());
+  assert(3, p1.minions[0].currentHp);
+  assert(4, p1.minions[0].getMaxHp());
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(0, p1.hand.length);
+  assert(10, p1.minions[0].getCurrentAttack());
+  assert(6, p1.minions[0].currentHp);
+  assert(7, p1.minions[0].getMaxHp());
+};
+
+tests.testShieldSlam = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.HarvestGolem.copy());
+  p1.hand.push(WarriorCards.ShieldSlam.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.useHeroPower();
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.minions[0].currentHp);
+  assert(0, p1.hand.length);
+};
+
+tests.testShieldSlam__noArmor = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.HarvestGolem.copy());
+  p1.hand.push(WarriorCards.ShieldSlam.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(3, p1.minions[0].currentHp);
+  assert(0, p1.hand.length);
+};
+
+tests.testShieldSlam__spellDamage = function() {
+  throw new Error('Not implemented');
+};
+
+tests.testShieldSlam__noArmorSpellDamage = function() {
+  throw new Error('Not implemented');
+};
+
+tests.testUpgrade = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.Upgrade.copy());
+  p1.hand.push(WarriorCards.Upgrade.copy());
+  p1.currentMana = 2;
+  assert(false, p1.hero.weapon);
+  assert(0, p1.hero.getCurrentAttack());
+  p1.turn.playCard(p1.hand[0]);
+  assert(true, !!p1.hero.weapon);
+  assert(1, p1.hero.getCurrentAttack());
+  assert(3, p1.hero.weapon.durability);
+  p1.turn.playCard(p1.hand[0]);
+  assert(true, !!p1.hero.weapon);
+  assert(2, p1.hero.getCurrentAttack());
+  assert(4, p1.hero.weapon.durability);
 };

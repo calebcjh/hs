@@ -304,7 +304,7 @@
               ownerId: possibleTargets[j].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
               index: possibleTargets[j].player.minions.indexOf(possibleTargets[j])
             };
-            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target, comment: 'Attack ' + target.name + ' with ' + minion.name});
+            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target, comment: 'Attack ' + possibleTargets[j].name + ' with ' + minion.name});
           }
         }
       }

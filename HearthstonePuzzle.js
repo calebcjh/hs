@@ -148,6 +148,7 @@
         return val / (state.unsolved.length + state.solved.length);
       };
       
+      // For epic
       var val = 0;
       for (var i = 0; i < state.game.currentPlayer.minions.length; i++) {
         var minion = state.game.currentPlayer.minions[i];
@@ -169,6 +170,7 @@
       return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp + state.game.currentPlayer.currentMana * 2;
       
       /*
+      // For complex
       var val = 0;
       for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
         var minion = state.game.otherPlayer.minions[i];
@@ -215,6 +217,7 @@
       if (puzzle == undefined) {
         puzzle = new HearthstonePuzzle(data);
       }
+      
       var possibleActions = puzzle.game.currentPlayer.turn.listAllActions(positionImportant);
       var childStates = [];
       for (var i = 0; i < possibleActions.length; i++) {
@@ -248,7 +251,7 @@
             var childSolved = forks[j].opponent.hero.hp <= 0 && forks[j].player.hero.hp > 0;
             if (!childSolved) {
               solved = false;
-              if (possibleActions[i].actionsId != Actions.END_TURN && forks[j].player.hero.hp > 0) {
+              if (possibleActions[i].actionId != Actions.END_TURN && forks[j].player.hero.hp > 0) {
                 unsolvedChildStates.push(forks[j]);
               } else {
                 solvable = false;
@@ -286,6 +289,11 @@
             });
             var solved = true;
             for (var j = 0; j < childStates[i].unsolved.length; j++) {
+              for (var x = 0; x < childStates[i].unsolved[j].history.length; x++) {
+                if (childStates[i].unsolved[j].history[x].actionId == 4) {
+                  debugger;
+                }
+              }
               var forkSolution = this.solve(childStates[i].unsolved[j].history, childStates[i].unsolved[j]);
               if (forkSolution) {
                 solutions.push(forkSolution);
@@ -298,6 +306,11 @@
               return solutions;
             }
           } else {
+            for (var x = 0; x < childStates[i].history.length; x++) {
+              if (childStates[i].history[x].actionId == 4) {
+                debugger;
+              }
+            }
             var solution = this.solve(childStates[i].history, childStates[i]);
             if (solution) {
               return solution;

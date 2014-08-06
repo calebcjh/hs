@@ -483,7 +483,6 @@ tests.testExplosiveTrapFreezingTrap__minionDies = function() {
   assert(1, p2.minions.length);
   assert(1, p2.hand.length);
   p2.turn.minionAttack(p2.minions[0], p1.hero);
-  console.log_(p2.hero);
   assert(1, p1.secrets.length);
   assert(29, p1.hero.hp);
   assert(27, p2.hero.hp);

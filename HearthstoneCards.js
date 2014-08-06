@@ -318,7 +318,8 @@
       game.currentPlayer.currentMana -= this.getCurrentMana();
       game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, this.attack, this.durability, this.windfury, this.handlers);
       game.currentPlayer.hero.weapon.registerHandlers(game);
-      game.currentPlayer.hero.weapon.updateStats(game);
+      // southsea deckhand
+      game.updateStats();
     }
   };
   BasicCards[CardType.HERO_POWER] = {
@@ -660,6 +661,8 @@
         var index = game.handlers[this.registeredHandlers[i].event].indexOf(this.registeredHandlers[i]);
         delete game.handlers[this.registeredHandlers[i].event][index]; // delete must be used because handlers can be removed while being iterated over
       }
+      
+      game.updateStats();
     };
     
     this.die = function(game) {
@@ -681,6 +684,7 @@
     frozen: false,
     appliedAuras: [],
     registeredHandlers: [],
+    weapon: false,
     getCurrentAttack: function() {
       var attackFromAuras = 0;
       for (var i = 0; i < this.appliedAuras.length; i++) {
@@ -931,6 +935,9 @@
     SenjinShieldmasta: new Card('Sen\'jin Shieldmasta', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 4, {attack: 3, hp: 5, taunt: true}),
     Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, tag: 'Beast'}),
     Shieldbearer: new Card('Shieldbearer', 'Taunt.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 0, hp: 4, taunt: true}),
+    SouthseaDeckhand: new Card('Southsea Deckhand', 'Has Charge while you have a weapon equipped.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 2, hp: 1, tag: 'Pirate', auras: [{charge: true, eligible: function(entity) {
+      return entity == this.owner && this.owner.player.hero.weapon;
+    }}]}),
     StonetuskBoar: new Card('Stonetusk Boar', 'Charge', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.FREE, 1, {charge: true, hp: 1, attack: 1, tag: 'Beast'}),
     StormwindChampion: new Card('Stormwind Champion', 'Your other minions have +1/+1.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 7, {attack: 6, hp: 6, auras: [{attack: 1, hp: 1, eligible: function(entity) {
       return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner;
@@ -1402,7 +1409,7 @@
       return this.owner.player.minions.indexOf(entity) != -1 && entity.isBeast;
     }}]}),
     BestialWrath: new Card('Bestial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
-      return game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
     }, applyEffects: function(game, unused_position, target) {
       // change all secrets' cost to 0
       target.enchantAttack += 2;
@@ -1418,7 +1425,7 @@
       handler.register(game);
     }}),
     DeadlyShot: new Card('Deadly Shot', 'Destroy a random enemy minion.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {verify: function(game, unused_position, unused_target) {
-      return game.otherPlayer.minions.length > 0;
+      return this.__proto__.verify.call(this, game) && game.otherPlayer.minions.length > 0;
     }, applyEffects: function(game, unused_position, unused_target) {
       var index = game.random(game.otherPlayer.minions.length);
       game.kill(game.otherPlayer.minions[index]);
@@ -1614,7 +1621,7 @@
 
   var WarlockCards = {
     PowerOverwhelming: new Card('Power Overwhelming', 'Give a friendly minion +4/+4 until end of turn. Then, it dies. Horribly.', Set.EXPERT, CardType.SPELL, HeroClass.WARLOCK, Rarity.COMMON, 1, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
-      return game.currentPlayer.minions.indexOf(target) != -1;
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
       target.enchantAttack += 4;
       target.enchantHp += 4;
@@ -1660,7 +1667,7 @@
   
   var WarriorCards = {
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
-      return game.currentPlayer.minions.indexOf(target) != -1;
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
       target.enchantAttack += 2;
       target.charge = true;
@@ -1676,12 +1683,34 @@
       game.dealDamage(target, 1, this);
       target.enchantAttack += 2;
     }}}),
+    Gorehowl: new Card('Gorehowl', 'Attacking a minion costs 1 Attack instead of 1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.WARRIOR, Rarity.EPIC, 7, {attack: 7, durability: 1}), // todo: handlers
+    InnerRage: new Card('Inner Rage', 'Deal 1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      game.dealDamage(target, 1 + game.currentPlayer.spellDamage, this);
+      target.enchantAttack += 2;
+    }}),
+    Rampage: new Card('Rampage', 'Give a damaged minion +3/+3.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
+      return this.__proto__.verify.call(this, game, unused_position, target) && target.currentHp < target.getMaxHp();
+    }, applyEffects: function(game, unused_position, target) {
+      target.enchantAttack += 3;
+      target.enchantHp += 3;
+      target.currentHp += 3;
+    }}),
     ShieldSlam: new Card('Shield Slam', 'Deal 1 damage to a minion for each Armor you have.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var damage = 0;
       if (game.currentPlayer.hero.armor > 0) {
         damage = game.currentPlayer.hero.armor + game.currentPlayer.spellDamage;
       }
       game.dealDamage(target, damage, this);
+    }}),
+    Upgrade: new Card('Upgrade!', 'If you have a weapon, give it +1/+1. Otherwise, equip a 1/3 weapon.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.RARE, 1, {applyEffects: function(game, unused_position, unused_target) {
+      if (game.currentPlayer.hero.weapon) {
+        game.currentPlayer.hero.weapon.durability++;
+        game.currentPlayer.hero.weapon.enchantAttack++;
+      } else {
+        game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, 1, 3, false, []);
+        game.currentPlayer.hero.weapon.registerHandlers(game);
+        game.updateStats();
+      };
     }}),
   };
   
