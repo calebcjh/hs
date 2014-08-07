@@ -331,42 +331,48 @@
         for (var i = 0; i < state.solved.length; i++) {
           val += getBFSStateValue(state.solved[i]);
         }
-        return val / (state.unsolved.length + state.solved.length) / 2;
+        // semi BFS, prefer not to handle randomness
+        return (val / (state.unsolved.length + state.solved.length)) - 20;
       };
       
-      // For epic
       var val = 0;
       for (var i = 0; i < state.game.currentPlayer.minions.length; i++) {
         var minion = state.game.currentPlayer.minions[i];
         if ((minion.hasCharge() || !minion.sleeping) && (minion.attackCount == 0 || (minion.attackCount == 1 && minion.windfury))) {
-          val += minion.getCurrentAttack();
-        }
-        if (minion.deathrattle) {
-          val -= minion.currentHp;
+          val += minion.getCurrentAttack() * 1.5;
+          val += minion.currentHp;
+        } else {
+          val -= minion.getCurrentAttack();
+          val -= minion.enchantAttack * 10;
+          if (minion.deathrattle) {
+            val -= minion.currentHp;
+          }
         }
       }
+      if (state.game.currentPlayer.hero.attackCount == 0 || (state.game.currentPlayer.hero.attackCount == 1 && state.game.currentPlayer.hero.weapon.windfury)) {
+        val += state.game.currentPlayer.hero.getCurrentAttack() * 2.5;
+      }
       
+      var taunts = 0;
+      var pyro = state.game.currentPlayer.minions.filter(function(minion) { return minion.name == 'Wild Pyromancer'; }).length > 0;
+      var pyroHurt = pyro && state.game.currentPlayer.minions.filter(function(minion) { return minion.name == 'Wild Pyromancer'; })[0].currentHp < 2;
       for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
         var minion = state.game.otherPlayer.minions[i];
         if (minion.taunt) {
-          val -= minion.currentHp;
+          taunts++;
+          val -= (minion.currentHp * (pyroHurt ? minion.currentHp / 7 : 1));
         }
+      }
+      
+      // You have a wild pyromancer, and you have spells, and if there are many enemy minions on board with taunt
+      if (state.game.currentPlayer.minions.filter(function(minion) { return minion.name == 'Wild Pyromancer'; }).length == 1
+        && state.game.currentPlayer.minions.filter(function(minion) { return minion.name == 'Wild Pyromancer'; })[0].currentHp == 2
+        && state.game.currentPlayer.hand.filter(function(card) { return card.type == CardType.SPELL; }).length > 0
+        && taunts > 2) {
+        val += taunts * 2.5;
       }
       
       return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp + state.game.currentPlayer.currentMana * 2;
-      
-      /*
-      // For complex
-      var val = 0;
-      for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
-        var minion = state.game.otherPlayer.minions[i];
-        if (minion.getCurrentAttack() > 0 && !minion.taunt) {
-          val += minion.currentHp;
-          val += (minion.divineShield ? 1 : 0);
-        }
-      }
-      return val - state.game.currentPlayer.hand.length - state.game.currentPlayer.currentMana;
-      */
     };
     
     var childStates = [];
@@ -464,6 +470,7 @@
             return solutions;
           }
         } else {
+          currState.history.actions[currState.history.actions.length - 1].val = getBFSStateValue(currState);
           var solution = this.solveBFS(currState.history, currState);
           if (solution) {
             return solution;
@@ -472,7 +479,8 @@
       }
     };
     
-    this.solve = this.solveDFS;
+    this.solve = this.solveBFS;
+    this.getBFSStateValue = getBFSStateValue;
   };
   
   window.HearthstonePuzzle = HearthstonePuzzle;

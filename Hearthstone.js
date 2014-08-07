@@ -327,7 +327,18 @@
         }
       }
       
-      // todo: hero attack
+      // hero attack
+      if (player.hero.getCurrentAttack() > 0 && (player.hero.attackCount == 0 || (player.hero.weapon.windfury && player.hero.attackCount == 1))) {
+        var heroTargets = player.hero.listTargets(game);
+        for (var i = 0; i < heroTargets.length; i++) {
+          var target = {
+            type: heroTargets[i].type,
+            ownerId: 1 - game.currentIndex,
+            index: heroTargets[i].player.minions.indexOf(heroTargets[i])
+          };
+          actions.push({actionId: Actions.HERO_ATTACK, target: target, comment: 'Attack ' + heroTargets[i].name + ' with hero.'});
+        }
+      }
       
       // end turn
       actions.push({actionId: Actions.END_TURN, comment: 'End turn'});

@@ -1,4 +1,4 @@
-tests.testPuzzleSolverBasic = function() {
+tests.testPuzzleSolverPingFace = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -29,7 +29,7 @@ tests.testPuzzleSolverBasic = function() {
   console.log_(solution);
 };
 
-tests.testPuzzleSolverIntermediate = function() {
+tests.testPuzzleSolverIceComboManaWyrm = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -66,7 +66,7 @@ tests.testPuzzleSolverIntermediate = function() {
   console.log_(solution);
 };
 
-tests.testPuzzleSolverAdvance = function() {
+tests.testPuzzleSolverMoreIceComboManaWyrm = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -111,7 +111,7 @@ tests.testPuzzleSolverAdvance = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverComplex = function() {
+tests.xtestPuzzleSolverProtectLeperGnomes = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -170,7 +170,7 @@ tests.testPuzzleSolverComplex = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverBasicRandom = function() {
+tests.testPuzzleSolverRandomArcaneMissiles = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -208,7 +208,7 @@ tests.testPuzzleSolverBasicRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverIntermediateRandom = function() {
+tests.testPuzzleSolverRandomDeadlyShotAbominations = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -253,7 +253,7 @@ tests.testPuzzleSolverIntermediateRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverAdvancedRandom = function() {
+tests.testPuzzleSolverRandomArcaneMissilesAbomination = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -292,7 +292,7 @@ tests.testPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverAdvancedRandom = function() {
+tests.testPuzzleSolverRandomSylvanasKrushAntonidas = function() {
   var data = {
     opponent: {
       heroClass: 1,
@@ -341,7 +341,7 @@ tests.testPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolutionEpicRandom__VoidTerror = function() {
+tests.testPuzzleSolutionRandomTerrorPortal__VoidTerror = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -430,7 +430,7 @@ tests.xtestPuzzleSolutionEpicRandom__VoidTerror = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.testPuzzleSolutionEpicRandom__SummoningPortal = function() {
+tests.testPuzzleSolutionRandomTerrorPortal__SummoningPortal = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -551,7 +551,7 @@ tests.testPuzzleSolutionEpicRandom__SummoningPortal = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.xtestPuzzleSolverEpicRandom = function() {
+tests.xtestPuzzleSolverRandomTerrorPortal = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -615,7 +615,82 @@ tests.xtestPuzzleSolverEpicRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverLegendaryRandom = function() {
+tests.testPuzzleSolutionRandomSoloSylvanas = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 28,
+      armor: 0,
+      mana: 10,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        NeutralCards.Abomination.copy(),
+        NeutralCards.RagnarosTheFirelord.copy(),
+        NeutralCards.MogushanWarden.copy(),
+        NeutralCards.Shieldbearer.copy(),
+        NeutralCards.SenjinShieldmasta.copy(),
+        NeutralCards.FenCreeper.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 3},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 4},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 5},
+      ]
+    },
+    player: {
+      heroClass: 8,
+      hp: 4,
+      armor: 0,
+      mana: 10,
+      currentMana: 10,
+      fatigue: 1,
+      hand: [
+        NeutralCards.SylvanasWindrunner.copy(),
+        WarriorCards.Gorehowl.copy(),
+        // puzzle cards
+        NeutralCards.WildPyromancer.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.Rampage.copy(),
+        WarriorCards.ShieldSlam.copy(),
+        WarriorCards.WarsongCommander.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.Upgrade.copy(),
+        NeutralCards.WildPyromancer.copy(),
+        NeutralCards.SouthseaDeckhand.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0},
+      ]
+    }
+  }
+  var puzzle = new HearthstonePuzzle(data, false);
+  var p = puzzle.player;
+  p.turn.playCard(p.hand[0], 0);
+  p.turn.playCard(p.hand[0], undefined, p.minions[1]);
+  p.turn.playCard(p.hand[6], 0);
+  p.turn.minionAttack(p.minions[0], puzzle.opponent.minions[2]);
+  console.log_('before', (new Solver()).getBFSStateValue(puzzle));
+  p.turn.playCard(p.hand[0], undefined, p.minions[1]);
+  // p.turn.useHeroPower();
+  console.log_('after', (new Solver()).getBFSStateValue(puzzle));
+  p.turn.playCard(p.hand[4], 0);
+  p.turn.playCard(p.hand[0], undefined, p.minions[1]);
+  p.turn.playCard(p.hand[2]);
+  p.turn.minionAttack(p.minions[0], puzzle.opponent.hero);
+  p.turn.heroAttack(p.hero, puzzle.opponent.hero);
+  p.turn.playCard(p.hand[1], undefined, p.minions[0]);
+  p.turn.endTurn();
+  assert(0, puzzle.opponent.hero.hp);
+};
+
+tests.testPuzzleSolverRandomSoloSylvanas = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -680,5 +755,4 @@ tests.testPuzzleSolverLegendaryRandom = function() {
   console.log_('Replay time:', solver.replayTime);
   console.log_('States checked:', solver.statesChecked);
 };
-
 

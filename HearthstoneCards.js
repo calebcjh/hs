@@ -1744,7 +1744,7 @@
     game.dealDamageToHero(game.currentPlayer.hero, 2);
   }}));
   
-  var Warrior = new Hero(new Card('Armor Up', 'Gain 2 Armor.', Set.BASIC, CardType.HERO_POWER, HeroClass.WARLOCK, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+  var Warrior = new Hero(new Card('Armor Up', 'Gain 2 Armor.', Set.BASIC, CardType.HERO_POWER, HeroClass.WARRIOR, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
     game.currentPlayer.hero.armor += 2;
   }}));
 
