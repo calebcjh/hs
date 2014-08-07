@@ -210,7 +210,8 @@
       };
     };
     
-    this.solve = function(history, puzzle) {
+    // DFS
+    this.solveDFS = function(history, puzzle) {
       if (history == undefined) {
         history = {actions: [], rngHistory: []};
       }
@@ -294,7 +295,7 @@
                   debugger;
                 }
               }
-              var forkSolution = this.solve(childStates[i].unsolved[j].history, childStates[i].unsolved[j]);
+              var forkSolution = this.solveDFS(childStates[i].unsolved[j].history, childStates[i].unsolved[j]);
               if (forkSolution) {
                 solutions.push(forkSolution);
               } else {
@@ -311,7 +312,7 @@
                 debugger;
               }
             }
-            var solution = this.solve(childStates[i].history, childStates[i]);
+            var solution = this.solveDFS(childStates[i].history, childStates[i]);
             if (solution) {
               return solution;
             }
@@ -320,6 +321,158 @@
       }
       return false;
     };
+    
+    var getBFSStateValue = function(state) {
+      if (!state.game) {
+        var val = 0;
+        for (var i = 0; i < state.unsolved.length; i++) {
+          val += getBFSStateValue(state.unsolved[i]);
+        }
+        for (var i = 0; i < state.solved.length; i++) {
+          val += getBFSStateValue(state.solved[i]);
+        }
+        return val / (state.unsolved.length + state.solved.length) / 2;
+      };
+      
+      // For epic
+      var val = 0;
+      for (var i = 0; i < state.game.currentPlayer.minions.length; i++) {
+        var minion = state.game.currentPlayer.minions[i];
+        if ((minion.hasCharge() || !minion.sleeping) && (minion.attackCount == 0 || (minion.attackCount == 1 && minion.windfury))) {
+          val += minion.getCurrentAttack();
+        }
+        if (minion.deathrattle) {
+          val -= minion.currentHp;
+        }
+      }
+      
+      for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
+        var minion = state.game.otherPlayer.minions[i];
+        if (minion.taunt) {
+          val -= minion.currentHp;
+        }
+      }
+      
+      return val - state.game.otherPlayer.hero.hp + state.game.currentPlayer.hero.hp + state.game.currentPlayer.currentMana * 2;
+      
+      /*
+      // For complex
+      var val = 0;
+      for (var i = 0; i < state.game.otherPlayer.minions.length; i++) {
+        var minion = state.game.otherPlayer.minions[i];
+        if (minion.getCurrentAttack() > 0 && !minion.taunt) {
+          val += minion.currentHp;
+          val += (minion.divineShield ? 1 : 0);
+        }
+      }
+      return val - state.game.currentPlayer.hand.length - state.game.currentPlayer.currentMana;
+      */
+    };
+    
+    var childStates = [];
+    // BFS
+    this.solveBFS = function(history, puzzle) {
+      if (history == undefined) {
+        history = {actions: [], rngHistory: []};
+      }
+      if (puzzle == undefined) {
+        puzzle = new HearthstonePuzzle(data);
+      }
+      
+      var possibleActions = puzzle.game.currentPlayer.turn.listAllActions(positionImportant);
+      var childStates = [];
+      for (var i = 0; i < possibleActions.length; i++) {
+        var forksContainer = {forks: []};
+      
+        var startTime = new Date();        
+        var clone = new HearthstonePuzzle(data);
+        var cloneHistory = {actions: history.actions.concat(possibleActions[i]), rngHistory: history.rngHistory.slice(0)};
+        prepareRandom(clone, cloneHistory, forksContainer);
+        
+        this.initTime += (new Date() - startTime - clone.constructorTime - clone.cardCopyTime);
+        this.constructorTime += clone.constructorTime;
+        this.cardCopyTime += clone.cardCopyTime;
+        startTime = new Date();
+        
+        clone.replay(cloneHistory.actions);
+        
+        this.replayTime += (new Date() - startTime);
+        this.statesChecked++;
+        if (this.statesChecked % 10000 == 0) { console.log_('States checked:', this.statesChecked); }
+
+        
+        var forks = forksContainer.forks;
+        if (forks.length > 1) {
+          // check if all forks solve the puzzle
+          var solved = true;
+          var solvable = true;
+          var unsolvedChildStates = [];
+          var solvedChildren = [];
+          for (var j = 0; j < forks.length; j++) {
+            var childSolved = forks[j].opponent.hero.hp <= 0 && forks[j].player.hero.hp > 0;
+            if (!childSolved) {
+              solved = false;
+              if (possibleActions[i].actionId != Actions.END_TURN && forks[j].player.hero.hp > 0) {
+                unsolvedChildStates.push(forks[j]);
+              } else {
+                solvable = false;
+              }
+            } else {
+              solvedChildren.push(forks[j]);
+            }
+          }
+          if (solved) {
+            childStates = [{unsolved: unsolvedChildStates, solved: solvedChildren}];
+            break;
+          } else if (solvable) {
+            childStates.push({unsolved: unsolvedChildStates, solved: solvedChildren});
+          }
+        } else {
+          if (clone.opponent.hero.hp <= 0 && clone.player.hero.hp > 0) {
+            return cloneHistory;
+          } else if (possibleActions[i].actionId != Actions.END_TURN && clone.player.hero.hp > 0) {
+            childStates.push(clone);
+          }
+        }
+      };
+      
+      while (childStates.length > 0) {
+        childStates.sort(function(state1, state2) {
+          return getBFSStateValue(state1) - getBFSStateValue(state2);
+        });
+        var currState = childStates.pop()
+        if (currState.unsolved) {
+          var solutions = currState.solved.map(function(state) {
+            return state.history;
+          });
+          var solved = true;
+          for (var j = 0; j < currState.unsolved.length; j++) {
+            for (var x = 0; x < currState.unsolved[j].history.length; x++) {
+              if (currState.unsolved[j].history[x].actionId == 4) {
+                debugger;
+              }
+            }
+            var forkSolution = this.solveDFS(currState.unsolved[j].history, currState.unsolved[j]);
+            if (forkSolution) {
+              solutions.push(forkSolution);
+            } else {
+              solved = false;
+              break;
+            }
+          }
+          if (solved) {
+            return solutions;
+          }
+        } else {
+          var solution = this.solveBFS(currState.history, currState);
+          if (solution) {
+            return solution;
+          }
+        }
+      }
+    };
+    
+    this.solve = this.solveDFS;
   };
   
   window.HearthstonePuzzle = HearthstonePuzzle;

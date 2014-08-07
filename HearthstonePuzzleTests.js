@@ -1,4 +1,4 @@
-tests.xtestPuzzleSolverBasic = function() {
+tests.testPuzzleSolverBasic = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -29,7 +29,7 @@ tests.xtestPuzzleSolverBasic = function() {
   console.log_(solution);
 };
 
-tests.xtestPuzzleSolverIntermediate = function() {
+tests.testPuzzleSolverIntermediate = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -66,7 +66,7 @@ tests.xtestPuzzleSolverIntermediate = function() {
   console.log_(solution);
 };
 
-tests.xtestPuzzleSolverAdvance = function() {
+tests.testPuzzleSolverAdvance = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -111,7 +111,7 @@ tests.xtestPuzzleSolverAdvance = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverComplex = function() {
+tests.testPuzzleSolverComplex = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -170,7 +170,7 @@ tests.xtestPuzzleSolverComplex = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverBasicRandom = function() {
+tests.testPuzzleSolverBasicRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -208,7 +208,7 @@ tests.xtestPuzzleSolverBasicRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverIntermediateRandom = function() {
+tests.testPuzzleSolverIntermediateRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -253,7 +253,7 @@ tests.xtestPuzzleSolverIntermediateRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverAdvancedRandom = function() {
+tests.testPuzzleSolverAdvancedRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -292,7 +292,7 @@ tests.xtestPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverAdvancedRandom = function() {
+tests.testPuzzleSolverAdvancedRandom = function() {
   var data = {
     opponent: {
       heroClass: 1,
@@ -341,7 +341,7 @@ tests.xtestPuzzleSolverAdvancedRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolutionEpicRandom__VoidTerror = function() {
+tests.xtestPuzzleSolutionEpicRandom__VoidTerror = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -615,7 +615,7 @@ tests.xtestPuzzleSolverEpicRandom = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverLegendaryRandom = function() {
+tests.testPuzzleSolverLegendaryRandom = function() {
   var data = {
     opponent: {
       heroClass: 2,
