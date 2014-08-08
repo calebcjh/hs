@@ -1683,7 +1683,12 @@
       game.dealDamage(target, 1, this);
       target.enchantAttack += 2;
     }}}),
-    Gorehowl: new Card('Gorehowl', 'Attacking a minion costs 1 Attack instead of 1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.WARRIOR, Rarity.EPIC, 7, {attack: 7, durability: 1}), // todo: handlers
+    Gorehowl: new Card('Gorehowl', 'Attacking a minion costs 1 Attack instead of 1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.WARRIOR, Rarity.EPIC, 7, {attack: 7, durability: 1, handlers: [{event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
+      if (hero == this.owner.player.hero && target.type == TargetType.MINION) {
+        hero.weapon.durability++;
+        hero.weapon.attack--;
+      }
+    }}]}),
     InnerRage: new Card('Inner Rage', 'Deal 1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 1 + game.currentPlayer.spellDamage, this);
       target.enchantAttack += 2;

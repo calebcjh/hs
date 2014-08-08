@@ -111,7 +111,7 @@ tests.testPuzzleSolverMoreIceComboManaWyrm = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.xtestPuzzleSolverProtectLeperGnomes = function() {
+tests.testPuzzleSolverProtectLeperGnomes = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -551,7 +551,7 @@ tests.testPuzzleSolutionRandomTerrorPortal__SummoningPortal = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.xtestPuzzleSolverRandomTerrorPortal = function() {
+tests.testPuzzleSolverRandomTerrorPortal = function() {
   var data = {
     opponent: {
       heroClass: 7,
