@@ -122,6 +122,7 @@ tests.testHuntersMark = function() {
   assert(5, p1.minions[0].currentHp);
   p2.hand.push(HunterCards.HuntersMark.copy());
   p2.turn.playCard(p2.hand[1], undefined, p1.minions[0]);
+  assert(1, p1.minions[0].getMaxHp());
   assert(1, p1.minions[0].currentHp);
   p2.turn.endTurn();
   p1.turn.endTurn();

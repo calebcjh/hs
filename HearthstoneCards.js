@@ -398,8 +398,7 @@
     this.attackCount = 0;
     this.registeredHandlers = [];
     
-    this.enchantHp = 0;
-    this.enchantAttack = 0;
+    this.enchantments = [];
     this.appliedAuras = [];
     this.registeredAuras = [];
     
@@ -410,21 +409,31 @@
     }
     
     this.getCurrentAttack = function() {
+      var attackFromEnchantments = this.attack;
+      for (var i = 0; i < this.enchantments.length; i++) {
+        var enchantment = this.enchantments[i];
+        attackFromEnchantments = enchantment.modifyAttack(attackFromEnchantments);
+      }
       var attackFromAuras = 0;
       for (var i = 0; i < this.appliedAuras.length; i++) {
         var aura = this.appliedAuras[i];
         attackFromAuras += aura.attack;
       }
-      return this.attack + this.enchantAttack + attackFromAuras;
+      return attackFromEnchantments + attackFromAuras;
     };
     
     this.getMaxHp = function() {
+      var hpFromEnchantments = this.hp;
+      for (var i = 0; i < this.enchantments.length; i++) {
+        var enchantment = this.enchantments[i];
+        hpFromEnchantments = enchantment.modifyHp(hpFromEnchantments);
+      }
       var hpFromAuras = 0;
       for (var i = 0; i < this.appliedAuras.length; i++) {
         var aura = this.appliedAuras[i];
         hpFromAuras += aura.hp;
       }
-      return this.hp + this.enchantHp + hpFromAuras;
+      return hpFromEnchantments + hpFromAuras;
     };
     
     this.hasCharge = function() {
@@ -586,22 +595,27 @@
   var Weapon = function(player, attack, durability, windfury, eventHandlers) {
     this.player = player;
     this.attack = attack;
-    this.enchantAttack = 0;
     this.durability = durability;
     this.windfury = windfury;
     this.eventHandlers = eventHandlers;
     this.deathrattle = false;
+    this.enchantments = [];
     this.appliedAuras = [];
     this.registeredAuras = [];
     this.registeredHandlers = [];
     
     this.getCurrentAttack = function() {
+      var attackFromEnchantments = this.attack;
+      for (var i = 0; i < this.enchantments.length; i++) {
+        var enchantment = this.enchantments[i];
+        attackFromEnchantments = enchantment.modifyAttack(attackFromEnchantments);
+      }
       var attackFromAuras = 0;
       for (var i = 0; i < this.appliedAuras.length; i++) {
         var aura = this.appliedAuras[i];
         attackFromAuras += aura.attack;
       }
-      return this.attack + this.enchantAttack + attackFromAuras;
+      return attackFromEnchantments + attackFromAuras;
     };
     
     this.updateStats = function(game, reapply) {
@@ -678,14 +692,19 @@
     type: TargetType.HERO,
     hp: 30,
     attack: 0,
-    enchantAttack: 0,
     attackCount: 0,
     armor: 0,
     frozen: false,
+    enchantments: [],
     appliedAuras: [],
     registeredHandlers: [],
     weapon: false,
     getCurrentAttack: function() {
+      var attackFromEnchantments = this.attack;
+      for (var i = 0; i < this.enchantments.length; i++) {
+        var enchantment = this.enchantments[i];
+        attackFromEnchantments = enchantment.modifyAttack(attackFromEnchantments);
+      }
       var attackFromAuras = 0;
       for (var i = 0; i < this.appliedAuras.length; i++) {
         var aura = this.appliedAuras[i];
@@ -695,7 +714,7 @@
       if (this.weapon) {
         attackFromWeapon += this.weapon.getCurrentAttack();
       }
-      return this.attack + this.enchantAttack + attackFromAuras + attackFromWeapon;
+      return attackFromEnchantments + attackFromAuras + attackFromWeapon;
     },
     listTargets: function(game) {
       var opponent;
@@ -837,6 +856,28 @@
     };
   };
   
+  var ModifierType = {
+    ADD: 0,
+    SET: 1,
+  };
+  
+  var Enchantment = function(attack, attackModifyType, hp, hpModifyType) {
+    this.modifyAttack = function(enchantAttack) {
+      if (attackModifyType == ModifierType.ADD) {
+        return enchantAttack + attack;
+      } else {
+        return attack;
+      }
+    };
+    this.modifyHp = function(enchantHp) {
+      if (hpModifyType == ModifierType.ADD) {
+        return enchantHp + hp;
+      } else {
+        return hp;
+      }
+    };
+  };
+  
   var NeutralCards = {
     Abomination: new Card('Abomination', 'Taunt. Deathrattle: Deal 2 damage to ALL characters.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 4, {attack: 4, hp: 4, taunt: true, deathrattle: function(game) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
@@ -860,10 +901,8 @@
     CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
       return target.type == TargetType.MINION;
     }, activate: function(game, minion, position, target) {
-      var hp = target.currentHp;
       var attack = target.getCurrentAttack();
-      target.enchantAttack = (hp - target.attack);
-      target.enchantHp += (attack - hp);
+      target.enchantments.push(new Enchantment(target.currentHp, ModifierType.SET, attack, ModifierType.SET));
       target.currentHp = attack;
       target.updateStats(game, true);
       if (target.currentHp <= 0) {
@@ -1127,9 +1166,8 @@
       console.log('EA', game.currentPlayer == this.owner.player, this.owner.player.secrets);
       if (game.currentPlayer == this.owner.player && this.owner.player.secrets.length > 0) {
         // todo: silence, remove after death
-        this.owner.enchantAttack += 2;
+        this.owner.enchantments.push(new Enchantment(2, ModifierType.ADD, 2, ModifierType.ADD));
         this.owner.currentHp += 2;
-        this.owner.enchantHp += 2;
       }
     }}]}),
     IceBarrier: new Card('Ice Barrier', 'Secret: As soon as your hero is attacked, gain 8 Armor.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
@@ -1223,7 +1261,7 @@
       console.log('manawyrm handler', arguments, game.currentPlayer == this.owner.player);
       if (game.currentPlayer == this.owner.player) {
         // todo: auras, buffs, silence
-        this.owner.enchantAttack++;
+        this.owner.enchantments.push(new Enchantment(1, ModifierType.ADD, 0, ModifierType.ADD));
       }
     }}]}),
     MirrorEntity: new Card('Mirror Entity', 'Secret: When your opponent plays a minion, summon a copy of it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
@@ -1323,13 +1361,12 @@
     Houndmaster: new Card('Houndmaster', 'Battlecry: Give a friendly Beast +2/+2 and Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 4, {requiresTarget: true, attack: 4, hp: 3, battlecry: {verify: function(game, position, target) {
       return game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
     }, activate: function(game, minion, position, target) {
-      target.enchantAttack += 2;
+      target.enchantments.push(new Enchantment(2, ModifierType.ADD, 2, ModifierType.ADD));
       target.currentHp += 2;
-      target.enchantHp += 2;
       target.taunt = true;
     }}}),
     HuntersMark: new Card('Hunter\'s Mark', 'Change a minion\'s Health to 1.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
-      target.enchantHp = 1 - target.hp;
+      target.enchantments.push(new Enchantment(0, ModifierType.ADD, 1, ModifierType.SET));
       target.updateStats(game, true);
     }}),
     KillCommand: new Card('Kill Command', 'Deal 3 damage. If you have a Beast, deal 5 damage instead.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
@@ -1412,11 +1449,13 @@
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
     }, applyEffects: function(game, unused_position, target) {
       // change all secrets' cost to 0
-      target.enchantAttack += 2;
+      var bestialWrath = new Enchantment(2, ModifierType.ADD, 0, ModifierType.ADD);
+      target.enchantments.push(bestialWrath);
       target.immune = true;
-      
+      // todo: faceless manipulator's buff must be removed too
       var handler = new EventHandler(target, Events.END_TURN, function(game) {
-        this.owner.enchantAttack -= 2;
+        var index = this.owner.enchantments.indexOf(bestialWrath);
+        this.owner.enchantments.splice(index, 1);
         this.owner.immune = false;
         
         this.remove(game);
@@ -1586,9 +1625,8 @@
     }}),
     ScavangingHyena: new Card('Scavenging Hyena', 'Whenever a friendly Beast dies, gain +2/+1.', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.COMMON, 2, {attack: 2, hp: 2, tag: 'Beast', handlers: [{event: Events.MINION_DIES, handler: function(game, minion) {
       if (minion.player == this.owner.player && minion.isBeast) {
-        this.owner.enchantAttack += 2;
+        this.owner.enchantments.push(new Enchantment(2, ModifierType.ADD, 1, ModifierType.ADD));
         this.owner.currentHp += 1;
-        this.owner.enchantHp += 1;
       }
     }}]}),
   };
@@ -1606,7 +1644,7 @@
     }}),
     Humility: new Card('Humility', 'Change a minion\'s Attack to 1.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       // todo: interaction with enrage + attack
-      target.enchantAttack = 1 - target.attack;
+      target.enchantments.push(new Enchantment(1, ModifierType.SET, 0, ModifierType.ADD));
       target.updateStats(game, true);
     }}),
     LightsJustice: new Card('Light\'s Justice', '', Set.BASIC, CardType.WEAPON, HeroClass.PALADIN, Rarity.FREE, 1, {attack: 1, durability: 4}),
@@ -1623,8 +1661,7 @@
     PowerOverwhelming: new Card('Power Overwhelming', 'Give a friendly minion +4/+4 until end of turn. Then, it dies. Horribly.', Set.EXPERT, CardType.SPELL, HeroClass.WARLOCK, Rarity.COMMON, 1, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
-      target.enchantAttack += 4;
-      target.enchantHp += 4;
+      target.enchantments.push(new Enchantment(4, ModifierType.ADD, 4, ModifierType.ADD));
       target.currentHp += 4;
       
       var handler = new EventHandler(target, Events.END_TURN, function(game) {
@@ -1643,18 +1680,19 @@
     VoidTerror: new Card('Void Terror', 'Battlecry: Destroy the minions on either side of this minion and gain their Attack and Health.', Set.EXPERT, CardType.MINION, HeroClass.WARLOCK, Rarity.RARE, 3, {hp: 3, attack: 3, tag: 'Demon', battlecry: {
       activate: function(game, minion, position, target) {
         var leftMinion, rightMinion;
+        var totalAttack = 0, totalHp = 0;
         if (position - 1 >= 0) {
           leftMinion = game.currentPlayer.minions[position - 1];
-          minion.enchantHp += leftMinion.currentHp;
-          minion.currentHp += leftMinion.currentHp;
-          minion.enchantAttack += leftMinion.getCurrentAttack();
+          totalAttack += leftMinion.getCurrentAttack();
+          totalHp += leftMinion.currentHp;
         }
         if (position + 1 < game.currentPlayer.minions.length) {
           rightMinion = game.currentPlayer.minions[position + 1];
-          minion.enchantHp += rightMinion.currentHp;
-          minion.currentHp += rightMinion.currentHp;
-          minion.enchantAttack += rightMinion.getCurrentAttack();
+          totalAttack += rightMinion.getCurrentAttack();
+          totalHp += rightMinion.currentHp;
         }
+        minion.enchantments.push(new Enchantment(totalAttack, ModifierType.ADD, totalHp, ModifierType.ADD));
+        minion.currentHp += totalHp;
         if (leftMinion) {
           game.kill(leftMinion);
         }
@@ -1669,7 +1707,7 @@
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
-      target.enchantAttack += 2;
+      target.enchantments.push(new Enchantment(2, ModifierType.ADD, 0, ModifierType.ADD));
       target.charge = true;
     }}),
     WarsongCommander: new Card('Warsong Commander', 'Whenever you summon a minion with 3 or less Attack, give it Charge.', Set.BASIC, CardType.MINION, HeroClass.WARRIOR, Rarity.FREE, 3, {hp: 3, attack: 2, handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
@@ -1681,7 +1719,7 @@
       return target.type == TargetType.MINION;
     }, activate: function(game, minion, position, target) {
       game.dealDamage(target, 1, this);
-      target.enchantAttack += 2;
+      target.enchantments.push(new Enchantment(2, ModifierType.ADD, 0, ModifierType.ADD));
     }}}),
     Gorehowl: new Card('Gorehowl', 'Attacking a minion costs 1 Attack instead of 1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.WARRIOR, Rarity.EPIC, 7, {attack: 7, durability: 1, handlers: [{event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
       if (hero == this.owner.player.hero && target.type == TargetType.MINION) {
@@ -1691,13 +1729,12 @@
     }}]}),
     InnerRage: new Card('Inner Rage', 'Deal 1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 1 + game.currentPlayer.spellDamage, this);
-      target.enchantAttack += 2;
+      target.enchantments.push(new Enchantment(2, ModifierType.ADD, 0, ModifierType.ADD));
     }}),
     Rampage: new Card('Rampage', 'Give a damaged minion +3/+3.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && target.currentHp < target.getMaxHp();
     }, applyEffects: function(game, unused_position, target) {
-      target.enchantAttack += 3;
-      target.enchantHp += 3;
+      target.enchantments.push(new Enchantment(3, ModifierType.ADD, 3, ModifierType.ADD));
       target.currentHp += 3;
     }}),
     ShieldSlam: new Card('Shield Slam', 'Deal 1 damage to a minion for each Armor you have.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
@@ -1710,7 +1747,7 @@
     Upgrade: new Card('Upgrade!', 'If you have a weapon, give it +1/+1. Otherwise, equip a 1/3 weapon.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.RARE, 1, {applyEffects: function(game, unused_position, unused_target) {
       if (game.currentPlayer.hero.weapon) {
         game.currentPlayer.hero.weapon.durability++;
-        game.currentPlayer.hero.weapon.enchantAttack++;
+        game.currentPlayer.hero.weapon.enchantments.push(new Enchantment(1, ModifierType.ADD, 0, ModifierType.ADD));
       } else {
         game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, 1, 3, false, []);
         game.currentPlayer.hero.weapon.registerHandlers(game);

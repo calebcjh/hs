@@ -343,7 +343,7 @@
           val += minion.currentHp;
         } else {
           val -= minion.getCurrentAttack();
-          val -= minion.enchantAttack * 10;
+          // val -= minion.enchantAttack * 10;
           if (minion.deathrattle) {
             val -= minion.currentHp;
           }
