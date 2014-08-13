@@ -985,7 +985,13 @@
       minion.remove(game);
       var clonedMinion = target.clone(game, player);
       player.minions.splice(position, 0, clonedMinion);
+      // update hp
+      clonedMinion.currentHp = clonedMinion.getMaxHp() - (target.getMaxHp() - target.currentHp);
+      clonedMinion.updateStats(game);
       game.updateStats();
+      if (clonedMinion.currentHp <= 0) {
+        game.kill(clonedMinion);
+      }
     }}}),
     FenCreeper: new Card('Fen Creeper', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 5, {attack: 3, hp: 6, taunt: true}),
     DamagedGolem: new Card('Damaged Golem', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 2, hp: 1}),

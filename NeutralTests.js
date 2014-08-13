@@ -108,6 +108,45 @@ tests.testFacelessManipulator = function() {
   assert(3, p1.minions[1].getCurrentAttack());
 };
 
+tests.testFacelessManipulator__damaged = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.DireWolfAlpha.copy());
+  p1.hand.push(NeutralCards.FacelessManipulator.copy());
+  p1.currentMana = 9;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.useHeroPower(p1.minions[0]);
+  p1.turn.playCard(p1.hand[0], 0, p1.minions[0]);
+  assert(2, p1.minions.length);
+  assert(1, p1.minions[0].currentHp);
+  assert(3, p1.minions[0].getCurrentAttack());
+  assert(1, p1.minions[1].currentHp);
+  assert(3, p1.minions[1].getCurrentAttack());
+};
+
+tests.testFacelessManipulator__auraBuffed1HpMinion = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.StormwindChampion.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.currentMana = 10;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.useHeroPower(p1.minions[0]);
+  assert(2, p1.minions.length);
+  assert(1, p1.minions[0].currentHp);
+  assert(2, p1.minions[0].getCurrentAttack());
+  assert(6, p1.minions[1].currentHp);
+  assert(6, p1.minions[1].getCurrentAttack());
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.FacelessManipulator.copy());
+  p2.currentMana = 5;
+  p2.turn.playCard(p2.hand[1], 0, p1.minions[0]);
+  assert(0, p2.minions.length);
+};
+
 tests.testIronforgeRifleman = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());
