@@ -517,3 +517,64 @@ tests.testFreezingTrapExplosiveTrap = function() {
   assert(2, p2.hand.length);
   assert(3, p2.hand[1].getCurrentMana());
 };
+
+tests.testMirrorEntityVoidTerror = function() {
+  var p1 = new Player([], new Warlock());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.MirrorEntity.copy());
+  p2.currentMana = 3;
+  p2.turn.playCard(p2.hand[1]);
+  p2.turn.endTurn();
+  p1.hand.push(WarlockCards.VoidTerror.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(1, p1.minions.length);
+  assert(0, p2.secrets.length);
+  assert(1, p2.minions.length);
+  assert(5, p1.minions[0].currentHp);
+  assert(5, p1.minions[0].getCurrentAttack());
+  assert(5, p2.minions[0].currentHp);
+  assert(5, p2.minions[0].getCurrentAttack());
+};
+
+tests.testMirrorEntitySwordOfJustice = function() {
+  throw new Error('Not implemented');
+};
+
+tests.testSnipeSwordOfJustice = function() {
+  throw new Error('Not implemented');
+};
+
+tests.testFacelessManipulatorBestialWrath = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(HunterCards.BestialWrath.copy());
+  p1.hand.push(NeutralCards.FacelessManipulator.copy());
+  p1.currentMana = 7;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  p1.turn.playCard(p1.hand[0], 1, p1.minions[0]);
+  assert(2, p1.minions.length);
+  assert(3, p1.minions[0].getCurrentAttack());
+  assert(true, p1.minions[0].immune);
+  assert(true, p1.minions[0].hasCharge());
+  assert(3, p1.minions[1].getCurrentAttack());
+  assert(true, p1.minions[1].immune);
+  assert(true, p1.minions[1].hasCharge());
+  p1.turn.endTurn();
+  assert(1, p1.minions[0].getCurrentAttack());
+  assert(false, p1.minions[0].immune);
+  assert(true, p1.minions[0].hasCharge());
+  assert(1, p1.minions[1].getCurrentAttack());
+  assert(false, p1.minions[1].immune);
+  assert(true, p1.minions[1].hasCharge());
+};

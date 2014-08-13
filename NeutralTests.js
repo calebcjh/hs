@@ -92,6 +92,22 @@ tests.testDireWolfAlpha = function() {
   assert(1, p1.minions[2].getCurrentAttack());
 };
 
+tests.testFacelessManipulator = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.DireWolfAlpha.copy());
+  p1.hand.push(NeutralCards.FacelessManipulator.copy());
+  p1.currentMana = 7;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 0, p1.minions[0]);
+  assert(2, p1.minions.length);
+  assert(2, p1.minions[0].currentHp);
+  assert(3, p1.minions[0].getCurrentAttack());
+  assert(2, p1.minions[1].currentHp);
+  assert(3, p1.minions[1].getCurrentAttack());
+};
+
 tests.testIronforgeRifleman = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());

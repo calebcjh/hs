@@ -72,9 +72,9 @@ tests.testWarsongCommander__auraBuffed = function() {
   p1.turn.playCard(p1.hand[0], 2);
   p1.turn.playCard(p1.hand[0], 2);
   assert('Harvest Golem', p1.minions[2].name);
-  assert(false, p1.minions[2].charge);
+  assert(true, p1.minions[2].charge);
   p1.turn.minionAttack(p1.minions[2], p2.hero);
-  assert(30, p2.hero.hp);
+  assert(26, p2.hero.hp);
 };
 
 tests.testWarsongCommander__battlecryBuffed = function() {
