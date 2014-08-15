@@ -1556,9 +1556,9 @@
       var explosiveTrap = new Secret(game.currentPlayer, 'Explosive Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         if (game.currentPlayer != this.owner.player && (handlerParams.target == this.owner.player.hero || handlerParams.originalTarget == this.owner.player.hero)) {
           for (var i = 0; i < game.currentPlayer.minions.length; i++) {
-            game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2, this);
+            game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2 + this.owner.player.spellDamage, this);
           }
-          game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
+          game.dealSimultaneousDamage(game.currentPlayer.hero, 2 + this.owner.player.spellDamage, this);
           game.simultaneousDamageDone();
           if (minion.currentHp <= 0) {
             handlerParams.cancel = true;
@@ -1568,9 +1568,9 @@
       }}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
         if (game.currentPlayer != this.owner.player && (handlerParams.target == this.owner.player.hero || handlerParams.originalTarget == this.owner.player.hero)) {
           for (var i = 0; i < game.currentPlayer.minions.length; i++) {
-            game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2, this);
+            game.dealSimultaneousDamage(game.currentPlayer.minions[i], 2 + this.owner.player.spellDamage, this);
           }
-          game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
+          game.dealSimultaneousDamage(game.currentPlayer.hero, 2 + this.owner.player.spellDamage, this);
           game.simultaneousDamageDone();
           if (hero.hp <= 0) {
             handlerParams.cancel = true;
@@ -1692,6 +1692,76 @@
         this.owner.currentHp += 1;
       }
     }}]}),
+    Snake: new Card('Snake', '', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, tag: 'Beast'}),
+    SnakeTrap: new Card('Snake Trap', 'Secret: When one of your minions is attacked, summon three 1/1 Snakes.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var snakeTrap = new Secret(game.currentPlayer, 'Snake Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target.type == TargetType.MINION) {
+          snake1 = new Minion(this.owner.player, 'Snake', HunterCards.Snake.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(snake1);
+          snake1.playOrderIndex = game.playOrderIndex++;
+          game.updateStats();
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, snake1));
+          
+          snake2 = new Minion(this.owner.player, 'Snake', HunterCards.Snake.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(snake2);
+          snake2.playOrderIndex = game.playOrderIndex++;
+          game.updateStats();
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, snake2));
+          
+          snake3 = new Minion(this.owner.player, 'Snake', HunterCards.Snake.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(snake3);
+          snake3.playOrderIndex = game.playOrderIndex++;
+          game.updateStats();
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, snake3));
+          
+          this.owner.triggered(game);
+        }
+      }}, {event: Events.BEFORE_HERO_ATTACKS, handler: function(game, hero, handlerParams) {
+        if (game.currentPlayer != this.owner.player && handlerParams.target.type == TargetType.MINION) {
+          snake1 = new Minion(this.owner.player, 'Snake', HunterCards.Snake.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(snake1);
+          snake1.playOrderIndex = game.playOrderIndex++;
+          game.updateStats();
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, snake1));
+          
+          snake2 = new Minion(this.owner.player, 'Snake', HunterCards.Snake.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(snake2);
+          snake2.playOrderIndex = game.playOrderIndex++;
+          game.updateStats();
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.owner.player, this.owner.player.minions.length - 1, snake2));
+          
+          snake3 = new Minion(this.owner.player, 'Snake', HunterCards.Snake.copy(), 1, 1, false, false, false, false, false, false, false, [], []);
+          this.owner.player.minions.push(snake3);
+          snake3.playOrderIndex = game.playOrderIndex++;
+          game.updateStats();
+          game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(this.owner, this.player, this.owner.player.minions.length - 1, snake3));
+          
+          this.owner.triggered(game);
+        }
+      }}]);
+      snakeTrap.activate(game);
+    }}),
+    Snipe: new Card('Snipe', 'Secret: When your opponent plays a minion, deal 4 damage to it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+      var snipe = new Secret(game.currentPlayer, 'Snipe', [{event: Events.AFTER_MINION_PLAYED_FROM_HAND, handler: function(game, player, position, minion) {
+        if (game.currentPlayer != this.owner.player && player != this.owner.player) {
+          game.dealDamage(minion, 4 + this.owner.player.spellDamage, this);
+          
+          this.owner.triggered(game);
+        }
+      }}]);
+      
+      snipe.activate(game);
+    }}),
+    Hound: new Card('Hound', 'Charge', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.COMMON, 1, {draftable: false, attack: 1, hp: 1, charge: true, tag: 'Beast'}),
+    UnleashTheHounds: new Card('Unleash the Hounds', 'For each enemy minion, summon a 1/1 hound with Charge.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {applyEffects: function(game, unused_position, unused_target) {
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        var hound = new Minion(game.currentPlayer, 'Hound', HunterCards.Hound.copy(), 1, 1, true /* charge */, false, false, false, false, false, false, [], []);
+        game.currentPlayer.minions.push(hound);
+        hound.playOrderIndex = game.playOrderIndex++;
+        game.updateStats();
+        game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, hound));
+      }
+    }}),
   };
   
   var PaladinCards = {
