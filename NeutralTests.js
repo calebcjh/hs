@@ -38,7 +38,21 @@ tests.testAbomination = function() {
   assert(1, p1.minions.length);
   assert(2, p1.minions[0].currentHp);
   assert(25, p1.hero.hp);
-}; 
+};
+
+tests.testAbusiveSergeant = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(NeutralCards.AbusiveSergeant.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1, p1.minions[0]);
+  assert(3, p1.minions[0].getCurrentAttack());
+  p1.turn.endTurn();
+  assert(1, p1.minions[0].getCurrentAttack());
+};
 
 tests.testCrazedAlchemist = function() {
   var p1 = new Player([], new Hunter());

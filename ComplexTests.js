@@ -578,3 +578,20 @@ tests.testFacelessManipulatorBestialWrath = function() {
   assert(false, p1.minions[1].immune);
   assert(true, p1.minions[1].hasCharge());
 };
+
+tests.testFacelessManipulatorAbusiveSergeant = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(NeutralCards.AbusiveSergeant.copy());
+  p1.hand.push(NeutralCards.FacelessManipulator.copy());
+  p1.currentMana = 8;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1, p1.minions[0]);
+  p1.turn.playCard(p1.hand[0], 2, p1.minions[0]);
+  assert(3, p1.minions[2].getCurrentAttack());
+  assert(true, p1.minions[2].hasCharge());
+  p1.turn.endTurn();
+  assert(1, p1.minions[2].getCurrentAttack());
+};

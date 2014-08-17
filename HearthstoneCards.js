@@ -953,6 +953,13 @@
       game.dealSimultaneousDamage(game.currentPlayer.hero, 2, this);
       game.simultaneousDamageDone();
     }}),
+    AbusiveSergeant: new Card('Abusive Sergeant', 'Battlecry: Give a minion +2 Attack this turn.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {requiresTarget: true, minionOnly: true, attack: 2, hp: 1, battlecry: {activate: function(game, minion, position, target) {
+      var abuse = new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD, [{event: Events.END_TURN, handler: function(game) {
+        this.owner.remove(game);
+      }}]);
+      target.enchantments.push(abuse);
+      abuse.registerHandlers(game);
+    }}}),
     BaineBloodhoof: new Card('Baine Bloodhoof', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 4, {draftable: false, attack: 4, hp: 5}),
     CairneBloodhoof: new Card('Cairne Bloodhoof', 'Deathrattle: Summon a 4/5 Baine Bloodhoof.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 4, hp: 5, deathrattle: function(game, position) {
       baine = new Minion(this.player, 'Baine Bloodhoof', NeutralCards.BaineBloodhoof.copy(), 4, 5, false, false, false, false, false, false, false, [], []);
@@ -961,9 +968,7 @@
       game.updateStats();
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, minion));
     }}),
-    CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
-      return target.type == TargetType.MINION;
-    }, activate: function(game, minion, position, target) {
+    CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, minionOnly: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
       var attack = target.getCurrentAttack();
       target.enchantments.push(new Enchantment(target, target.currentHp, ModifierType.SET, attack, ModifierType.SET));
       target.currentHp = attack;
