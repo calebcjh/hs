@@ -464,11 +464,6 @@
   };
   
   Hearthstone.prototype.simultaneousDamageDone = function(group) {
-    if (group != this.simultaneousDamageQueue[0]) {
-      this.pendingSimultaneousDamageDone.push(group);
-      return;
-    }
-    
     // sort by play order
     group.sort(function(t1, t2) {
       if (t1.target.targetType != t2.target.targetType) {
@@ -511,6 +506,15 @@
       }
     }
     
+    if (group != this.simultaneousDamageQueue[0]) {
+      this.pendingSimultaneousDamageDone.push(deadMinions);
+      return;
+    }
+    
+    this.handleSimultaneousDeaths(deadMinions);
+  };
+  
+  Hearthstone.prototype.handleSimultaneousDeaths = function(deadMinions) {
     // trigger death handlers
     var deathrattles = [];
     for (var i = 0; i < deadMinions.length; i++) {
@@ -530,7 +534,7 @@
     
     if (this.pendingSimultaneousDamageDone.length != 0) {
       var nextGroup = this.pendingSimultaneousDamageDone.splice(0, 1)[0];
-      this.simultaneousDamageDone(nextGroup);
+      this.handleSimultaneousDeaths(nextGroup);
     }
   };
   
