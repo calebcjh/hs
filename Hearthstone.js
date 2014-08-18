@@ -102,15 +102,14 @@
       }
       target = handlerParams.target;
       
-      
-
       // perform attack
+      var group = game.initializeSimultaneousDamage();
       if (target.type == TargetType.MINION) {
         if (target.currentHp > 0) {
           // increment minion's attack count
           minion.attackCount++;
-          game.dealSimultaneousDamageToMinion(target, minion.getCurrentAttack(), minion);
-          game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
+          game.dealSimultaneousDamage(target, minion.getCurrentAttack(), minion, group);
+          game.dealSimultaneousDamage(minion, target.getCurrentAttack(), target, group);
         } else {
           return;
         }
@@ -118,11 +117,11 @@
         // increment minion's attack count
         minion.attackCount++;
         if (target == game.currentPlayer.hero && target.getCurrentAttack() > 0) {
-          game.dealSimultaneousDamageToMinion(minion, target.getCurrentAttack(), target);
+          game.dealSimultaneousDamage(minion, target.getCurrentAttack(), target, group);
         }
-        game.dealSimultaneousDamageToHero(target, minion.getCurrentAttack(), minion);
+        game.dealSimultaneousDamage(target, minion.getCurrentAttack(), minion, group);
       }
-      game.simultaneousDamageDone();
+      game.simultaneousDamageDone(group);
       
       game.handlers[Events.AFTER_MINION_ATTACKS].forEach(run(game, minion, target));
     };
@@ -160,21 +159,22 @@
       target = handlerParams.target;
       
       // perform attack
+      var group = game.initializeSimultaneousDamage();
       if (target.type == TargetType.MINION) {
         if (target.currentHp > 0) {
           // increment hero's attack count
           hero.attackCount++;
-          game.dealSimultaneousDamageToMinion(target, hero.getCurrentAttack(), hero);
-          game.dealSimultaneousDamageToHero(hero, target.getCurrentAttack(), target);
+          game.dealSimultaneousDamage(target, hero.getCurrentAttack(), hero, group);
+          game.dealSimultaneousDamage(hero, target.getCurrentAttack(), target, group);
         } else {
           return;
         }
       } else if (target.type == TargetType.HERO) {
         // increment hero's attack count
         hero.attackCount++;
-        game.dealSimultaneousDamageToHero(target, hero.getCurrentAttack(), hero);
+        game.dealSimultaneousDamage(target, hero.getCurrentAttack(), hero, group);
       }
-      game.simultaneousDamageDone();
+      game.simultaneousDamageDone(group);
       
       // todo: where to trigger after hero attacks?
       game.handlers[Events.AFTER_HERO_ATTACKS].forEach(run(game, hero, target));
@@ -361,8 +361,8 @@
 
     this.playOrderIndex = 0;
     
-    this.simultaneouslyDamagedMinions = [];
-    this.simultaneouslyDamagedHeroes = [];
+    this.simultaneousDamageQueue = [];
+    this.pendingSimultaneousDamageDone = [];
     
     this.handlers = [];
     this.auras = [];
@@ -402,14 +402,6 @@
     }
   };
   
-  Hearthstone.prototype.dealSimultaneousDamage = function(target, amount, source) {
-    if (target.type == TargetType.HERO) {
-      this.dealSimultaneousDamageToHero(target, amount, source);
-    } else {
-      this.dealSimultaneousDamageToMinion(target, amount, source);
-    }
-  };
-
   Hearthstone.prototype.dealDamageToHero = function(hero, amount, source) {
     // trigger before hero damage
     var handlerParams = {cancel: false, amount: amount, source: source};
@@ -439,30 +431,6 @@
     }
   };
   
-  Hearthstone.prototype.dealSimultaneousDamageToHero = function(hero, amount, source) {
-    // trigger before hero damage
-    var handlerParams = {cancel: false, amount: amount, source: source};
-    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
-    if (handlerParams.cancel) {
-      return;
-    }
-    
-    var damageLeft = handlerParams.amount;
-    if (!hero.immune) {
-      if (hero.armor > 0) {
-        var damageAbsorbed = Math.min(hero.armor, damageLeft);
-        hero.armor -= damageAbsorbed;
-        damageLeft -= damageAbsorbed;
-      }
-      
-      if (damageLeft > 0) {
-        hero.hp -= damageLeft;
-      }
-      
-      this.simultaneouslyDamagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
-    }
-  };
-
   Hearthstone.prototype.dealDamageToMinion = function(minion, amount, source) {
     // trigger before minion damage
     var handlerParams = {cancel: false, amount: amount, source: source};
@@ -485,7 +453,112 @@
     }
   };
   
-  Hearthstone.prototype.dealSimultaneousDamageToMinion = function(minion, amount, source) {
+  Hearthstone.prototype.initializeSimultaneousDamage = function() {
+    var group = [];
+    this.simultaneousDamageQueue.push(group);
+    return group;
+  };
+  
+  Hearthstone.prototype.dealSimultaneousDamage = function(target, amount, source, group) {
+    group.push({target: target, amount: amount, source: source});
+  };
+  
+  Hearthstone.prototype.simultaneousDamageDone = function(group) {
+    if (group != this.simultaneousDamageQueue[0]) {
+      this.pendingSimultaneousDamageDone.push(group);
+      return;
+    }
+    
+    // sort by play order
+    group.sort(function(t1, t2) {
+      if (t1.target.targetType != t2.target.targetType) {
+        return t1.target.targetType - t2.target.targetType;
+      } else if (t1.target.targetType == TargetType.HERO) {
+        return t1.target == this.players[0].hero ? -1 : 1;
+      } else {
+        return t1.target.playOrderIndex - t2.target.playOrderIndex;
+      }
+    });
+    
+    // do damage
+    var damagedMinions = [], damagedHeroes = [];
+    for (var i = 0; i < group.length; i++) {
+      var target = group[i].target;
+      if (target.type == TargetType.HERO) {
+        this.dealSimultaneousDamageToHero(group[i].target, group[i].amount, group[i].source, damagedHeroes);
+      } else {
+        this.dealSimultaneousDamageToMinion(group[i].target, group[i].amount, group[i].source, damagedMinions);
+      }
+    }
+    
+    // call after damage taken handlers
+    for (var i = 0; i < damagedHeroes.length; i++) {
+      this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHeroes[i].hero, damagedHeroes[i].amount, damagedHeroes[i].source));
+    }
+    for (var i = 0; i < damagedMinions.length; i++) {
+      this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinions[i].minion, damagedMinions[i].amount, damagedMinions[i].source));
+    }
+    
+    // check for dead minions
+    var deadMinions = [];
+    for (var i = 0; i < damagedMinions.length; i++) {
+      var damagedMinion = damagedMinions[i];
+      if (damagedMinion.minion.currentHp <= 0) {
+        var minion = damagedMinion.minion;
+        var position = minion.player.minions.indexOf(minion);
+        minion.die(this);
+        deadMinions.push({minion: minion, position: position});
+      }
+    }
+    
+    // trigger death handlers
+    var deathrattles = [];
+    for (var i = 0; i < deadMinions.length; i++) {
+      var minion = deadMinions[i].minion;
+      this.handlers[Events.MINION_DIES].forEach(run(this, minion));
+      if (minion.deathrattle) {
+        deathrattles.push(minion.deathrattle.bind(minion, this, deadMinions[i].position));
+      }
+    }
+    
+    // trigger deathrattles
+    for (var i = 0; i < deathrattles.length; i++) {
+      deathrattles[i]();
+    }
+    
+    this.simultaneousDamageQueue.splice(0, 1);
+    
+    if (this.pendingSimultaneousDamageDone.length != 0) {
+      var nextGroup = this.pendingSimultaneousDamageDone.splice(0, 1)[0];
+      this.simultaneousDamageDone(nextGroup);
+    }
+  };
+  
+  Hearthstone.prototype.dealSimultaneousDamageToHero = function(hero, amount, source, damagedHeroes) {
+    // trigger before hero damage
+    var handlerParams = {cancel: false, amount: amount, source: source};
+    this.handlers[Events.BEFORE_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams));
+    if (handlerParams.cancel) {
+      return;
+    }
+    
+    var damageLeft = handlerParams.amount;
+    if (!hero.immune) {
+      if (hero.armor > 0) {
+        var damageAbsorbed = Math.min(hero.armor, damageLeft);
+        hero.armor -= damageAbsorbed;
+        damageLeft -= damageAbsorbed;
+      }
+      
+      if (damageLeft > 0) {
+        hero.hp -= damageLeft;
+      }
+      
+      damagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
+    }
+  };
+
+  Hearthstone.prototype.dealSimultaneousDamageToMinion = function(minion, amount, source, damagedMinions) {
     // trigger before minion damage
     var handlerParams = {cancel: false, amount: amount, source: source};
     this.handlers[Events.BEFORE_MINION_TAKES_DAMAGE].forEach(run(this, minion, handlerParams));
@@ -497,56 +570,10 @@
       minion.divineShield = false;
     } else if (handlerParams.amount > 0 && !minion.immune) {
       minion.currentHp -= handlerParams.amount;
-      this.simultaneouslyDamagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
+      damagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
     }
   };
   
-  Hearthstone.prototype.simultaneousDamageDone = function() {
-    for (var i = 0; i < this.simultaneouslyDamagedHeroes.length; i++) {
-      var damagedHero = this.simultaneouslyDamagedHeroes[i];
-      
-      // trigger hero damage handlers
-      this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, damagedHero.hero, damagedHero.amount, damagedHero.source));
-    }
-    this.simultaneouslyDamagedHeroes = [];
-
-    this.simultaneouslyDamagedMinions.sort(function(minion1, minion2) {
-      return minion1.minion.playOrderIndex - minion2.minion.playOrderIndex;
-    });
-
-    for (var i = 0; i < this.simultaneouslyDamagedMinions.length; i++) {
-      var damagedMinion = this.simultaneouslyDamagedMinions[i];
-      // trigger damage handlers
-      this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, damagedMinion.minion, damagedMinion.amount, damagedMinion.source));
-    }
-    var damagedMinions = this.simultaneouslyDamagedMinions.slice(0);
-    this.simultaneouslyDamagedMinions = []; 
-    
-    // possibly split function here depending on ordering of after_takes_damage events and after_attack events.
-    
-    var deathrattles = [];
-    for (var i = 0; i < damagedMinions.length; i++) {
-      var damagedMinion = damagedMinions[i];
-      if (damagedMinion.minion.currentHp <= 0) {
-        var minion = damagedMinion.minion;
-        var position = minion.player.minions.indexOf(minion);
-        minion.die(this);
-
-        // trigger minion death handlers
-        this.handlers[Events.MINION_DIES].forEach(run(this, minion));
-
-        if (minion.deathrattle) {
-          deathrattles.push(minion.deathrattle.bind(minion, this, position));
-        }
-      }
-    }
-
-    // todo: sort deathrattles
-    for (var i = 0; i < deathrattles.length; i++) {
-      deathrattles[i]();
-    }
-  }
-
   Hearthstone.prototype.kill = function(minion) {
     var position = minion.player.minions.indexOf(minion);
 
