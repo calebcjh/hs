@@ -961,6 +961,11 @@
       target.enchantments.push(abuse);
       abuse.registerHandlers(game);
     }}}),
+    AcidicSwampOoze: new Card('Acidic Swamp Ooze', 'Battlecry: Destroy your opponent\'s weapon.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 2, {attack: 3, hp: 2, battlecry: {activate: function(game, minion, position, unused_target) {
+      if (game.otherPlayer.hero.weapon) {
+        game.otherPlayer.hero.weapon.die(game);
+      }
+    }}}),
     BaineBloodhoof: new Card('Baine Bloodhoof', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 4, {draftable: false, attack: 4, hp: 5}),
     CairneBloodhoof: new Card('Cairne Bloodhoof', 'Deathrattle: Summon a 4/5 Baine Bloodhoof.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 4, hp: 5, deathrattle: function(game, position) {
       baine = new Minion(this.player, 'Baine Bloodhoof', NeutralCards.BaineBloodhoof.copy(), 4, 5, false, false, false, false, false, false, false, [], []);

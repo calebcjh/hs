@@ -54,6 +54,21 @@ tests.testAbusiveSergeant = function() {
   assert(1, p1.minions[0].getCurrentAttack());
 };
 
+tests.testAcidicSwampOoze = function() {
+  var p1 = new Player([], new Hunter());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(HunterCards.EaglehornBow.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.AcidicSwampOoze.copy());
+  p2.currentMana = 2;
+  assert(true, !!p1.hero.weapon);
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(false, p1.hero.weapon);
+};
+
 tests.testCrazedAlchemist = function() {
   var p1 = new Player([], new Hunter());
   var p2 = new Player([], new Mage());
