@@ -111,7 +111,7 @@ tests.testPuzzleSolverMoreIceComboManaWyrm = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverProtectLeperGnomes = function() {
+tests.xtestPuzzleSolverProtectLeperGnomes = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -170,7 +170,7 @@ tests.testPuzzleSolverProtectLeperGnomes = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverRandomArcaneMissiles = function() {
+tests.xtestPuzzleSolverRandomArcaneMissiles = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -208,7 +208,7 @@ tests.testPuzzleSolverRandomArcaneMissiles = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverRandomDeadlyShotAbominations = function() {
+tests.xtestPuzzleSolverRandomDeadlyShotAbominations = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -253,7 +253,7 @@ tests.testPuzzleSolverRandomDeadlyShotAbominations = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverRandomArcaneMissilesAbomination = function() {
+tests.xtestPuzzleSolverRandomArcaneMissilesAbomination = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -292,7 +292,7 @@ tests.testPuzzleSolverRandomArcaneMissilesAbomination = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
-tests.testPuzzleSolverRandomSylvanasKrushAntonidas = function() {
+tests.xtestPuzzleSolverRandomSylvanasKrushAntonidas = function() {
   var data = {
     opponent: {
       heroClass: 1,
@@ -551,7 +551,7 @@ tests.testPuzzleSolutionRandomTerrorPortal__SummoningPortal = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.testPuzzleSolverRandomTerrorPortal = function() {
+tests.xtestPuzzleSolverRandomTerrorPortal = function() {
   var data = {
     opponent: {
       heroClass: 7,
@@ -690,7 +690,7 @@ tests.testPuzzleSolutionRandomSoloSylvanas = function() {
   assert(0, puzzle.opponent.hero.hp);
 };
 
-tests.testPuzzleSolverRandomSoloSylvanas = function() {
+tests.xtestPuzzleSolverRandomSoloSylvanas = function() {
   var data = {
     opponent: {
       heroClass: 2,
@@ -756,3 +756,188 @@ tests.testPuzzleSolverRandomSoloSylvanas = function() {
   console.log_('States checked:', solver.statesChecked);
 };
 
+tests.testPuzzleSolutionDamageDeathrattles = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 9,
+      armor: 0,
+      mana: 9,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        NeutralCards.Abomination.copy(),
+        NeutralCards.SludgeBelcher.copy(),
+        NeutralCards.UnstableGhoul.copy(),
+        NeutralCards.UnstableGhoul.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.InnerRage.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 3},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 0,
+          index: 1,
+        }},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 0,
+          index: 1,
+        }},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 0,
+          index: 1,
+        }},
+      ]
+    },
+    player: {
+      heroClass: 4,
+      hp: 6,
+      armor: 0,
+      mana: 9,
+      currentMana: 9,
+      fatigue: 1,
+      hand: [
+        NeutralCards.FlesheatingGhoul.copy(),
+        PriestCards.HolySmite.copy(),
+        // puzzle cards
+        PriestCards.PowerWordShield.copy(),
+        PriestCards.PowerWordShield.copy(),
+        PriestCards.InnerFire.copy(),
+        PriestCards.ShadowMadness.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 1,
+          index: 0,
+        }},
+      ]
+    }
+  }
+  var puzzle = new HearthstonePuzzle(data, false);
+  var p1 = puzzle.opponent;
+  var p2 = puzzle.player;
+    // play shadow madness on 1/1 unstable ghoul
+  p2.turn.playCard(p2.hand[3], undefined, p1.minions[2]);
+  assert(3, p1.minions.length);
+  assert(2, p2.minions.length);
+  assert('Unstable Ghoul', p2.minions[1].name);
+  // heal flesheating ghoul
+  p2.turn.useHeroPower(p2.minions[0]);
+  assert(3, p2.minions[0].currentHp);
+  assert(6, p2.hero.hp);
+  // play power word shield on unstable ghoul
+  p2.turn.playCard(p2.hand[0], undefined, p2.minions[1]);
+  assert(5, p2.minions[1].currentHp);
+  assert(5, p2.hero.hp);
+  // play inner fire on unstable ghoul
+  p2.turn.playCard(p2.hand[1], undefined, p2.minions[1]);
+  assert(5, p2.minions[1].getCurrentAttack());
+  assert(5, p2.hero.hp);
+  // play power word shield on flesheating ghoul
+  p2.turn.playCard(p2.hand[0], undefined, p2.minions[0]);
+  assert(5, p2.minions[0].currentHp);
+  assert(3, p2.hero.hp);
+  // run unstable ghoul into abomination
+  assert('Unstable Ghoul', p2.minions[1].name);
+  p2.turn.minionAttack(p2.minions[1], p1.minions[0]);
+  // everything dead except flesheating ghoul
+  assert(0, p1.minions.length);
+  assert(1, p2.minions.length);
+  assert(7, p1.hero.hp);
+  assert('Flesheating Ghoul', p2.minions[0].name);
+  assert(7, p2.minions[0].getCurrentAttack());
+  // run flesheating ghoul into enemy hero
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(0, p1.hero.hp);
+  assert(1, p2.hero.hp);
+};
+
+tests.testPuzzleSolverDamageDeathrattles = function() {
+  var data = {
+    opponent: {
+      heroClass: 2,
+      hp: 9,
+      armor: 0,
+      mana: 9,
+      currentMana: 0,
+      fatigue: 1,
+      hand: [
+        NeutralCards.Abomination.copy(),
+        NeutralCards.SludgeBelcher.copy(),
+        NeutralCards.UnstableGhoul.copy(),
+        NeutralCards.UnstableGhoul.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.InnerRage.copy(),
+        WarriorCards.InnerRage.copy(),
+      ],
+      deck: [NeutralCards.Wisp.copy()],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 1},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 2},
+        {actionId: Actions.PLAY_CARD, card: 0, position: 3},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 0,
+          index: 1,
+        }},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 0,
+          index: 1,
+        }},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 0,
+          index: 1,
+        }},
+      ]
+    },
+    player: {
+      heroClass: 4,
+      hp: 6,
+      armor: 0,
+      mana: 9,
+      currentMana: 9,
+      fatigue: 1,
+      hand: [
+        NeutralCards.FlesheatingGhoul.copy(),
+        PriestCards.HolySmite.copy(),
+        // puzzle cards
+        PriestCards.PowerWordShield.copy(),
+        PriestCards.PowerWordShield.copy(),
+        PriestCards.InnerFire.copy(),
+        PriestCards.ShadowMadness.copy(),
+      ],
+      deck: [],
+      actions: [
+        {actionId: Actions.PLAY_CARD, card: 0, position: 0},
+        {actionId: Actions.PLAY_CARD, card: 0, target: {
+          type: TargetType.MINION,
+          ownerId: 1,
+          index: 0,
+        }},
+      ]
+    }
+  }
+  var solver = new Solver(data, false);
+  var solution = solver.solve();
+  assert(true, !!solution);
+  console.log_(solution);
+  console.log_('Constructor time:', solver.constructorTime);
+  console.log_('Init time:', solver.initTime);
+  console.log_('Card copy time:', solver.cardCopyTime);
+  console.log_('Replay time:', solver.replayTime);
+  console.log_('States checked:', solver.statesChecked);
+};

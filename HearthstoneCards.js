@@ -731,6 +731,7 @@
   var BasicHero = {
     type: TargetType.HERO,
     hp: 30,
+    maxHp: 30,
     attack: 0,
     attackCount: 0,
     armor: 0,
@@ -999,12 +1000,17 @@
       // update hp
       clonedMinion.currentHp = clonedMinion.getMaxHp() - (target.getMaxHp() - target.currentHp);
       clonedMinion.updateStats(game);
+      clonedMinion.sleeping = true;
       game.updateStats();
       if (clonedMinion.currentHp <= 0) {
         game.kill(clonedMinion);
       }
     }}}),
     FenCreeper: new Card('Fen Creeper', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 5, {attack: 3, hp: 6, taunt: true}),
+    FlesheatingGhoul: new Card('Flesheating Ghoul', 'Whenever a minion dies, gain +1 Attack.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 2, hp: 3, handlers: [{event: Events.MINION_DIES, handler: function(game, minion) {
+      this.owner.enchantments.push(new Enchantment(this.owner, 1, ModifierType.ADD, 0, ModifierType.ADD));
+      game.updateStats();
+    }}]}),
     DamagedGolem: new Card('Damaged Golem', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 2, hp: 1}),
     HarvestGolem: new Card('Harvest Golem', 'Deathrattle: Summon a 2/1 Damaged Golem.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 2, hp: 3, deathrattle: function(game, position) {
       damaged = new Minion(this.player, 'Damaged Golem', NeutralCards.DamagedGolem.copy(), 2, 1, false, false, false, false, false, false, false, [], []);
@@ -1061,6 +1067,14 @@
     SenjinShieldmasta: new Card('Sen\'jin Shieldmasta', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 4, {attack: 3, hp: 5, taunt: true}),
     Sheep: new Card('Sheep', '', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 0, {draftable: false, attack: 1, hp: 1, tag: 'Beast'}),
     Shieldbearer: new Card('Shieldbearer', 'Taunt.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 0, hp: 4, taunt: true}),
+    Slime: new Card('Slime', 'Taunt', Set.NAXXRAMAS, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {draftable: false, attack: 1, hp: 2, taunt: true}),
+    SludgeBelcher: new Card('Sludge Belcher', 'Taunt. Deathrattle: Summon a 1/2 Slime with Taunt.', Set.NAXXRAMAS, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 5, {attack: 3, hp: 5, deathrattle: function(game, position) {
+      slime = new Minion(this.player, 'Slime', NeutralCards.Slime.copy(), 1, 2, false, false, false, false, false, true /* taunt */, false, [], []);
+      this.player.minions.splice(position, 0, slime);
+      slime.playOrderIndex = game.playOrderIndex++;
+      game.updateStats();
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, slime));
+    }}),
     SouthseaDeckhand: new Card('Southsea Deckhand', 'Has Charge while you have a weapon equipped.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 2, hp: 1, tag: 'Pirate', auras: [{charge: true, eligible: function(entity) {
       return entity == this.owner && this.owner.player.hero.weapon;
     }}]}),
@@ -1088,6 +1102,16 @@
     }}),
     TheCoin: new Card('The Coin', 'Gain 1 Mana Crystal this turn only.', Set.BASIC, CardType.SPELL, HeroClass.NEUTRAL, Rarity.FREE, 0, {draftable: false, applyEffects: function(game) {
       game.currentPlayer.currentMana++;
+    }}),
+    UnstableGhoul: new Card('Unstable Ghoul', 'Taunt. Deathrattle: Deal 1 damage to all minions.', Set.NAXXRAMAS, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 2, {attack: 1, hp: 3, taunt: true, deathrattle: function(game) {
+      var group = game.initializeSimultaneousDamage();
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1, this, group);
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.currentPlayer.minions[i], 1, this, group);
+      }
+      game.simultaneousDamageDone(group);
     }}),
     WildPyromancer: new Card('Wild Pyromancer', 'After you cast a spell, deal 1 damage to ALL minions.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {attack: 3, hp: 2, handlers: [{event: Events.AFTER_SPELL, handler: function(game, card, handlerParams) {
       if (game.currentPlayer != this.owner.player) {
@@ -1806,7 +1830,42 @@
     }, activate: function(game, minion, position, target) {
       target.divineShield = true;
     }}}),
-    
+  };
+
+  var PriestCards = {
+    HolySmite: new Card('Holy Smite', 'Deal 2 damage.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      game.dealDamage(target, 2 + game.currentPlayer.spellDamage, this);
+    }}),
+    PowerWordShield: new Card('Power word: Shield', 'Give a minion +2 Health. Draw a card.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      target.enchantments.push(new Enchantment(target, 0, ModifierType.ADD, 2, ModifierType.ADD));
+      target.currentHp += 2;
+      game.updateStats();
+      game.drawCard(game.currentPlayer);
+    }}),
+    InnerFire: new Card('Inner Fire', 'Change a minion\'s Attack to be equal to its Health.', Set.EXPERT, CardType.SPELL, HeroClass.PRIEST, Rarity.COMMON, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      target.enchantments.push(new Enchantment(target, target.currentHp, ModifierType.SET, 0, ModifierType.ADD));
+      game.updateStats();
+    }}),
+    ShadowMadness: new Card('Shadow Madness', 'Gain control of an enemy minion with 3 or less Attack until end of turn.', Set.EXPERT, CardType.SPELL, HeroClass.PRIEST, Rarity.RARE, 4, {minionOnly: true, requiresTarget: true, verify: function(game, unused_position, target) {
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.otherPlayer.minions.indexOf(target) != -1 && target.getCurrentAttack() <= 2;
+    }, applyEffects: function(game, unused_position, target) {
+      var index = game.otherPlayer.minions.indexOf(target);
+      game.otherPlayer.minions.splice(index, 1);
+      game.currentPlayer.minions.push(target);
+      target.player = game.currentPlayer;
+      var shadowMadness = new Enchantment(target, 0, ModifierType.ADD, 0, ModifierType.ADD, [{event: Events.END_TURN, handler: function(game) {
+        var minion = this.owner.owner;        
+        var index = game.currentPlayer.minions.indexOf(minion);
+        game.currentPlayer.minions.splice(index, 1);
+        game.otherPlayer.minions.push(minion);
+        minion.player = game.otherPlayer;
+        game.updateStats();
+      }}]);
+      target.enchantments.push(shadowMadness);
+      shadowMadness.registerHandlers(game);
+      target.sleeping = false;
+      game.updateStats();
+    }}),
   };
 
   var WarlockCards = {
@@ -1933,6 +1992,10 @@
     game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
   }}));
 
+  var Priest = new Hero(new Card('Lesser Heal', 'Restore 2 Health.', Set.BASIC, CardType.HERO_POWER, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    game.dealDamage(target, -2, this);
+  }}));
+
   var Warlock = new Hero(new Card('Life Tap', 'Draw a card and take 2 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.WARLOCK, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
     game.drawCard(game.currentPlayer);
     game.dealDamageToHero(game.currentPlayer.hero, 2);
@@ -1946,6 +2009,7 @@
   window.MageCards = MageCards;
   window.HunterCards = HunterCards;
   window.PaladinCards = PaladinCards;
+  window.PriestCards = PriestCards;
   window.WarlockCards = WarlockCards;
   window.WarriorCards = WarriorCards;
   window.Cards = Cards;
@@ -1956,10 +2020,13 @@
   window.Hunter = Hunter;
   window.Mage = Mage;
   window.Paladin = Paladin;
+  window.Priest = Priest;
   window.Warlock = Warlock;
   window.Warrior = Warrior;
   window.Events = Events;
   window.run = run;
   window.TargetType = TargetType;
   window.Set = Set;
+  window.Enchantment = Enchantment;
+  window.ModifierType = ModifierType;
 })(window, document);

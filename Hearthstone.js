@@ -260,11 +260,12 @@
               for (var k = 0; k < targets.length; k++) {
                 if (card.verify(game, j, targets[k])) {
                   var target = {
+                    name: targets[k].name ? targets[k].name : (targets[k] == game.currentPlayer.hero ? 'own hero' : 'enemy hero'),
                     type: targets[k].type,
                     ownerId: targets[k].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
                     index: targets[k].player.minions.indexOf(targets[k])
                   };
-                  actions.push({actionId: Actions.PLAY_CARD, card: i, position: j, target: target, comment: 'Play ' + card.name + ' on ' + targets[k].name});
+                  actions.push({actionId: Actions.PLAY_CARD, card: i, position: j, target: target, comment: 'Play ' + card.name + ' on ' + target.name});
                 };
               };
             } else if (card.verify(game, j)) {
@@ -275,14 +276,15 @@
           for (var k = 0; k < targets.length; k++) {
             if (card.verify(game, undefined, targets[k])) {
               var target = {
+                name: targets[k].name ? targets[k].name : (targets[k] == game.currentPlayer.hero ? 'own hero' : 'enemy hero'),
                 type: targets[k].type,
                 ownerId: targets[k].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
                 index: targets[k].player.minions.indexOf(targets[k])
               };
               if (card.requiresPosition) {
-                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, position: 0, comment: 'Play ' + card.name + ' on ' + targets[k].name});
+                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, position: 0, comment: 'Play ' + card.name + ' on ' + target.name});
               } else {
-                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, comment: 'Play ' + card.name + ' on ' + targets[k].name});
+                actions.push({actionId: Actions.PLAY_CARD, card: i, target: target, comment: 'Play ' + card.name + ' on ' + target.name});
               }
             };
           };
@@ -300,11 +302,12 @@
           var possibleTargets = minion.listTargets(game);
           for (var j = 0; j < possibleTargets.length; j++) {
             var target = {
+              name: possibleTargets[j].name ? possibleTargets[j].name : (possibleTargets[j] == game.currentPlayer.hero ? 'own hero' : 'enemy hero'),
               type: possibleTargets[j].type,
               ownerId: possibleTargets[j].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
               index: possibleTargets[j].player.minions.indexOf(possibleTargets[j])
             };
-            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target, comment: 'Attack ' + possibleTargets[j].name + ' with ' + minion.name});
+            actions.push({actionId: Actions.MINION_ATTACK, minion: i, target: target, comment: 'Attack ' + target.name + ' with ' + minion.name});
           }
         }
       }
@@ -315,6 +318,7 @@
           for (var i = 0; i < targets.length; i++) {
             if (heroPower.verify(game, undefined /* position */, targets[i])) {
               var target = {
+                name: targets[i].name ? targets[i].name : (targets[i] == game.currentPlayer.hero ? 'own hero' : 'enemy hero'),
                 type: targets[i].type,
                 ownerId: targets[i].player == game.currentPlayer ? game.currentIndex : 1 - game.currentIndex,
                 index: targets[i].player.minions.indexOf(targets[i])
@@ -332,11 +336,12 @@
         var heroTargets = player.hero.listTargets(game);
         for (var i = 0; i < heroTargets.length; i++) {
           var target = {
+            name: heroTargets[i].name ? heroTargets[i].name : (heroTargets[i] == game.currentPlayer.hero ? 'own hero' : 'enemy hero'),   
             type: heroTargets[i].type,
             ownerId: 1 - game.currentIndex,
             index: heroTargets[i].player.minions.indexOf(heroTargets[i])
           };
-          actions.push({actionId: Actions.HERO_ATTACK, target: target, comment: 'Attack ' + heroTargets[i].name + ' with hero.'});
+          actions.push({actionId: Actions.HERO_ATTACK, target: target, comment: 'Attack ' + target.name + ' with hero.'});
         }
       }
       
@@ -394,7 +399,6 @@
   };
   
   Hearthstone.prototype.dealDamage = function(target, amount, source) {
-    console.log(target);
     if (target.type == TargetType.HERO) {
       this.dealDamageToHero(target, amount, source);
     } else {
@@ -411,23 +415,22 @@
     }
     
     var damageLeft = handlerParams.amount;
-    if (!hero.immune) {
-      if (hero.armor > 0) {
+    if (!hero.immune && damageLeft > 0) {
+      if (hero.armor > 0 && damageLeft > 0) {
         var damageAbsorbed = Math.min(hero.armor, damageLeft);
         hero.armor -= damageAbsorbed;
         damageLeft -= damageAbsorbed;
       }
-      
-      if (damageLeft > 0) {
-        hero.hp -= damageLeft;
-      
-        if(this.checkEndGame()) {
-          return;
-        }
-      }
+
+      hero.hp -= damageLeft;
       
       // trigger hero damage handlers
       this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, handlerParams.amount, source));
+    } else if (damageLeft < 0) { // heal
+      var healAmount = Math.min(0 - damageLeft, hero.maxHp - hero.hp);
+      hero.hp += healAmount;
+
+      this.handlers[Events.AFTER_HERO_TAKES_DAMAGE].forEach(run(this, hero, 0 - healAmount, source));
     }
   };
   
@@ -438,7 +441,6 @@
     if (handlerParams.cancel) {
       return;
     }
-    
     if (handlerParams.amount > 0 && minion.divineShield) {
       minion.divineShield = false;
     } else if (handlerParams.amount > 0 && !minion.immune) {
@@ -450,6 +452,12 @@
       if (minion.currentHp <= 0) {
         this.kill(minion);
       }
+    } else if (handlerParams.amount < 0) { // heal
+      var healAmount = Math.min(0 - handlerParams.amount, minion.getMaxHp() - minion.currentHp);
+      minion.currentHp += healAmount;
+
+      // trigger damage handlers
+      this.handlers[Events.AFTER_MINION_TAKES_DAMAGE].forEach(run(this, minion, 0 - healAmount, source));
     }
   };
   
@@ -463,6 +471,7 @@
     group.push({target: target, amount: amount, source: source});
   };
   
+  // handle heals
   Hearthstone.prototype.simultaneousDamageDone = function(group) {
     // sort by play order
     group.sort(function(t1, t2) {
@@ -547,7 +556,7 @@
     }
     
     var damageLeft = handlerParams.amount;
-    if (!hero.immune) {
+    if (!hero.immune && damageLeft > 0) {
       if (hero.armor > 0) {
         var damageAbsorbed = Math.min(hero.armor, damageLeft);
         hero.armor -= damageAbsorbed;
@@ -559,6 +568,11 @@
       }
       
       damagedHeroes.push({hero: hero, amount: handlerParams.amount, source: source});
+    } else if (damageLeft < 0) { // heal
+      var healAmount = Math.min(0 - damageLeft, hero.maxHp - hero.hp);
+      hero.hp += healAmount;
+      
+      damagedHeroes.push({hero: hero, amount: 0 - healAmount, source: source});
     }
   };
 
@@ -575,6 +589,11 @@
     } else if (handlerParams.amount > 0 && !minion.immune) {
       minion.currentHp -= handlerParams.amount;
       damagedMinions.push({minion: minion, amount: handlerParams.amount, source: source});
+    } else if (handlerParams.amount < 0) { // heal
+      var healAmount = Math.min(0 - handlerParams.amount, minion.getMaxHp() - minion.currentHp);
+      minion.currentHp += healAmount;
+
+      damagedMinions.push({minion: minion, amount: 0 - healAmount, source: source});
     }
   };
   
