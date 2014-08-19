@@ -69,6 +69,38 @@ tests.testAcidicSwampOoze = function() {
   assert(false, p1.hero.weapon);
 };
 
+tests.testAcolyteOfPain = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Priest());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.AcolyteOfPain.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(29, p1.hero.hp);
+  p1.turn.useHeroPower(p1.minions[0]);
+  assert(27, p1.hero.hp);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(PriestCards.ShadowMadness.copy());
+  p2.currentMana = 7;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.minionAttack(p2.minions[0], p1.minions[0]);
+  assert(24, p1.hero.hp);
+  p2.turn.useHeroPower(p1.minions[0]);
+  assert(24, p1.hero.hp);
+  p2.turn.playCard(p2.hand[1], undefined, p1.minions[0]);
+  assert(29, p2.hero.hp);
+  p2.turn.minionAttack(p2.minions[0], p1.minions[0]);
+  assert(27, p2.hero.hp);
+  p2.turn.endTurn();
+  assert(20, p1.hero.hp);
+  p1.currentMana = 2;
+  p1.turn.useHeroPower(p1.minions[0]);
+  assert(15, p1.hero.hp);
+};
+
 tests.testCrazedAlchemist = function() {
   var p1 = new Player([], new Hunter());
   var p2 = new Player([], new Mage());

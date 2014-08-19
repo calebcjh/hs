@@ -967,6 +967,11 @@
         game.otherPlayer.hero.weapon.die(game);
       }
     }}}),
+    AcolyteOfPain: new Card('Acolyte of Pain', 'Whenever this minion takes damage, draw a card.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 3, {attack: 1, hp: 3, handlers: [{event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
+      if (minion == this.owner && amount > 0) {
+        game.drawCard(this.owner.player);
+      }
+    }}]}),
     BaineBloodhoof: new Card('Baine Bloodhoof', '', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 4, {draftable: false, attack: 4, hp: 5}),
     CairneBloodhoof: new Card('Cairne Bloodhoof', 'Deathrattle: Summon a 4/5 Baine Bloodhoof.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 6, {attack: 4, hp: 5, deathrattle: function(game, position) {
       baine = new Minion(this.player, 'Baine Bloodhoof', NeutralCards.BaineBloodhoof.copy(), 4, 5, false, false, false, false, false, false, false, [], []);
@@ -1836,7 +1841,7 @@
     HolySmite: new Card('Holy Smite', 'Deal 2 damage.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, 2 + game.currentPlayer.spellDamage, this);
     }}),
-    PowerWordShield: new Card('Power word: Shield', 'Give a minion +2 Health. Draw a card.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+    PowerWordShield: new Card('Power Word: Shield', 'Give a minion +2 Health. Draw a card.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       target.enchantments.push(new Enchantment(target, 0, ModifierType.ADD, 2, ModifierType.ADD));
       target.currentHp += 2;
       game.updateStats();
