@@ -161,6 +161,26 @@ tests.testFacelessManipulator__auraBuffed1HpMinion = function() {
   assert(0, p2.minions.length);
 };
 
+tests.testFlesheatingGhoul = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.FlesheatingGhoul.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.currentMana = 4;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 1;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(2, p1.minions[0].getCurrentAttack());
+  // Run Stonetusk Boars into each other.
+  p2.turn.minionAttack(p2.minions[0], p1.minions[1]);
+  assert(4, p1.minions[0].getCurrentAttack());  
+};
+
+
 tests.testIronforgeRifleman = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());
@@ -227,6 +247,22 @@ tests.testRagnarosTheFirelord = function() {
 
 tests.testRagnarosTheFirelord__silenced = function() {
   throw new Error('Not implemented');
+};
+
+tests.testSludgeBelcher = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.SludgeBelcher.copy());
+  p1.hand.push(MageCards.Fireball.copy());
+  p1.currentMana = 9;
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  assert('Sludge Belcher', p1.minions[0].name);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.minions.length);
+  assert('Slime', p1.minions[0].name);
+  assert(true, p1.minions[0].taunt);
 };
 
 tests.testSouthseaDeckhand = function() {
@@ -360,6 +396,24 @@ tests.testSylvanasWindrunner__trade = function() {
   assert(false, randomCalled);
   p1.turn.minionAttack(p1.minions[0], p2.minions[0]);
   assert(false, randomCalled);
+};
+
+tests.testUnstableGhoul = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.UnstableGhoul.copy());
+  p1.hand.push(NeutralCards.UnstableGhoul.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.hand.push(MageCards.Fireball.copy());
+  p1.currentMana = 9;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0], 2);
+  assert(3, p1.minions.length);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.minions.length);
+  assert(2, p1.minions[0].currentHp);
 };
 
 tests.testWildPyromancer = function() {

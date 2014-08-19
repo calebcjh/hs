@@ -595,3 +595,74 @@ tests.testFacelessManipulatorAbusiveSergeant = function() {
   p1.turn.endTurn();
   assert(1, p1.minions[2].getCurrentAttack());
 };
+
+tests.testFacelessManipulatorShadowMadness = function() {
+  throw new Error('Not implemented');
+};
+
+tests.testDeathrattlePuzzle = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Priest());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.Abomination.copy());
+  p1.hand.push(NeutralCards.SludgeBelcher.copy());
+  p1.hand.push(NeutralCards.UnstableGhoul.copy());
+  p1.hand.push(NeutralCards.UnstableGhoul.copy());
+  p1.currentMana = 13;
+  p1.hero.hp = 9;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0], 2);
+  p1.turn.playCard(p1.hand[0], 3);
+  p1.minions[1].currentHp = 2;
+  p1.minions[1].enchantments.push(new Enchantment(p1.minions[2], 6, ModifierType.ADD, 0, ModifierType.ADD));
+  game.updateStats();
+  p1.turn.endTurn();
+  p2.hand = [];
+  p2.hand.push(NeutralCards.FlesheatingGhoul.copy());
+  p2.hand.push(PriestCards.PowerWordShield.copy());
+  p2.hand.push(PriestCards.PowerWordShield.copy());
+  p2.hand.push(PriestCards.InnerFire.copy());
+  p2.hand.push(PriestCards.ShadowMadness.copy());
+  p2.fatigue = 1;
+  p2.currentMana = 12;
+  p2.hero.hp = 6;
+  p2.turn.playCard(p2.hand[0], 0);
+  p2.minions[0].sleeping = false;
+  p2.minions[0].currentHp = 1;
+  // begin solution
+  // play shadow madness on 1/1 unstable ghoul
+  p2.turn.playCard(p2.hand[3], undefined, p1.minions[2]);
+  assert(3, p1.minions.length);
+  assert(2, p2.minions.length);
+  assert('Unstable Ghoul', p2.minions[1].name);
+  // heal flesheating ghoul
+  p2.turn.useHeroPower(p2.minions[0]);
+  assert(3, p2.minions[0].currentHp);
+  assert(6, p2.hero.hp);
+  // play power word shield on unstable ghoul
+  p2.turn.playCard(p2.hand[0], undefined, p2.minions[1]);
+  assert(5, p2.minions[1].currentHp);
+  assert(5, p2.hero.hp);
+  // play inner fire on unstable ghoul
+  p2.turn.playCard(p2.hand[1], undefined, p2.minions[1]);
+  assert(5, p2.minions[1].getCurrentAttack());
+  assert(5, p2.hero.hp);
+  // play power word shield on flesheating ghoul
+  p2.turn.playCard(p2.hand[0], undefined, p2.minions[0]);
+  assert(5, p2.minions[0].currentHp);
+  assert(3, p2.hero.hp);
+  // run unstable ghoul into abomination
+  assert('Unstable Ghoul', p2.minions[1].name);
+  p2.turn.minionAttack(p2.minions[1], p1.minions[0]);
+  // everything dead except flesheating ghoul
+  assert(0, p1.minions.length);
+  assert(1, p2.minions.length);
+  assert(7, p1.hero.hp);
+  assert('Flesheating Ghoul', p2.minions[0].name);
+  assert(7, p2.minions[0].getCurrentAttack());
+  // run flesheating ghoul into enemy hero
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(0, p1.hero.hp);
+  assert(1, p2.hero.hp);
+};

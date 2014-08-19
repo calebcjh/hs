@@ -15,7 +15,7 @@
     Hunter,
     Mage,
     Paladin,
-    undefined, /* Priest */
+    Priest,
     undefined, /* Rogue */
     undefined, /* Shaman */
     Warlock,
