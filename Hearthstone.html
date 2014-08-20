@@ -16,14 +16,229 @@
   
   .card {
     display: inline-block;
-    width: 100px;
-    height: 150px;
-    border: 1px solid black;
+    width: 178px;
+    height: 250px;
     position: relative;
     text-align: center;
     margin: auto;
     font-size: 12px;
     vertical-align: bottom;
+  }
+  
+  .card.minionCard .overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('http://www.hsdeck.com/images/cardframe_minion_03.png');
+  }
+  
+  .card.spellCard .overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('http://www.hsdeck.com/images/cardframe_spell_03.png');
+  }
+  
+  .card.weaponCard .overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('http://www.hsdeck.com/images/cardframe_equipment_03.png');
+  }
+  
+  .card.spellCard .image {
+    position: absolute;
+    left: 25px;
+    top: 28px;
+  }
+  
+  .card.minionCard .image {
+    position: absolute;
+    left: 40px;
+    top: 5px;
+  }
+  
+  .card.weaponCard .image {
+    position: absolute;
+    left: 32px;
+    top: 18px;
+  }
+  
+  .card .mana, .card .attack, .card .hp {
+    position: absolute;
+    display: block;
+    width: 40px;
+    text-align: center;
+    font-size: 34px;
+    color: white;
+    text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black, 1px 1px black, -1px 1px black, -1px -1px black, 1px -1px black;
+  }
+  
+  .card .mana {
+    top: 5px;
+    left: 5px;
+  }
+  
+  .card .attack {
+    bottom: 10px;
+    left: 7px;
+  }
+  
+  .card .hp {
+    bottom: 10px;
+    right: 4px;
+  }
+  
+  .card.weaponCard .attack {
+    bottom: 10px;
+    left: 5px;
+  }
+  
+  .card.weaponCard .hp {
+    bottom: 10px;
+    right: 5px;
+  }
+  
+  .card.minionCard .title {
+    display: block;
+    position: absolute;
+    top: 113px;
+    left: 9px;
+  }
+  
+  .card.spellCard .title {
+    display: block;
+    position: absolute;
+    top: 108px;
+    left: 9px;
+  }
+  
+  .card.weaponCard .title {
+    display: block;
+    position: absolute;
+    top: 114px;
+    left: 9px;
+  }
+  
+  .card.spellCard .rarity {
+    background-image: url('http://www.hsdeck.com/images/sprites/rarity_spell.png');
+    width: 30px;
+    height: 30px;
+    display: block;
+    position: absolute;
+    top: 135px;
+    left: 75px;
+  }
+  
+  .card.minionCard .rarity {
+    background-image: url('http://www.hsdeck.com/images/sprites/rarity_minion.png');
+    width: 51px;
+    height: 20px;
+    display: block;
+    position: absolute;
+    top: 138px;
+    left: 68px;
+  }
+  
+  .card.weaponCard .rarity {
+    background-image: url('http://www.hsdeck.com/images/sprites/rarity_equipment.png');
+    width: 28px;
+    height: 22px;
+    display: block;
+    position: absolute;
+    top: 137px;
+    left: 74px;
+  }
+  
+  .minionCard .rarity.common {
+    background-position: 0 0;
+  }
+  
+  .minionCard .rarity.rare {
+    background-position: 0 -20px;
+  }
+  
+  .minionCard .rarity.epic {
+    background-position: 0 -40px;
+  }
+  
+  .minionCard .rarity.legendary {
+    background-position: 0 -60px;
+  }
+  
+  .spellCard .rarity.common {
+    background-position: 0 0;
+  }
+  
+  .spellCard .rarity.rare {
+    background-position: 0 -30px;
+  }
+  
+  .spellCard .rarity.epic {
+    background-position: 0 -60px;
+  }
+  
+  .spellCard .rarity.legendary {
+    background-position: 0 -90px;
+  }
+  
+  .weaponCard .rarity.common {
+    background-position: 0 0;
+  }
+  
+  .weaponCard .rarity.rare {
+    background-position: 0 -22px;
+  }
+  
+  .weaponCard .rarity.epic {
+    background-position: 0 -44px;
+  }
+  
+  .weaponCard .rarity.legendary {
+    background-position: 0 -66px;
+  }
+  
+  .card .description {
+    font-family: helvetica;
+    display: table;
+    position: absolute;
+    overflow: hidden;
+    text-align: center;
+    line-height: 12px;
+  }
+  
+  .card.weaponCard .description {
+    color: white;
+  }
+  
+  .card.minionCard .description, .card.weaponCard .description {
+    top: 160px;
+    left: 32px;
+    width: 115px;
+    height: 60px;
+  }
+  
+  .card.spellCard .description {
+    top: 165px;
+    left: 34px;
+    width: 110px;
+    height: 55px;
+  }
+  
+  .card .description span {
+    font-size: 11px;
+    display: table-cell;
+    vertical-align: middle;
+  }
+  
+  .card.minionCard .dragon {
+    background-image: url('http://www.hsdeck.com/images/dragon_frame.png');
+    width: 135px;
+    height: 102px;
+    display: block;
+    position: absolute;
+    top: -7px;
+    left: 40px;
   }
   
   .minion {
@@ -39,19 +254,19 @@
     vertical-align: bottom;
   }
   
-  .card .mana, .minion .mana {
+  .minion .mana {
     position: absolute;
     top: 0;
     left: 0;
   }
   
-  .card .attack, .minion .attack {
+  .minion .attack {
     position: absolute;
     bottom: 0;
     left: 0;
   }
   
-  .card .hp, .minion .hp {
+  .minion .hp {
     position: absolute;
     bottom: 0;
     right: 0;
@@ -286,7 +501,6 @@
   <div id="message">Waiting for an opponent...</div>
   <div id="end_turn">END TURN</div>
   <div id="player_field">
-    <div class="hand"></div>
     <div class="mana_bar"></div>
     <div class="deck"></div>
     <div class="hero">
@@ -297,6 +511,7 @@
     </div>
     <div class="hero_power"></div>
     <div class="minions"></div>
+    <div class="hand"></div>
   </div>
   <div id="draft">
     <div id="draft_container"></div>

@@ -243,11 +243,27 @@
     this.drawCard = function(card) {
       var base = document.createElement('div');
       base.className = 'card';
-      base.innerHTML = card.name;
       
-      if (card == this.selectedCard || this.selectedCards.indexOf(card) != -1) {
-        base.className += ' selected';
+      if (card.type == CardType.SPELL) {
+        base.className += ' spellCard';
+      } else if (card.type == CardType.MINION) {
+        base.className += ' minionCard';
+      } else {
+        base.className += ' weaponCard';
       }
+      
+      var imageContainer = document.createElement('div');
+      imageContainer.className = 'image';
+      base.appendChild(imageContainer);
+      
+      var image = document.createElement('img');
+      console.log(card);
+      image.src = 'http://www.hsdeck.com/images/cards/' + card.getReference() + '.png';
+      imageContainer.appendChild(image);
+      
+      var overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      base.appendChild(overlay);
       
       var mana = document.createElement('div');
       mana.className = 'mana';
@@ -262,13 +278,88 @@
       
         var hp = document.createElement('div');
         hp.className = 'hp';
-        hp.innerHTML = card.hp;
+        if (card.type == CardType.MINION) {
+          hp.innerHTML = card.hp;
+        } else if (card.type == CardType.WEAPON) {
+          hp.innerHTML = card.durability;
+        }
         base.appendChild(hp);
+      }
+      
+      var titleContainer = document.createElement('div');
+      titleContainer.className = 'title';
+      base.appendChild(titleContainer);
+      
+      var title = document.createElement('img');
+      title.src = 'http://www.hsdeck.com/images/cards/titles/' + card.getReference() + '.png';
+      titleContainer.appendChild(title);
+      
+      if (card.rarity != Rarity.FREE && card.set != Set.BASIC) {
+        var rarity = document.createElement('div');
+        rarity.className = 'rarity';
+        switch (card.rarity) {
+          case Rarity.COMMON:
+            rarity.className += ' common';
+            break;
+          case Rarity.RARE:
+            rarity.className += ' rare';
+            break;
+          case Rarity.EPIC:
+            rarity.className += ' epic';
+            break;
+          case Rarity.LEGENDARY:
+            rarity.className += ' legendary';
+            var dragon = document.createElement('div');
+            dragon.className = 'dragon';
+            base.appendChild(dragon);
+            break;
+        }
+        base.appendChild(rarity);
+      }
+      
+      var descriptionContainer = document.createElement('div');
+      descriptionContainer.className = 'description';
+      base.appendChild(descriptionContainer);
+      
+      var description = document.createElement('span');
+      description.innerHTML = card.getDescription();
+      descriptionContainer.appendChild(description);
+      
+      var lineHeight = this.getLineHeight(card);
+      if (lineHeight != 12) {
+        description.style.lineHeight = lineHeight + 'px';
+      }
+      
+      if (card.tag) {
+        var tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.innerHTML = card.tag;
+        base.appendChild(tag);
       }
       
       base.onclick = this.selectCard.bind(this, card);
       
       return base;
+    };
+    
+    this.getLineHeight = function(card) {
+      var sizing = document.createElement('span');
+      sizing.style.fontFamily = 'helvetica';
+      sizing.style.display = 'block';
+      sizing.style.fontSize = '11px';
+      sizing.style.lineHeight = '12px';
+      sizing.style.width = card.type == CardType.SPELL ? '110px' : '115px';
+      sizing.innerHTML = card.getDescription();
+      sizing.style.visibility = 'hidden';
+      document.body.appendChild(sizing);
+      var lineHeight = 12;
+      while(sizing.offsetHeight > (card.type == CardType.SPELL ? 55 : 60)) {
+        lineHeight--;
+        sizing.style.lineHeight = lineHeight + 'px';
+        console.log(lineHeight, card.getDescription());
+      }
+      document.body.removeChild(sizing);
+      return lineHeight;
     };
     
     this.drawMinion = function(minion, index, isPlayer) {

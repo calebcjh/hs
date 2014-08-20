@@ -1976,6 +1976,7 @@
   Cards[HeroClass.HUNTER] = HunterCards;
   Cards[HeroClass.MAGE] = MageCards;
   Cards[HeroClass.PALADIN] = PaladinCards;
+  Cards[HeroClass.PRIEST] = PriestCards;
   Cards[HeroClass.WARLOCK] = WarlockCards;
   Cards[HeroClass.WARRIOR] = WarriorCards;
   Cards[HeroClass.NEUTRAL] = NeutralCards;

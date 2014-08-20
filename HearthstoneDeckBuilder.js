@@ -156,11 +156,11 @@
       base.className = 'card';
       
       if (card.type == CardType.SPELL) {
-        base.className += ' spell';
+        base.className += ' spellCard';
       } else if (card.type == CardType.MINION) {
-        base.className += ' minion';
+        base.className += ' minionCard';
       } else {
-        base.className += ' weapon';
+        base.className += ' weaponCard';
       }
       
       var imageContainer = document.createElement('div');
