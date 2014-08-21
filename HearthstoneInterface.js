@@ -252,6 +252,10 @@
         base.className += ' weaponCard';
       }
       
+      if (card == this.selectedCard || this.selectedCards.indexOf(card) != -1) {
+        base.className += ' selected';
+      }
+      
       var imageContainer = document.createElement('div');
       imageContainer.className = 'image';
       base.appendChild(imageContainer);

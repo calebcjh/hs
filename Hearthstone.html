@@ -15,14 +15,192 @@
   }
   
   .card {
+    border-radius: 15px;
     display: inline-block;
     width: 178px;
     height: 250px;
     position: relative;
     text-align: center;
-    margin: auto;
+    margin-left: -50px;
+    margin-right: -50px;
     font-size: 12px;
     vertical-align: bottom;
+  }
+  
+  .selected.card {
+    transform: translateY(-50px) !important;
+    transform: translateY(-50px);
+    z-index: 999;
+  }
+  
+  .card:hover {
+    transform: translateY(-50px) !important;
+    z-index: 1000;
+  }
+  
+  .card:first-child:nth-last-child(1),
+  .card:first-child:nth-last-child(1) ~ .card {
+    margin: auto;
+  }
+  
+  .card:first-child:nth-last-child(2),
+  .card:first-child:nth-last-child(2) ~ .card {
+    margin: 0 -25px 0 -25px;
+  }
+  
+  .card:first-child:nth-last-child(3),
+  .card:first-child:nth-last-child(3) ~ .card {
+    margin: 0 -34px 0 -34px;
+  }
+  
+  .card:first-child:nth-last-child(4),
+  .card:first-child:nth-last-child(4) ~ .card {
+    margin: 0 -42px 0 -42px;
+  }
+  
+  .card:first-child:nth-last-child(5),
+  .card:first-child:nth-last-child(5) ~ .card {
+    margin: 0 -49px 0 -49px;
+  }
+  
+  .card:first-child:nth-last-child(6),
+  .card:first-child:nth-last-child(6) ~ .card {
+    margin: 0 -55px 0 -55px;
+  }
+  
+  .card:first-child:nth-last-child(7),
+  .card:first-child:nth-last-child(7) ~ .card {
+    margin: 0 -60px 0 -60px;
+  }
+  
+  .card:first-child:nth-last-child(8),
+  .card:first-child:nth-last-child(8) ~ .card {
+    margin: 0 -63px 0 -63px;
+  }
+  
+  .card:first-child:nth-last-child(9),
+  .card:first-child:nth-last-child(9) ~ .card {
+    margin: 0 -65px 0 -65px;
+  }
+  
+  .card:first-child:nth-last-child(10),
+  .card:first-child:nth-last-child(10) ~ .card {
+    margin: 0 -66px 0 -66px;
+  }
+  
+  /* Even */
+  .card:nth-child(1):nth-last-child(10) {
+    transform: rotate(-18deg) scale(0.7) translateY(146px);
+  }
+  
+  .card:nth-child(1):nth-last-child(8),
+  .card:nth-child(2):nth-last-child(9) {
+    transform: rotate(-14deg) scale(0.7) translateY(122px);
+  }
+  
+  .card:nth-child(1):nth-last-child(6),
+  .card:nth-child(2):nth-last-child(7),
+  .card:nth-child(3):nth-last-child(8) {
+    transform: rotate(-10deg) scale(0.7) translateY(93px);
+  }
+  
+  .card:nth-child(1):nth-last-child(4),
+  .card:nth-child(2):nth-last-child(5),
+  .card:nth-child(3):nth-last-child(6),
+  .card:nth-child(4):nth-last-child(7) {
+    transform: rotate(-6deg) scale(0.7) translateY(79px);
+  }
+  
+  .card:nth-child(1):nth-last-child(2),
+  .card:nth-child(2):nth-last-child(3),
+  .card:nth-child(3):nth-last-child(4),
+  .card:nth-child(4):nth-last-child(5),
+  .card:nth-child(5):nth-last-child(6) {
+    transform: rotate(-2deg) scale(0.7) translateY(70px);
+  }
+  
+  .card:nth-child(2):nth-last-child(1),
+  .card:nth-child(3):nth-last-child(2),
+  .card:nth-child(4):nth-last-child(3),
+  .card:nth-child(5):nth-last-child(4),
+  .card:nth-child(6):nth-last-child(5) {
+    transform: rotate(2deg) scale(0.7) translateY(70px);
+  }
+  
+  .card:nth-child(4):nth-last-child(1),
+  .card:nth-child(5):nth-last-child(2),
+  .card:nth-child(6):nth-last-child(3),
+  .card:nth-child(7):nth-last-child(4) {
+    transform: rotate(6deg) scale(0.7) translateY(79px);
+  }
+  
+  .card:nth-child(6):nth-last-child(1),
+  .card:nth-child(7):nth-last-child(2),
+  .card:nth-child(8):nth-last-child(3) {
+    transform: rotate(10deg) scale(0.7) translateY(93px);
+  }
+  
+  .card:nth-child(8):nth-last-child(1),
+  .card:nth-child(9):nth-last-child(2) {
+    transform: rotate(14deg) scale(0.7) translateY(122px);
+  }
+  
+  .card:nth-child(10):nth-last-child(1) {
+    transform: rotate(18deg) scale(0.7) translateY(146px);
+  }
+  
+  /* Odd */
+  
+  .card:nth-child(1):nth-last-child(9) {
+    transform: rotate(-16deg) scale(0.7) translateY(146px);
+  }
+  
+  .card:nth-child(1):nth-last-child(7),
+  .card:nth-child(2):nth-last-child(8) {
+    transform: rotate(-12deg) scale(0.7) translateY(122px);
+  }
+  
+  .card:nth-child(1):nth-last-child(5),
+  .card:nth-child(2):nth-last-child(6),
+  .card:nth-child(3):nth-last-child(7) {
+    transform: rotate(-8deg) scale(0.7) translateY(93px);
+  }
+  
+  .card:nth-child(1):nth-last-child(3),
+  .card:nth-child(2):nth-last-child(4),
+  .card:nth-child(3):nth-last-child(5),
+  .card:nth-child(4):nth-last-child(6) {
+    transform: rotate(-4deg) scale(0.7) translateY(79px);
+  }
+  
+  .card:nth-child(1):nth-last-child(1),
+  .card:nth-child(2):nth-last-child(2),
+  .card:nth-child(3):nth-last-child(3),
+  .card:nth-child(4):nth-last-child(4),
+  .card:nth-child(5):nth-last-child(5) {
+    transform: scale(0.7) translateY(70px);
+  }
+  
+  .card:nth-child(3):nth-last-child(1),
+  .card:nth-child(4):nth-last-child(2),
+  .card:nth-child(5):nth-last-child(3),
+  .card:nth-child(6):nth-last-child(4) {
+    transform: rotate(4deg) scale(0.7) translateY(79px);
+  }
+  
+  .card:nth-child(5):nth-last-child(1),
+  .card:nth-child(6):nth-last-child(2),
+  .card:nth-child(7):nth-last-child(3) {
+    transform: rotate(8deg) scale(0.7) translateY(93px);
+  }
+  
+  .card:nth-child(7):nth-last-child(1),
+  .card:nth-child(8):nth-last-child(2) {
+    transform: rotate(12deg) scale(0.7) translateY(122px);
+  }
+  
+  .card:nth-child(9):nth-last-child(1) {
+    transform: rotate(16deg) scale(0.7) translateY(146px);
   }
   
   .card.minionCard .overlay {
@@ -205,6 +383,8 @@
     overflow: hidden;
     text-align: center;
     line-height: 12px;
+    text-shadow: none;
+    color: black;
   }
   
   .card.weaponCard .description {
@@ -448,7 +628,7 @@
   }
   
   .selected {
-    border: 2px solid red;
+    box-shadow: inset 0 0 10px 5px red, 0 0 10px 5px red;
   }
   
   .frozen {
