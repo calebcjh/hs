@@ -26,6 +26,10 @@
       name.innerHTML = gameName;
       entry.appendChild(name);
       
+      var type = document.createElement('td');
+      type.innerHTML = game.type;
+      entry.appendChild(type);
+      
       var players = document.createElement('td');
       players.innerHTML = game.playerNames.join(', ');
       entry.appendChild(players);
