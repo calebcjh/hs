@@ -1872,6 +1872,22 @@
       game.updateStats();
     }}),
   };
+  
+  var ShamanCards = {
+    HealingTotem: new Card('Healing Totem', 'At the end of your turn, restore 1 Health to all friendly minions.', Set.BASIC, CardType.MINION, HeroClass.SHAMAN, Rarity.FREE, 1, {draftable: false, hp: 2, attack: 0, tag: 'Totem', handlers: [{event: Events.END_TURN, handler: function(game) {
+      if (game.currentPlayer == this.owner.player) {
+        var group = game.initializeSimultaneousDamage();
+        for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+          game.dealSimultaneousDamage(game.otherPlayer.minions[i], -1, this, group);
+        }
+        game.simultaneousDamageDone(group);
+      }
+    }}]}),
+    SearingTotem: new Card('Searing Totem', '', Set.BASIC, CardType.MINION, HeroClass.PALADIN, Rarity.FREE, 1, {draftable: false, hp: 1, attack: 1, tag: 'Totem'}),
+    StoneclawTotem: new Card('Stoneclaw Totem', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 1, {draftable: false, attack: 0, hp: 2, taunt: true}),
+    // todo: spell damage
+    WrathOfAirTotem: new Card('Wrath of Air Totem', 'Spell Damage +1', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 1, {draftable: false, attack: 0, hp: 2}),
+  };
 
   var WarlockCards = {
     PowerOverwhelming: new Card('Power Overwhelming', 'Give a friendly minion +4/+4 until end of turn. Then, it dies. Horribly.', Set.EXPERT, CardType.SPELL, HeroClass.WARLOCK, Rarity.COMMON, 1, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
@@ -1977,6 +1993,7 @@
   Cards[HeroClass.MAGE] = MageCards;
   Cards[HeroClass.PALADIN] = PaladinCards;
   Cards[HeroClass.PRIEST] = PriestCards;
+  Cards[HeroClass.SHAMAN] = ShamanCards;
   Cards[HeroClass.WARLOCK] = WarlockCards;
   Cards[HeroClass.WARRIOR] = WarriorCards;
   Cards[HeroClass.NEUTRAL] = NeutralCards;
@@ -2001,6 +2018,29 @@
   var Priest = new Hero(new Card('Lesser Heal', 'Restore 2 Health.', Set.BASIC, CardType.HERO_POWER, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
     game.dealDamage(target, -2, this);
   }}));
+  
+  var Shaman = new Hero(new Card('Totemic Call', 'Summon a random Totem', Set.BASIC, CardType.HERO_POWER, HeroClass.SHAMAN, Rarity.FREE, 2, {verify: function(game, unused_target) {
+    return game.currentPlayer.minions.filter(function(minion) {
+      return ['Healing Totem', 'Searing Totem', 'Stoneclaw Totem', 'Wrath of Air Totem'].indexOf(minion.name) != -1;
+    }).length < 4;
+  }, applyEffects: function(game, unused_position, unused_target) {
+    var options = [ShamanCards.HealingTotem.copy(), ShamanCards.SearingTotem.copy(), ShamanCards.StoneclawTotem.copy(), ShamanCards.WrathOfAirTotem.copy()];
+    game.currentPlayer.minions.forEach(function(minion) {
+      option = options.filter(function(card) {
+        return card.name != minion.name
+      });
+    });
+    
+    var selectedIndex = game.random(options.length);
+    var selectedTotem = options[selectedIndex];
+    
+    // todo: spell damage totem.
+    totem = new Minion(game.currentPlayer, selectedTotem.name, selectedTotem, selectedTotem.attack, selectedTotem.hp, false, false, false, false, false, selectedTotem.taunt, false, [], []);
+    game.currentPlayer.minions.push(totem);
+    totem.playOrderIndex = game.playOrderIndex++;
+    game.updateStats();
+    game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, totem));
+  }}));
 
   var Warlock = new Hero(new Card('Life Tap', 'Draw a card and take 2 damage.', Set.BASIC, CardType.HERO_POWER, HeroClass.WARLOCK, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
     game.drawCard(game.currentPlayer);
@@ -2016,6 +2056,7 @@
   window.HunterCards = HunterCards;
   window.PaladinCards = PaladinCards;
   window.PriestCards = PriestCards;
+  window.ShamanCards = ShamanCards;
   window.WarlockCards = WarlockCards;
   window.WarriorCards = WarriorCards;
   window.Cards = Cards;
@@ -2027,6 +2068,7 @@
   window.Mage = Mage;
   window.Paladin = Paladin;
   window.Priest = Priest;
+  window.Shaman = Shaman;
   window.Warlock = Warlock;
   window.Warrior = Warrior;
   window.Events = Events;

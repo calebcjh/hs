@@ -17,7 +17,7 @@
     Paladin,
     Priest,
     undefined, /* Rogue */
-    undefined, /* Shaman */
+    Shaman,
     Warlock,
     Warrior,
   ];

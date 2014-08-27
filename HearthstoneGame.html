@@ -2,14 +2,19 @@
 <script type="text/javascript" src="HearthstoneGame.js"></script>
 
 <div id="game_room">
-  <br>Player name: <input id="player_name" type="text"><br>
+  <br>Player name: <input id="player_name" type="text">
   <br>Deck: <select id="deck"></select><br>
-  <br>Games:<br>
+  <br>Existing Games:<br>
   <table id="games">
     <tr><td>Name</td><td>Type</td><td>Players</td><td>Join</td></tr>
   </table>
-  <br>Create Game<br>
-  <br>Game name: <input id="game_name" type="text"><br>
+  <br>Create Game:
+  <br>Game name: <input id="game_name" type="text">
+  <br>Type: <select id="type">
+    <option>Constructed</option>
+    <option>Constructed Arena</option>
+    <option>Arena</option>
+  </select><br>
   <button id="create">Create</button><br>
 </div>
 
