@@ -2030,7 +2030,9 @@
         return card.name != minion.name
       });
     });
-    
+    console.log_(options, game.currentPlayer.minions.filter(function(minion) {
+      return ['Healing Totem', 'Searing Totem', 'Stoneclaw Totem', 'Wrath of Air Totem'].indexOf(minion.name) != -1;
+    }));
     var selectedIndex = game.random(options.length);
     var selectedTotem = options[selectedIndex];
     
