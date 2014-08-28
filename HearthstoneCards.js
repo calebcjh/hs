@@ -1884,9 +1884,9 @@
       }
     }}]}),
     SearingTotem: new Card('Searing Totem', '', Set.BASIC, CardType.MINION, HeroClass.PALADIN, Rarity.FREE, 1, {draftable: false, hp: 1, attack: 1, tag: 'Totem'}),
-    StoneclawTotem: new Card('Stoneclaw Totem', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 1, {draftable: false, attack: 0, hp: 2, taunt: true}),
+    StoneclawTotem: new Card('Stoneclaw Totem', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 1, {draftable: false, attack: 0, hp: 2, taunt: true, tag: 'Totem'}),
     // todo: spell damage
-    WrathOfAirTotem: new Card('Wrath of Air Totem', 'Spell Damage +1', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 1, {draftable: false, attack: 0, hp: 2}),
+    WrathOfAirTotem: new Card('Wrath of Air Totem', 'Spell Damage +1', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 1, {draftable: false, attack: 0, hp: 2, tag: 'Totem'}),
   };
 
   var WarlockCards = {
