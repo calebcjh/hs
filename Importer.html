@@ -1,0 +1,175 @@
+<textarea id="haystack"></textarea><br>
+Card name: <input id="needle" type=text"><br><button onclick="find()">Find</button>
+
+<script>
+  function find() {
+    var haystack = JSON.parse(document.querySelector('#haystack').value);
+    var needle = document.querySelector('#needle').value;
+    for (var i = 0; i < haystack.length; i++) {
+      if (haystack[i]['CardName'] == needle) {
+        console.log(haystack[i]);
+        console.log(transform(haystack[i]));
+      }
+    }
+  }
+  
+  // CardType
+  // 3 hero
+  // 4 minion
+  // 5 spell
+  // 6 enchantment
+  // 7 weapon
+  // 10 hero power
+  
+  // CardSet
+  // 2 basic
+  // 3 expert
+  // 4 reward
+  // 5 tutorial
+  // 11 promotion
+  // 12 naxxramas
+
+  // Rarity
+  // 1 Free
+  // 2 Common
+  // 3 Rare
+  // 4 Epic
+  // 5 Legendary
+  
+  // Tags
+  // Taunt
+  // Divine Shield
+  // Charge
+  // Windfury
+  // Stealth
+  // Spellpower
+  
+  // Race
+  // 14 Murloc
+  // 15 Demon
+  // 20 Beast
+  // 21 Totem
+  // 23 Pirate
+  // 24 Dragon
+  
+  // Class
+  // 2 Druid
+  // 3 Hunter
+  // 4 Mage
+  // 5 Paladin
+  // 6 Priest
+  // 7 Rogue
+  // 8 Shaman
+  // 9 Warlock
+  // 10 Warrior
+  // 11 Dream
+  
+  function transform(card) {
+    var output = getReference(card);
+    output += ': new Card(\'';
+    output += card['CardName'];
+    output += '\', \'';
+    output += stripTags(card['CardTextInHand']);
+    output += '\', Set.';
+    output += ['?', '?', 'BASIC', 'EXPERT', 'REWARD', 'TUTORIAL', 'PROMOTION', 'NAXXRAMAS'][card['CardSet']];
+    output += ', CardType.';
+    output += ['?', '?', '?', '!!' /* hero */, 'MINION', 'SPELL', '!!' /* enchantment */, 'WEAPON', '?', '?', 'HERO_POWER'][card['CardType']];
+    output += ', HeroClass.';
+    output += ['NEUTRAL', '?', 'DRUID', 'HUNTER', 'MAGE', 'PALADIN', 'PRIEST', 'ROGUE', 'SHAMAN', 'WARLOCK', 'WARIOR', 'DREAM'][card['Class']];
+    output += ', Rarity.';
+    output += ['?', 'FREE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'][card['Rarity']];
+    output += ', ';
+    output += card['Cost'];
+    output += ', {';
+    if (!card['Collectible']) {
+      output += 'draftable: false, ';
+    }
+    if (card['CardType'] == 4) {
+      // minion
+      output += 'attack: ' + card['Atk'] + ', hp: ' + card['Health'];
+      if (card['Race']) {
+        output += ', tag:\'';
+        switch(parseInt(card['Race'])) {
+          case 14:
+            output += 'Murloc';
+            break;
+          case 15:
+            output += 'Demon';
+            break;
+          case 20:
+            output += 'Beast';
+            break;
+          case 21:
+            output += 'Totem';
+            break;
+          case 23:
+            output += 'Pirate';
+            break;
+          case 24:
+            output += 'Dragon';
+            break;
+          default:
+            output += 'TODO';
+        }
+        output += '\'';
+      }
+      if (card['Divine Shield']) {
+        output += ', divineShield: true';
+      }
+      if (card['Charge']) {
+        output += ', charge: true';
+      }
+      if (card['Spellpower']) {
+        output += ', spellPower: ' + card['Spellpower'];
+      }
+      if (card['Steal']) {
+        output += ', stealth: true';
+      }
+      if (card['Taunt']) {
+        output += ', taunt: true';
+      }
+      if (card['Windfury']) {
+        output += ', windfury: true';
+      }
+    } else if (card['CardType'] == 5) {
+      // spell
+      output += 'applyEffect: function(game, unused_position, target) { /* TODO */ }';
+    } else if (card['CardType'] == 7) {
+      // weapon
+      output += 'attack: ' + card['Atk'] + ', durability: ' + card['Durability'];
+    }
+    output += '})';
+    
+    return output;
+  }
+  
+  function getReference(card) {
+    var ucased = card['CardName'].split(' ').map(function(word) {
+      var stripped = word.replace(/[^a-z]/gi, '');
+      return stripped.substr(0, 1).toUpperCase() + (stripped.length > 1 ? stripped.substr(1) : '');
+    });
+    return ucased.join('');
+  }
+  
+  function stripTags(text) {
+    var output = '';
+    var inTag = false;
+    var escaping = false;
+    for (var i = 0; i < text.length; i++) {
+      if (escaping) {
+        output += text.charAt(i);
+        escaping = false;
+      } else if (text.charAt(i) == '&') {
+        inTag = true;
+      } else if (text.charAt(i) == ';') {
+        inTag = false;
+      } else if (!escaping && text.charAt(i) == '\\') {
+        escaping = true;
+      } else if (!inTag) {
+        output += text.charAt(i);
+      }
+    }
+    return output;
+  }
+  
+</script>
