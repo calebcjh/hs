@@ -75,7 +75,7 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
     output += ', CardType.';
     output += ['?', '?', '?', '!!' /* hero */, 'MINION', 'SPELL', '!!' /* enchantment */, 'WEAPON', '?', '?', 'HERO_POWER'][card['CardType']];
     output += ', HeroClass.';
-    output += ['NEUTRAL', '?', 'DRUID', 'HUNTER', 'MAGE', 'PALADIN', 'PRIEST', 'ROGUE', 'SHAMAN', 'WARLOCK', 'WARIOR', 'DREAM'][card['Class']];
+    output += ['NEUTRAL', '?', 'DRUID', 'HUNTER', 'MAGE', 'PALADIN', 'PRIEST', 'ROGUE', 'SHAMAN', 'WARLOCK', 'WARIOR', 'DREAM'][card['Class'] ? card['Class'] : 0];
     output += ', Rarity.';
     output += ['?', 'FREE', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'][card['Rarity']];
     output += ', ';
@@ -83,6 +83,9 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
     output += ', {';
     if (!card['Collectible']) {
       output += 'draftable: false, ';
+    }
+    if (card['TargetingArrowText']) {
+      output += 'requiresTarget: true, ';
     }
     if (card['CardType'] == 4) {
       // minion
@@ -131,6 +134,12 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
       if (card['Windfury']) {
         output += ', windfury: true';
       }
+      if (card['Battlecry']) {
+        output += ', battlecry: { /* TODO */ }';
+      }
+      if (card['Deathrattle']) {
+        output += ', deathrattle: { /* TODO */ }';
+      }
     } else if (card['CardType'] == 5) {
       // spell
       output += 'applyEffect: function(game, unused_position, target) { /* TODO */ }';
@@ -152,24 +161,7 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
   }
   
   function stripTags(text) {
-    var output = '';
-    var inTag = false;
-    var escaping = false;
-    for (var i = 0; i < text.length; i++) {
-      if (escaping) {
-        output += text.charAt(i);
-        escaping = false;
-      } else if (text.charAt(i) == '&') {
-        inTag = true;
-      } else if (text.charAt(i) == ';') {
-        inTag = false;
-      } else if (!escaping && text.charAt(i) == '\\') {
-        escaping = true;
-      } else if (!inTag) {
-        output += text.charAt(i);
-      }
-    }
-    return output;
+    return text.replace(/(<([^>]+)>)/ig, '');
   }
   
 </script>
