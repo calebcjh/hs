@@ -22,7 +22,6 @@
     this.hand = [];
     this.secrets = [];
 		this.minions = [];
-    this.spellDamage = 0;
     
     this.hero.player = this;
     
@@ -610,6 +609,14 @@
     }
   };
 
+  Hearthstone.prototype.getSpellDamage = function(player, amount) {
+    var bonus = 0;
+    for (var i = 0; i < player.minions.length; i++) {
+      bonus += player.minions[i].spellPower;
+    }
+    return bonus + amount;
+  };
+  
   Hearthstone.prototype.drawCard = function(player) {
     if (player.deck.length == 0) {
       // fatigue

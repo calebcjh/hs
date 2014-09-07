@@ -133,3 +133,19 @@ tests.testHeroAttack = function() {
   p2.turn.heroAttack(p2.hero, p1.hero);
   assert(19, p1.hero.hp);
 };
+
+tests.testSpellDamage = function() {
+  var p1 = new Player([], new Mage);
+  var p2 = new Player([], new Hunter);
+  var game = new Hearthstone([p1, p2], 0);
+  p1.currentMana = 9;
+  p1.hand.push(MageCards.Fireball.copy());
+  p1.hand.push(ShamanCards.WrathOfAirTotem.copy());
+  p1.hand.push(MageCards.Fireball.copy());
+  assert(30, p2.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p2.hero);
+  assert(24, p2.hero.hp);
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], undefined, p2.hero);
+  assert(17, p2.hero.hp);
+}
