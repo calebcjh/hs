@@ -2035,8 +2035,7 @@
     var selectedIndex = game.random(options.length);
     var selectedTotem = options[selectedIndex];
     
-    // todo: spell damage totem.
-    totem = new Minion(game.currentPlayer, selectedTotem.name, selectedTotem, selectedTotem.attack, selectedTotem.hp, false, false, false, false, 0, false, selectedTotem.taunt, false, [], []);
+    totem = new Minion(game.currentPlayer, selectedTotem.name, selectedTotem, selectedTotem.attack, selectedTotem.hp, false, false, false, false, selectedTotem.spellPower, false, selectedTotem.taunt, false, [], []);
     game.currentPlayer.minions.push(totem);
     totem.playOrderIndex = game.playOrderIndex++;
     game.updateStats();

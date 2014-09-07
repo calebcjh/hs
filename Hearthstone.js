@@ -21,7 +21,7 @@
     this.usedHeroPower = false;
     this.hand = [];
     this.secrets = [];
-		this.minions = [];
+    this.minions = [];
     
     this.hero.player = this;
     

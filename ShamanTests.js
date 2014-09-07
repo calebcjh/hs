@@ -40,7 +40,9 @@ tests.testTotemicCall = function() {
     assert(1, n);
     return 0;
   }
+  assert(0, game.getSpellDamage(p1, 0));
   p1.turn.useHeroPower();
+  assert(1, game.getSpellDamage(p1, 0));
   assert(0, p1.currentMana);
   assert(4, p1.minions.length);
   assert('Wrath of Air Totem', p1.minions[3].name);
