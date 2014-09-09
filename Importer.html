@@ -71,7 +71,7 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
     output += '\', \'';
     output += stripTags(card['CardTextInHand']);
     output += '\', Set.';
-    output += ['?', '?', 'BASIC', 'EXPERT', 'REWARD', 'TUTORIAL', 'PROMOTION', 'NAXXRAMAS'][card['CardSet']];
+    output += ['?', '?', 'BASIC', 'EXPERT', 'REWARD', 'TUTORIAL', '?', '?', '?', '?', '?', 'PROMOTION', 'NAXXRAMAS'][card['CardSet']];
     output += ', CardType.';
     output += ['?', '?', '?', '!!' /* hero */, 'MINION', 'SPELL', '!!' /* enchantment */, 'WEAPON', '?', '?', 'HERO_POWER'][card['CardType']];
     output += ', HeroClass.';
@@ -122,7 +122,11 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
       if (card['Charge']) {
         output += ', charge: true';
       }
-      if (card['Steal']) {
+      if (card['Spellpower']) {
+        // TODO: Parse from card text.
+        output += ', spellPower: /* TODO */';
+      }
+      if (card['Stealth']) {
         output += ', stealth: true';
       }
       if (card['Taunt']) {
@@ -132,10 +136,10 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
         output += ', windfury: true';
       }
       if (card['Battlecry']) {
-        output += ', battlecry: { /* TODO */ }';
+        output += ', battlecry: {verify: function(game, position, target) { /* TODO */ }, activate: function(game, minion, position, target) { /* TODO */ }}';
       }
       if (card['Deathrattle']) {
-        output += ', deathrattle: { /* TODO */ }';
+        output += ', deathrattle: function(game) { /* TODO */ }';
       }
     } else if (card['CardType'] == 5) {
       // spell

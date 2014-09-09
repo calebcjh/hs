@@ -530,3 +530,26 @@ tests.testYouthfulBrewmaster = function() {
   p1.turn.minionAttack(p1.minions[0], p2.hero);
   assert(28, p2.hero.hp);
 };
+
+tests.testZombieChow = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.ZombieChow.copy());
+  p1.currentMana = 1;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.Fireball.copy());
+  p2.hand.push(MageCards.Fireball.copy());
+  p2.hand.push(NeutralCards.ZombieChow.copy());
+  p2.hand.push(MageCards.Fireball.copy());
+  p2.currentMana = 13;
+  p2.turn.playCard(p2.hand[1], undefined, p1.minions[0]);
+  assert(30, p2.hero.hp);
+  p2.turn.playCard(p2.hand[1], undefined, p1.hero);
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(23, p1.hero.hp);
+  p2.turn.playCard(p2.hand[1], undefined, p2.minions[0]);
+  assert(0, p2.minions.length);
+  assert(28, p1.hero.hp);
+};

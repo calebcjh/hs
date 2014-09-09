@@ -1054,8 +1054,7 @@
     Nozdormu: new Card('Nozdormu', 'Players only have 15 seconds to take their turns.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 9, {attack: 8, hp: 8, tag: 'Dragon'}),
     PriestessOfElune: new Card('Priestess of Elune', 'Battlecry: Restore 4 Health to your hero.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 6, {attack: 5, hp: 4, battlecry: {
       activate: function(game, minion, position, target) {
-        game.currentPlayer.hero.hp = Math.min(game.currentPlayer.hero.hp + 4, 30);
-        // todo: trigger heal events
+        game.dealDamage(game.currentPlayer.hero, -4, this);
       }
     }}),
     RagnarosTheFirelord: new Card('Ragnaros the Firelord', 'Can\'t Attack. At the end of your turn, deal 8 damage to a random enemy.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.LEGENDARY, 8, {attack: 8, hp: 8, listTargets: function() { return []; }, handlers: [{event: Events.END_TURN, handler: function(game) {
@@ -1143,6 +1142,13 @@
       minion.player.hand.push(card);
       game.updateStats();
     }}}),
+    ZombieChow: new Card('Zombie Chow', 'Deathrattle: Restore 5 Health to the enemy hero.', Set.NAXXRAMAS, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {attack: 2, hp: 3, deathrattle: function(game) {
+      if (this.player == game.currentPlayer) {
+        game.dealDamage(game.otherPlayer.hero, -5, this);
+      } else {
+        game.dealDamage(game.currentPlayer.hero, -5, this);
+      }
+    }}), 
   };
   
   var MageCards = {
