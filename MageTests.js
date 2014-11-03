@@ -444,14 +444,17 @@ tests.testMirrorEntity = function() {
   assert(1, p1.secrets.length);
   assert(1, p1.minions.length);
   p1.turn.endTurn();
-  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(NeutralCards.Wisp.copy());
   p2.turn.playCard(p2.hand[1], 0);
   assert(0, p1.secrets.length);
   assert(2, p1.minions.length);
-  assert('Stonetusk Boar', p1.minions[1].name);
+  assert('Wisp', p1.minions[1].name);
+  assert(true, p1.minions[1].sleeping);
   assert(2, p1.minions[1].getCurrentAttack());
   assert(1, p2.minions.length);
-  assert('Stonetusk Boar', p2.minions[0].name);
+  assert('Wisp', p2.minions[0].name);
+  p2.turn.endTurn();
+  assert(false, p1.minions[1].sleeping);
 };
 
 tests.testPyroblast = function() {

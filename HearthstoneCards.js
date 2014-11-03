@@ -400,7 +400,6 @@
     this.immune = false;
     this.sleeping = true;
     this.frozen = false;
-    this.frostElapsed = true;
     this.currentHp = hp;
     this.attackCount = 0;
     this.registeredHandlers = [];
@@ -569,7 +568,6 @@
       clonedMinion.immune = this.immune;
       clonedMinion.sleeping = true;
       clonedMinion.frozen = this.frozen;
-      clonedMinion.frostElapsed = this.frostElapsed;
       clonedMinion.currentHp = this.currentHp;
       clonedMinion.attackCount = 0;
       clonedMinion.registeredHandlers = [];
@@ -1101,6 +1099,7 @@
         opponent.minions.splice(charmedIndex, 1);
         this.player.minions.push(charmedMinion);
         charmedMinion.player = this.player;
+        charmedMinion.sleeping = true;
       }
 
       // update states for all minions due to positional auras
@@ -1191,13 +1190,11 @@
     FrostNova: new Card('Frost Nova', 'Freeze all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.otherPlayer.minions[i].frozen = true;
-        game.otherPlayer.minions[i].frostElapsed = false;
       }
     }}),
     FrostBolt: new Card('Frost Bolt', 'Deal 3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 3), this);
       target.frozen = true;
-      target.frostElapsed = false;
     }}),
     MirrorImageMinion: new Card('Mirror Image', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true, getReference: function() {
       return 'MirrorImageMinion';
@@ -1227,12 +1224,10 @@
       if (source == this.owner && amount > 0) {
         console.log('water elemental hit something!', minion);
         minion.frozen = true;
-        minion.frostElapsed = false;
       }
     }}, {event: Events.AFTER_HERO_TAKES_DAMAGE, handler: function(game, hero, amount, source) {
       if (source == this.owner && amount > 0) {
         hero.frozen = true;
-        hero.frostElapsed = false;
       }
     }}]}),
     ArchmageAntonidas: new Card('Archmage Antonidas', 'Whenever you cast a spell, put a \'Fireball\' spell into your hand.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.LEGENDARY, 7, {attack: 5, hp: 7, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {
@@ -1251,7 +1246,6 @@
         var minion = game.otherPlayer.minions[i];
         game.dealSimultaneousDamage(minion, game.getSpellDamage(game.currentPlayer, 2), this, group);
         minion.frozen = true;
-        minion.frostElapsed = false;
       }
       game.simultaneousDamageDone(group);
     }}),
@@ -1260,19 +1254,16 @@
       var damage = game.getSpellDamage(game.currentPlayer, 1);
       game.dealSimultaneousDamage(target, damage, this, group);
       target.frozen = true;
-      target.frostElapsed = false;
       var index = target.player.minions.indexOf(target);
       if (index - 1 >= 0) {
         var minion = target.player.minions[index - 1];
         game.dealSimultaneousDamage(minion, damage, this, group);
         minion.frozen = true;
-        minion.frostElapsed = false;
       }
       if (index + 1 <= target.player.minions.length - 1) {
         var minion = target.player.minions[index + 1];
         game.dealSimultaneousDamage(minion, damage, this, group);
         minion.frozen = true;
-        minion.frostElapsed = false;
       }
       game.simultaneousDamageDone(group);
     }}),
@@ -1336,7 +1327,6 @@
         game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 4), this);
       } else {
         target.frozen = true;
-        target.frostElapsed = false;
       }
     }}),
     KirinTorMage: new Card('Kirin Tor Mage', 'Battlecry: The next Secret you play this turn costs (0).', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.RARE, 3, {attack: 4, hp: 3, battlecry: {activate: function(game, minion, position, target) {

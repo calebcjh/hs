@@ -635,12 +635,8 @@
   };
   
   Hearthstone.prototype.updateFreezeStatus = function(character) {
-    if (character.frozen) {
-      if (character.frostElapsed) {
-        character.frozen = false;
-      } else {
-        character.frostElapsed = true;
-      }
+    if (character.attackCount == 0) {
+      character.frozen = false;
     }
   };
   
@@ -662,21 +658,6 @@
     // trigger start handlers
     this.handlers[Events.START_TURN].forEach(run(this));
     
-    // unfreeze minions
-    for (var i = 0; i < this.currentPlayer.minions.length; i++) {
-      this.updateFreezeStatus(this.currentPlayer.minions[i]);
-    }
-    
-    // remove summoning sickness
-    this.currentPlayer.minions.forEach(function(minion) {
-      minion.sleeping = false;
-      minion.attackCount = 0;
-    });
-    
-    // unfreeze hero
-    this.updateFreezeStatus(this.currentPlayer.hero);
-    this.currentPlayer.hero.attackCount = 0;
-    
     // draw card
     this.drawCard(this.currentPlayer);
     
@@ -689,6 +670,25 @@
   Hearthstone.prototype.endTurn = function() {
     // trigger turn end handlers
     this.handlers[Events.END_TURN].forEach(run(this));
+    
+    // unfreeze minions
+    for (var i = 0; i < this.currentPlayer.minions.length; i++) {
+      this.updateFreezeStatus(this.currentPlayer.minions[i]);
+    }
+    
+    // remove summoning sickness
+    this.currentPlayer.minions.forEach(function(minion) {
+      minion.sleeping = false;
+      minion.attackCount = 0;
+    });
+    this.otherPlayer.minions.forEach(function(minion) {
+      minion.sleeping = false;
+      minion.attackCount = 0;
+    });
+    
+    // unfreeze hero
+    this.updateFreezeStatus(this.currentPlayer.hero);
+    this.currentPlayer.hero.attackCount = 0;
     
     this.startTurn();
   };
