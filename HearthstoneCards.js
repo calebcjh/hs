@@ -322,7 +322,11 @@
     activate: function(game, opt_target) {
       // spend mana
       game.currentPlayer.currentMana -= this.getCurrentMana();
-      game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, this.attack, this.durability, this.windfury, this.handlers);
+      // Destroys existing weapon.
+      if (game.currentPlayer.hero.weapon) {
+        game.currentPlayer.hero.weapon.die(game);
+      }
+      game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, this.attack, this.durability, this.windfury, this.deathrattle, this.handlers);
       game.currentPlayer.hero.weapon.registerHandlers(game);
       // southsea deckhand
       game.updateStats();
@@ -554,6 +558,7 @@
 
     this.die = function(game) {
       if (this.removed) {
+        // TODO: This should not be necessary.
         return;
       }
       
@@ -632,13 +637,13 @@
     };
   };
   
-  var Weapon = function(player, attack, durability, windfury, eventHandlers) {
+  var Weapon = function(player, attack, durability, windfury, deathrattle, eventHandlers) {
     this.player = player;
     this.attack = attack;
     this.durability = durability;
     this.windfury = windfury;
+    this.deathrattle = deathrattle;
     this.eventHandlers = eventHandlers;
-    this.deathrattle = false;
     this.enchantments = [];
     this.appliedAuras = [];
     this.registeredAuras = [];
@@ -720,11 +725,12 @@
     };
     
     this.die = function(game) {
-      if (this.removed) {
-        return;
-      }
-      this.removed = true;
       this.remove(game);
+      
+      // Deathrattle for weapon handled here.
+      if (this.deathrattle) {
+        this.deathrattle(game);
+      }
     };
   };
   
@@ -1933,12 +1939,33 @@
   };
   
   var WarriorCards = {
+    ArathiWeaponsmith: new Card('Arathi Weaponsmith', 'Battlecry: Equip a 2/2 weapon.', Set.EXPERT, CardType.MINION, HeroClass.WARIOR, Rarity.COMMON, 4, {attack: 3, hp: 3, battlecry: {activate: function(game, minion, position, target) {
+      // Destroys existing weapon.
+      if (game.currentPlayer.hero.weapon) {
+        game.currentPlayer.hero.weapon.die(game);
+      }
+      game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, 2, 2, false, false, []);
+      game.currentPlayer.hero.weapon.registerHandlers(game);
+      // southsea deckhand
+      game.updateStats();
+    }}}),
+    BattleAxe: new Card('BattleAxe', '', Set.EXPERT, CardType.WEAPON, HeroClass.WARIOR, Rarity.COMMON, 1, {draftable: false, attack: 2, durability: 2}),
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
       target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
       target.charge = true;
     }}),
+    DeathsBite: new Card('Death\'s Bite', 'Deathrattle: Deal 1 damage to all minions.', Set.NAXXRAMAS, CardType.WEAPON, HeroClass.WARIOR, Rarity.FREE, 4, {attack: 4, durability: 2, deathrattle: function(game) {
+      var group = game.initializeSimultaneousDamage();
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], 1, this, group);
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.currentPlayer.minions[i], 1, this, group);
+      }
+      game.simultaneousDamageDone(group);
+    }}), 
     WarsongCommander: new Card('Warsong Commander', 'Whenever you summon a minion with 3 or less Attack, give it Charge.', Set.BASIC, CardType.MINION, HeroClass.WARRIOR, Rarity.FREE, 3, {hp: 3, attack: 2, handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
       if (minion != this.owner && minion.player == this.owner.player && minion.attack <= 3) {
         minion.charge = true;
@@ -1978,7 +2005,7 @@
         game.currentPlayer.hero.weapon.durability++;
         game.currentPlayer.hero.weapon.enchantments.push(new Enchantment(game.currentPlayer.hero.weapon, 1, ModifierType.ADD, 0, ModifierType.ADD));
       } else {
-        game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, 1, 3, false, []);
+        game.currentPlayer.hero.weapon = new Weapon(game.currentPlayer, 1, 3, false, false, []);
         game.currentPlayer.hero.weapon.registerHandlers(game);
         game.updateStats();
       };

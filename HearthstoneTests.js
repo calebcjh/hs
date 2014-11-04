@@ -148,4 +148,19 @@ tests.testSpellDamage = function() {
   p1.turn.playCard(p1.hand[0], 0);
   p1.turn.playCard(p1.hand[0], undefined, p2.hero);
   assert(17, p2.hero.hp);
-}
+};
+
+tests.testWeapon = function() {
+  var p1 = new Player([], new Warrior);
+  var p2 = new Player([], new Hunter);
+  var game = new Hearthstone([p1, p2], 0);
+  p1.currentMana = 8;
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(NeutralCards.Wisp.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  p1.turn.playCard(p1.hand[0]);
+  assert(0, p1.minions.length);
+};

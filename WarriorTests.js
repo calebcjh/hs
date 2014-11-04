@@ -1,3 +1,22 @@
+tests.testArathiWeaponsmith = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.LeperGnome.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(WarriorCards.ArathiWeaponsmith.copy());
+  p1.currentMana = 9;
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  p1.turn.playCard(p1.hand[0]);
+  assert(30, p2.hero.hp);
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(1, p1.minions.length);
+  assert('Arathi Weaponsmith', p1.minions[0].name);
+  assert(2, p1.minions[0].currentHp);
+  assert(28, p2.hero.hp);
+};
+
 tests.testCharge = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());
@@ -14,7 +33,44 @@ tests.testCharge = function() {
   assert(4, p1.minions[0].getCurrentAttack());
   p1.turn.minionAttack(p1.minions[0], p2.hero);
   assert(26, p2.hero.hp);
-}
+};
+
+tests.testDeathsBite = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(NeutralCards.StonetuskBoar.copy());
+  p1.currentMana = 5;
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  assert(4, p1.hero.getCurrentAttack());
+  p1.turn.heroAttack(p1.hero, p2.hero);
+  assert(26, p2.hero.hp);
+  assert(1, p1.minions.length); // check that deathbite did not trigger
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.WaterElemental.copy());
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.currentMana = 5;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.endTurn();
+  assert(25, p2.hero.hp);
+  assert(2, p2.minions.length);
+  assert('Water Elemental', p2.minions[1].name);
+  assert(27, p1.hero.hp);
+  assert(1, p1.minions.length);
+  p1.turn.heroAttack(p1.hero, p2.minions[1]);
+  assert(true, p1.hero.frozen);
+  assert(25, p2.hero.hp);
+  assert(24, p1.hero.hp);
+  assert(1, p2.minions.length);
+  assert(0, p1.minions.length);
+  assert(1, p2.minions[0].currentHp);
+  assert(0, p1.hero.getCurrentAttack());
+  assert(false, p1.hero.weapon);
+};
 
 tests.testWarsongCommander = function() {
   var p1 = new Player([], new Warrior());
