@@ -1949,7 +1949,8 @@
       // southsea deckhand
       game.updateStats();
     }}}),
-    BattleAxe: new Card('BattleAxe', '', Set.EXPERT, CardType.WEAPON, HeroClass.WARIOR, Rarity.COMMON, 1, {draftable: false, attack: 2, durability: 2}),
+    BattleAxe: new Card('Battle Axe', '', Set.EXPERT, CardType.WEAPON, HeroClass.WARIOR, Rarity.COMMON, 1, {draftable: false, attack: 2, durability: 2}),
+    ArcaniteReaper: new Card('Arcanite Reaper', '', Set.BASIC, CardType.WEAPON, HeroClass.WARIOR, Rarity.FREE, 5, {draftable: false, attack: 5, durability: 2}),
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
