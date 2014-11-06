@@ -1939,6 +1939,7 @@
   };
   
   var WarriorCards = {
+    BattleAxe: new Card('Battle Axe', '', Set.EXPERT, CardType.WEAPON, HeroClass.WARIOR, Rarity.COMMON, 1, {draftable: false, attack: 2, durability: 2}),
     ArathiWeaponsmith: new Card('Arathi Weaponsmith', 'Battlecry: Equip a 2/2 weapon.', Set.EXPERT, CardType.MINION, HeroClass.WARIOR, Rarity.COMMON, 4, {attack: 3, hp: 3, battlecry: {activate: function(game, minion, position, target) {
       // Destroys existing weapon.
       if (game.currentPlayer.hero.weapon) {
@@ -1949,8 +1950,12 @@
       // southsea deckhand
       game.updateStats();
     }}}),
-    BattleAxe: new Card('Battle Axe', '', Set.EXPERT, CardType.WEAPON, HeroClass.WARIOR, Rarity.COMMON, 1, {draftable: false, attack: 2, durability: 2}),
     ArcaniteReaper: new Card('Arcanite Reaper', '', Set.BASIC, CardType.WEAPON, HeroClass.WARIOR, Rarity.FREE, 5, {draftable: false, attack: 5, durability: 2}),
+    Armorsmith: new Card('Armorsmith', 'Whenever a friendly minion takes damage, gain 1 Armor.', Set.EXPERT, CardType.MINION, HeroClass.WARIOR, Rarity.RARE, 2, {attack: 1, hp: 4, handlers: [{event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
+      if (minion.player == this.owner.player && amount > 0) {
+        this.owner.player.hero.armor++;
+      }
+    }}]}), 
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {

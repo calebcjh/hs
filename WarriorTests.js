@@ -17,6 +17,36 @@ tests.testArathiWeaponsmith = function() {
   assert(28, p2.hero.hp);
 };
 
+tests.testArmorsmith = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Warrior());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.Armorsmith.copy());
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.LeperGnome.copy());
+  p2.hand.push(WarriorCards.Armorsmith.copy());
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(WarriorCards.DeathsBite.copy());
+  p2.hand.push(WarriorCards.ArathiWeaponsmith.copy());
+  p2.currentMana = 12;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], 1);
+  p2.turn.playCard(p2.hand[1], 2);
+  assert(0, p1.hero.armor);
+  assert(0, p2.hero.armor);
+  p2.turn.minionAttack(p2.minions[2], p1.minions[0]);
+  assert(1, p1.hero.armor);
+  assert(1, p2.hero.armor);
+  p2.turn.playCard(p2.hand[1]);
+  p2.turn.heroAttack(p2.hero, p1.minions[0]);
+  assert(2, p1.hero.armor);
+  p2.turn.playCard(p2.hand[1], 2);
+  assert(3, p2.hero.armor);
+  assert(2, p2.minions[1].currentHp);
+};
+
 tests.testCharge = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());
