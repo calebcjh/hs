@@ -47,6 +47,38 @@ tests.testArmorsmith = function() {
   assert(2, p2.minions[1].currentHp);
 };
 
+tests.testBattleRage = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Warrior());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.Armorsmith.copy());
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(WarriorCards.Armorsmith.copy());
+  p2.hand.push(WarriorCards.DeathsBite.copy());
+  p2.hand.push(WarriorCards.ArathiWeaponsmith.copy());
+  p2.hand.push(WarriorCards.BattleRage.copy());
+  p2.currentMana = 13;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], 1);
+  p2.turn.playCard(p2.hand[1]);
+  p2.turn.playCard(p2.hand[1], 2);
+  assert(2, p2.currentMana);
+  assert(29, p2.hero.hp);
+  assert(3, p2.hero.armor);
+  assert(0, p2.deck.length);
+  assert(2, p2.hand.length);
+  p2.deck.push(NeutralCards.TheCoin.copy());
+  p2.deck.push(NeutralCards.TheCoin.copy());
+  p2.turn.playCard(p2.hand[1]);
+  assert(29, p2.hero.hp);
+  assert(1, p2.hero.armor);
+  assert(0, p2.deck.length);
+  assert(3, p2.hand.length);
+};
+
 tests.testCharge = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());

@@ -143,7 +143,7 @@ Card name: <input id="needle" type=text"><br><button onclick="find()">Find</butt
       }
     } else if (card['CardType'] == 5) {
       // spell
-      output += 'applyEffect: function(game, unused_position, target) { /* TODO */ }';
+      output += 'applyEffects: function(game, unused_position, target) { /* TODO */ }';
     } else if (card['CardType'] == 7) {
       // weapon
       output += 'attack: ' + card['Atk'] + ', durability: ' + card['Durability'];

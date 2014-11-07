@@ -1955,7 +1955,18 @@
       if (minion.player == this.owner.player && amount > 0) {
         this.owner.player.hero.armor++;
       }
-    }}]}), 
+    }}]}),
+    BattleRage: new Card('Battle Rage', 'Draw a card for each damaged friendly character.', Set.EXPERT, CardType.SPELL, HeroClass.WARIOR, Rarity.COMMON, 2, {applyEffects: function(game, unused_position, target) {
+      if (game.currentPlayer.hero.hp < game.currentPlayer.hero.maxHp) {
+        game.drawCard(game.currentPlayer);
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        var minion = game.currentPlayer.minions[i];
+        if (minion.currentHp < minion.getMaxHp()) {
+          game.drawCard(game.currentPlayer);
+        }
+      }
+    }}),
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
