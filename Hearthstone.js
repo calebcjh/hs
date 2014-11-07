@@ -467,7 +467,11 @@
   };
   
   Hearthstone.prototype.dealSimultaneousDamage = function(target, amount, source, group) {
-    group.push({target: target, amount: amount, source: source});
+    group.push({target: target, amount: amount, kill: false, source: source});
+  };
+  
+  Hearthstone.prototype.killSimultaneously = function(target, source, group) {
+    group.push({target: target, amount: 0, kill: true, source: source});
   };
   
   // handle heals
@@ -503,11 +507,16 @@
     }
     
     // check for dead minions
-    var deadMinions = [];
-    for (var i = 0; i < damagedMinions.length; i++) {
-      var damagedMinion = damagedMinions[i];
-      if (damagedMinion.minion.currentHp <= 0) {
-        var minion = damagedMinion.minion;
+    var deadMinions = [], j = 0;
+    for (var i = 0; i < group.length; i++) {
+      if (damagedMinions.length > j && group[i].target == damagedMinions[j].minion) {
+        if (damagedMinions[j].minion.currentHp <= 0) {
+          group[i].kill = true;
+        }
+        j++;
+      }
+      if (group[i].kill) {
+        var minion = group[i].target;
         var position = minion.player.minions.indexOf(minion);
         minion.die(this);
         deadMinions.push({minion: minion, position: position});

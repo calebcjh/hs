@@ -79,6 +79,44 @@ tests.testBattleRage = function() {
   assert(3, p2.hand.length);
 };
 
+tests.testBrawl = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Warrior());
+  var game = new Hearthstone([p1, p2], 0);
+  var randomCalls = 0;
+  game.random = function(n) { 
+    assert(0, randomCalls++);
+    assert(7, n);
+    return 1; // Armorsmith, TODO: Replace with Cult Master
+  };
+  p1.hand.push(MageCards.ManaWyrm.copy());
+  p1.hand.push(MageCards.WaterElemental.copy());
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.currentMana = 6;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0]);
+  assert(4, p1.minions.length);
+  p1.turn.endTurn();
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.hand.push(WarriorCards.Armorsmith.copy());
+  p2.hand.push(WarriorCards.ArathiWeaponsmith.copy());
+  p2.hand.push(WarriorCards.Brawl.copy());
+  p2.hand.push(WarriorCards.Brawl.copy());
+  p2.currentMana = 17;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1], 1);
+  p2.turn.playCard(p2.hand[1], 2);
+  assert(3, p2.minions.length);
+  p2.turn.playCard(p2.hand[1]);
+  assert(0, p1.minions.length);
+  assert(1, p2.minions.length);
+  assert('Armorsmith', p2.minions[0].name);
+  p2.turn.playCard(p2.hand[1]);
+  assert(1, p2.minions.length);
+  assert(1, p2.hand.length);
+};
+
 tests.testCharge = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());

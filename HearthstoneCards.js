@@ -1967,6 +1967,25 @@
         }
       }
     }}),
+    Brawl: new Card('Brawl', 'Destroy all minions except one. (chosen randomly)', Set.EXPERT, CardType.SPELL, HeroClass.WARIOR, Rarity.EPIC, 5, {applyEffects: function(game, unused_position, target) {
+      var numMinions = game.currentPlayer.minions.length + game.otherPlayer.minions.length;
+      if (numMinions < 2) {
+        return;
+      }
+      var index = game.random(numMinions);
+      var group = game.initializeSimultaneousDamage();
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        if (i != index) {
+          game.killSimultaneously(game.currentPlayer.minions[i], this, group);
+        }
+      }
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        if (i != index - game.currentPlayer.minions.length) {
+          game.killSimultaneously(game.otherPlayer.minions[i], this, group);
+        }
+      }
+      game.simultaneousDamageDone(group);
+    }}),
     Charge: new Card('Charge', 'Give a friendly minion +2 Attack and Charge.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 3, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1;
     }, applyEffects: function(game, unused_position, target) {
