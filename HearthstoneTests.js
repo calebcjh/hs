@@ -171,7 +171,7 @@ tests.testSpellDamageDescription = function() {
   var game = new Hearthstone([p1, p2], 0);
   p1.currentMana = 2;
   p1.hand.push(ShamanCards.WrathOfAirTotem.copy());
-  assert('Deal 3 damage to a character and <b>Freeze</b> it.', MageCards.FrostBolt.getDescription(game, p1));
+  assert('Deal 3 damage. If you have a Beast, deal 5 damage instead.', HunterCards.KillCommand.getDescription(game, p1));
   p1.turn.playCard(p1.hand[0], 0);
-  assert('Deal 4 damage to a character and <b>Freeze</b> it.', MageCards.FrostBolt.getDescription(game, p1));
+  assert('Deal 4 damage. If you have a Beast, deal 6 damage instead.', HunterCards.KillCommand.getDescription(game, p1));
 };
