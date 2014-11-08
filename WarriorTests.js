@@ -135,6 +135,46 @@ tests.testCharge = function() {
   assert(26, p2.hero.hp);
 };
 
+tests.testCleave = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  game.random = function() { return 1 };
+  p1.hand.push(WarriorCards.Cleave.copy());
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0]);
+  assert(2, p1.currentMana);
+  assert(1, p1.hand.length);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.WaterElemental.copy());
+  p2.currentMana = 4;
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(1, p2.minions.length);
+  p2.turn.endTurn();
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0]);
+  assert(2, p1.currentMana);
+  assert(1, p1.hand.length);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.MirrorImage.copy());
+  p2.turn.playCard(p2.hand[1]);
+  assert(3, p2.minions.length);
+  p2.turn.endTurn();
+  p1.currentMana = 1;
+  p1.turn.playCard(p1.hand[0]);
+  assert(1, p1.currentMana);
+  assert(1, p1.hand.length);
+  p1.currentMana = 2;
+  p1.turn.playCard(p1.hand[0]);
+  assert(0, p1.currentMana);
+  assert(0, p1.hand.length);
+  assert(2, p2.minions.length);
+  assert('Water Elemental', p2.minions[0].name);
+  assert(4, p2.minions[0].currentHp);
+  assert('Mirror Image', p2.minions[1].name);
+  assert(2, p2.minions[1].currentHp);
+};
+
 tests.testDeathsBite = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());

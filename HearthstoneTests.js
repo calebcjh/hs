@@ -164,3 +164,14 @@ tests.testWeapon = function() {
   p1.turn.playCard(p1.hand[0]);
   assert(0, p1.minions.length);
 };
+
+tests.testSpellDamageDescription = function() {
+  var p1 = new Player([], new Warrior);
+  var p2 = new Player([], new Hunter);
+  var game = new Hearthstone([p1, p2], 0);
+  p1.currentMana = 2;
+  p1.hand.push(ShamanCards.WrathOfAirTotem.copy());
+  assert('Deal 3 damage to a character and <b>Freeze</b> it.', MageCards.FrostBolt.getDescription(game, p1));
+  p1.turn.playCard(p1.hand[0], 0);
+  assert('Deal 4 damage to a character and <b>Freeze</b> it.', MageCards.FrostBolt.getDescription(game, p1));
+};

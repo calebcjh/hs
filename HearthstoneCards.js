@@ -138,14 +138,26 @@
       });
       return ucased.join('');
     },
-    getDescription: function() {
+    getDescription: function(game, player) {
       var description = this.description;
       var keywords = ['Battlecry', 'Charge', 'Combo', 'Counter', 'Deathrattle', 'Divine Shield', 'Enraged', 'Freeze', 'Immune', 'Overload', 'Secret', 'Silence', 'Spell Power', 'Stealth', 'Taunt', 'Windfury'];
       for (var i = 0; i < keywords.length; i++) {
         var needle = new RegExp(keywords[i].replace(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1'), 'g');
         description = description.replace(needle, '<b>' + keywords[i] + '</b>');
       }
-      return description;
+      
+      var tokens = description.split(' ');
+      for (var i = 0; i < tokens.length; i++) {
+        if (tokens[i].charAt(0) == '$') {
+          if (game && player) {
+            tokens[i] = game.getSpellDamage(player, parseInt(tokens[i].substr(1)));
+          } else {
+            tokens[i] = tokens[i].substr(1);
+          }
+        }
+      }
+      
+      return tokens.join(' ');
     },
   };
   
@@ -1157,7 +1169,7 @@
   };
   
   var MageCards = {
-    ArcaneExplosion: new Card('Arcane Explosion', 'Deal 1 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+    ArcaneExplosion: new Card('Arcane Explosion', 'Deal $1 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
       var group = game.initializeSimultaneousDamage();
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         console.log('hurting', game.otherPlayer.minions[i]);
@@ -1169,7 +1181,7 @@
       game.drawCard(game.currentPlayer);
       game.drawCard(game.currentPlayer);
     }}),
-    ArcaneMissiles: new Card('Arcane Missiles', 'Deal 3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+    ArcaneMissiles: new Card('Arcane Missiles', 'Deal $3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.getSpellDamage(game.currentPlayer, 3); i++) {
         var numTargets = game.otherPlayer.minions.length + (game.otherPlayer.hero.hp > 0 ? 1 : 0);
         var selectedTarget = game.random(numTargets);
@@ -1183,10 +1195,10 @@
         game.dealDamage(target, 1, this);
       }
     }}),
-    Fireball: new Card('Fireball', 'Deal 6 damage.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    Fireball: new Card('Fireball', 'Deal $6 damage.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 6), this);
     }}),
-    Flamestrike: new Card('Flamestrike', 'Deal 4 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
+    Flamestrike: new Card('Flamestrike', 'Deal $4 damage to all enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 7, {applyEffects: function(game, unused_position, unused_target) {
       var group = game.initializeSimultaneousDamage();
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.dealSimultaneousDamage(game.otherPlayer.minions[i], game.getSpellDamage(game.currentPlayer, 4), this, group);
@@ -1198,7 +1210,7 @@
         game.otherPlayer.minions[i].frozen = true;
       }
     }}),
-    FrostBolt: new Card('Frost Bolt', 'Deal 3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    FrostBolt: new Card('Frost Bolt', 'Deal $3 damage to a character and Freeze it.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 3), this);
       target.frozen = true;
     }}),
@@ -1246,7 +1258,7 @@
       }
       console.log('done');
     }}]}),
-    Blizzard: new Card('Blizzard', 'Deal 2 damage to all enemy minions and Freeze them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 6, {applyEffects: function(game, unused_position, unused_target) {
+    Blizzard: new Card('Blizzard', 'Deal $2 damage to all enemy minions and Freeze them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.RARE, 6, {applyEffects: function(game, unused_position, unused_target) {
       var group = game.initializeSimultaneousDamage();
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         var minion = game.otherPlayer.minions[i];
@@ -1255,7 +1267,7 @@
       }
       game.simultaneousDamageDone(group);
     }}),
-    ConeOfCold: new Card('Cone of Cold', 'Freeze a minion and the minions next to it, and deal 1 damage to them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+    ConeOfCold: new Card('Cone of Cold', 'Freeze a minion and the minions next to it, and deal $1 damage to them.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var group = game.initializeSimultaneousDamage();
       var damage = game.getSpellDamage(game.currentPlayer, 1);
       game.dealSimultaneousDamage(target, damage, this, group);
@@ -1328,7 +1340,7 @@
       
       iceBlock.activate(game);
     }}),
-    IceLance: new Card('Ice Lance', 'Freeze a character. If it was already Frozen, deal 4 damage instead.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    IceLance: new Card('Ice Lance', 'Freeze a character. If it was already Frozen, deal $4 damage instead.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       if (target.frozen) {
         game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 4), this);
       } else {
@@ -1405,7 +1417,7 @@
       
       mirrorEntity.activate(game);
     }}),
-    Pyroblast: new Card('Pyroblast', 'Deal 10 damage.', Set.Expert, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 10, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    Pyroblast: new Card('Pyroblast', 'Deal $10 damage.', Set.Expert, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 10, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 10), this);
     }}),
     SorcerersApprentice: new Card('Sorcerer\'s Apprentice', 'Your spells cost (1) less.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.COMMON, 2, {attack: 3, hp: 2, auras: [{mana: -1, eligible: function(entity) {
@@ -1471,7 +1483,7 @@
       game.updateStats();
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, minion));
     }}),
-    ArcaneShot: new Card('Arcane Shot', 'Deal 2 damage', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    ArcaneShot: new Card('Arcane Shot', 'Deal $2 damage', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 2), this);
     }}),
     Houndmaster: new Card('Houndmaster', 'Battlecry: Give a friendly Beast +2/+2 and Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 4, {requiresTarget: true, attack: 4, hp: 3, battlecry: {verify: function(game, position, target) {
@@ -1485,7 +1497,7 @@
       target.enchantments.push(new Enchantment(target, 0, ModifierType.ADD, 1, ModifierType.SET));
       target.updateStats(game, true);
     }}),
-    KillCommand: new Card('Kill Command', 'Deal 3 damage. If you have a Beast, deal 5 damage instead.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    KillCommand: new Card('Kill Command', 'Deal $3 damage. If you have a Beast, deal $5 damage instead.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       var damage = 3;
       for (var i = 0; i < game.currentPlayer.minions.length; i++) {
         if (game.currentPlayer.minions[i].isBeast) {
@@ -1494,7 +1506,7 @@
       }
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, damage), this);
     }}),
-    MultiShot: new Card('Multi-Shot', 'Deal 3 damage to two random enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {verify: function(game, unused_position, unused_target) {
+    MultiShot: new Card('Multi-Shot', 'Deal $3 damage to two random enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {verify: function(game, unused_position, unused_target) {
       return this.__proto__.verify.call(this, game) && game.otherPlayer.minions.length > 1;
     }, applyEffects: function(game, unused_position, unused_target) {
       var targets = 0;
@@ -1585,7 +1597,7 @@
         this.owner.durability++;
       }
     }}]}),
-    ExplosiveShot: new Card('Explosive Shot', 'Deal 5 damage to a minion and 2 damage to adjacent ones.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.RARE, 5, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+    ExplosiveShot: new Card('Explosive Shot', 'Deal $5 damage to a minion and $2 damage to adjacent ones.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.RARE, 5, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var primaryDamage = game.getSpellDamage(game.currentPlayer, 5);
       var secondaryDamage = game.getSpellDamage(game.currentPlayer, 2);
       var group = game.initializeSimultaneousDamage();
@@ -1601,7 +1613,7 @@
       }
       game.simultaneousDamageDone(group);
     }}),
-    ExplosiveTrap: new Card('Explosive Trap', 'Secret: When your hero is attacked, deal 2 damage to all enemies.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+    ExplosiveTrap: new Card('Explosive Trap', 'Secret: When your hero is attacked, deal $2 damage to all enemies.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var explosiveTrap = new Secret(game.currentPlayer, 'Explosive Trap', [{event: Events.BEFORE_MINION_ATTACKS, handler: function(game, minion, handlerParams) {
         var group = game.initializeSimultaneousDamage();
         if (game.currentPlayer != this.owner.player && (handlerParams.target == this.owner.player.hero || handlerParams.originalTarget == this.owner.player.hero)) {
@@ -1792,7 +1804,7 @@
       }}]);
       snakeTrap.activate(game);
     }}),
-    Snipe: new Card('Snipe', 'Secret: When your opponent plays a minion, deal 4 damage to it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
+    Snipe: new Card('Snipe', 'Secret: When your opponent plays a minion, deal $4 damage to it.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.COMMON, 2, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var snipe = new Secret(game.currentPlayer, 'Snipe', [{event: Events.AFTER_MINION_PLAYED_FROM_HAND, handler: function(game, player, position, minion) {
         if (game.currentPlayer != this.owner.player && player != this.owner.player) {
           game.dealDamage(minion, game.getSpellDamage(this.owner.player, 4), this);
@@ -1816,7 +1828,7 @@
   };
   
   var PaladinCards = {
-    Consecration: new Card('Consecration', 'Deal 2 damage to all enemies.', Set.BASIC, CardType.SPELL, HeroClass.PALADIN, Rarity.FREE, 4, {applyEffects: function(game, unused_position, unused_target) {
+    Consecration: new Card('Consecration', 'Deal $2 damage to all enemies.', Set.BASIC, CardType.SPELL, HeroClass.PALADIN, Rarity.FREE, 4, {applyEffects: function(game, unused_position, unused_target) {
       var group = game.initializeSimultaneousDamage();
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         game.dealSimultaneousDamage(game.otherPlayer.minions[i], game.getSpellDamage(game.currentPlayer, 2), this, group);
@@ -1842,7 +1854,7 @@
   };
 
   var PriestCards = {
-    HolySmite: new Card('Holy Smite', 'Deal 2 damage.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    HolySmite: new Card('Holy Smite', 'Deal $2 damage.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 2), this);
     }}),
     PowerWordShield: new Card('Power Word: Shield', 'Give a minion +2 Health. Draw a card.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
@@ -1992,6 +2004,33 @@
       target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
       target.charge = true;
     }}),
+    Cleave: new Card('Cleave', 'Deal $2 damage to two random enemy minions.', Set.BASIC, CardType.SPELL, HeroClass.WARIOR, Rarity.FREE, 2, {verify: function(game, unused_position, unused_target) {
+      return this.__proto__.verify.call(this, game) && game.otherPlayer.minions.length > 1;
+    }, applyEffects: function(game, unused_position, target) {var targets = 0;
+      var len = game.otherPlayer.minions.length;
+      var combinations = 1;
+      for (var i = len; i > 2 && i > (len - 2); i--) {
+        combinations *= i;
+      }
+      for (var i = Math.min(len - 2, 2); i > 1; i--) {
+        combinations /= i;
+      }
+      var selectedCase = game.random(combinations);
+      var k = 0;
+      for (var i = 0; i < len; i++) {
+        for (var j = i + 1; j < len; j++) {
+          if (k == selectedCase) {
+            var group = game.initializeSimultaneousDamage();
+            game.dealSimultaneousDamage(game.otherPlayer.minions[i], game.getSpellDamage(game.currentPlayer, 2), this, group);
+            game.dealSimultaneousDamage(game.otherPlayer.minions[j], game.getSpellDamage(game.currentPlayer, 2), this, group);
+            game.simultaneousDamageDone(group);
+            return;
+          } else {
+            k++;
+          }
+        }
+      }
+    }}),
     DeathsBite: new Card('Death\'s Bite', 'Deathrattle: Deal 1 damage to all minions.', Set.NAXXRAMAS, CardType.WEAPON, HeroClass.WARIOR, Rarity.FREE, 4, {attack: 4, durability: 2, deathrattle: function(game) {
       var group = game.initializeSimultaneousDamage();
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
@@ -2019,7 +2058,7 @@
         hero.weapon.attack--;
       }
     }}]}),
-    InnerRage: new Card('Inner Rage', 'Deal 1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+    InnerRage: new Card('Inner Rage', 'Deal $1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 1), this);
       target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
     }}),
