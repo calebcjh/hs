@@ -468,8 +468,7 @@
         if (savedDeck) {
           this.pickedHero = savedDeck.hero;
           for (var i = 0; i < savedDeck.cards.length; i++) {
-            var cardHash = savedDeck.cards[i].split('_');
-            this.pickedCards.push(Cards[cardHash[0]][cardHash[1]]);
+            this.pickedCards.push(hashToCard(savedDeck.cards[i]));
           }
           this.drawPickedCards();
           this.updateDeckType();

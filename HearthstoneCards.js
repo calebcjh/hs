@@ -43,6 +43,11 @@
     }
   }
   
+  var hashToCard = function(hash) {
+    var cardHash = hash.split('_');
+    return Cards[cardHash[0]][cardHash[1]];
+  };
+  
   var Events = {
     START_TURN: 0,
     END_TURN: 1,
@@ -859,6 +864,29 @@
     NEUTRAL: 9,
   };
   
+  var newHero = function(heroClass) {
+    switch(heroClass) {
+      case HeroClass.DRUID:
+        return new Druid();
+      case HeroClass.HUNTER:
+        return new Hunter();
+      case HeroClass.MAGE:
+        return new Mage();
+      case HeroClass.PALADIN:
+        return new Paladin();
+      case HeroClass.PRIEST:
+        return new Priest();
+      case HeroClass.ROGUE:
+        return new Rogue();
+      case HeroClass.SHAMAN:
+        return new Shaman();
+      case HeroClass.WARLOCK:
+        return new Warlock();
+      case HeroClass.WARRIOR:
+        return new Warrior();
+    }
+  };
+  
   // must implement verify, activate
   var Card = function(name, description, set, type, heroClass, rarity, mana, overrides) {
     this.name = name;
@@ -996,7 +1024,7 @@
       this.player.minions.splice(position, 0, baine);
       baine.playOrderIndex = game.playOrderIndex++;
       game.updateStats();
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, minion));
+      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, this.player, position, baine));
     }}),
     CrazedAlchemist: new Card('Crazed Alchemist', 'Battlecry: Swap the Attack and Health of a minion.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.RARE, 2, {requiresTarget: true, minionOnly: true, attack: 2, hp: 2, battlecry: {activate: function(game, minion, position, target) {
       var attack = target.getCurrentAttack();
@@ -1183,6 +1211,7 @@
     }}),
     ArcaneMissiles: new Card('Arcane Missiles', 'Deal $3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.getSpellDamage(game.currentPlayer, 3); i++) {
+      debugger;
         var numTargets = game.otherPlayer.minions.length + (game.otherPlayer.hero.hp > 0 ? 1 : 0);
         var selectedTarget = game.random(numTargets);
         var target;
@@ -1323,7 +1352,7 @@
     }}),
     IceBlock: new Card('Ice Block', 'Secret: When your hero takes fatal damage, prevent it and become Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.MAGE, Rarity.EPIC, 3, {isSecret: true, applyEffects: function(game, unused_position, unused_target) {
       var iceBlock = new Secret(game.currentPlayer, 'Ice Block', [{event: Events.BEFORE_HERO_TAKES_DAMAGE, handler: function(game, hero, handlerParams) {
-        if (game.currentPlayer != this.owner.player && handlerParams.amount >= hero.hp + hero.armor) {
+        if (game.currentPlayer != this.owner.player && hero == this.owner.player.hero && handlerParams.amount >= hero.hp + hero.armor) {
           handlerParams.amount = 0;
           hero.immune = true;
           
@@ -2175,4 +2204,6 @@
   window.Set = Set;
   window.Enchantment = Enchantment;
   window.ModifierType = ModifierType;
+  window.newHero = newHero;
+  window.hashToCard = hashToCard;
 })(window, document);

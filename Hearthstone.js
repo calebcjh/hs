@@ -702,48 +702,46 @@
     this.startTurn();
   };
   
+  var swap = function(deck, x, y) {
+    var t = deck[x];
+    deck[x] = deck[y];
+    deck[y] = t;
+  };
+  
+  Hearthstone.prototype.shuffle = function(deck) {
+    for (var i = 0; i < deck.length; i++) {
+      swap(deck, i, this.random(deck.length));
+    }
+  };
+  
   Hearthstone.prototype.startGame = function() {
     var p1Options = [], p2Options = [];
+    
+    // shuffle both decks
+    this.shuffle(this.players[0].deck);
+    this.shuffle(this.players[1].deck);
+    
     for (var i = 0; i < 3; i++) {
-      if (this.players[0].deck.length) {
-        // this.players[0].hand.push(p1Options.push(this.players[0].deck.pop().copy()););
-        p1Options.push(this.players[0].deck.pop().copy());
-      }
-      if (this.players[1].deck.length) {
-        // this.players[1].hand.push(this.players[1].deck.pop().copy());
-        p2Options.push(this.players[1].deck.pop().copy());
-      }
-    }
-    if (this.players[1].deck.length) {
-      // this.players[1].hand.push(this.players[1].deck.pop().copy());
+      p1Options.push(this.players[0].deck.pop().copy());
       p2Options.push(this.players[1].deck.pop().copy());
     }
+    p2Options.push(this.players[1].deck.pop().copy());
     
-    if (p1Options.length) {
-      this.mulligansRequired++;
-    }
+    this.mulligansRequired = 2;
     
-    if (p2Options.length) {
-      this.mulligansRequired++;
-    }
-    
-    if (p1Options.length) {
-      var p1DraftTurn = new Turn(this);
-      p1DraftTurn.draftOptions = p1Options;
-      p1DraftTurn.draftPicks = p1Options.length;
-      p1DraftTurn.drafting = true;
-      p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
-      this.players[0].play(p1DraftTurn);
-    }
-    
-    if (p2Options.length) {
-      var p2DraftTurn = new Turn(this);
-      p2DraftTurn.draftOptions = p2Options;
-      p2DraftTurn.draftPicks = p2Options.length;
-      p2DraftTurn.drafting = true;
-      p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
-      this.players[1].play(p2DraftTurn);
-    }
+    var p1DraftTurn = new Turn(this);
+    p1DraftTurn.draftOptions = p1Options;
+    p1DraftTurn.draftPicks = p1Options.length;
+    p1DraftTurn.drafting = true;
+    p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
+    this.players[0].play(p1DraftTurn);
+
+    var p2DraftTurn = new Turn(this);
+    p2DraftTurn.draftOptions = p2Options;
+    p2DraftTurn.draftPicks = p2Options.length;
+    p2DraftTurn.drafting = true;
+    p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
+    this.players[1].play(p2DraftTurn);
     
     this.players[1].hand.push(NeutralCards.TheCoin);
     

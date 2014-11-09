@@ -10,7 +10,7 @@
   include('Hearthstone.js');
   include('HearthstoneCards.js');
 
-  var HearthstoneInterface = function(playerNames, id, actionsRef, seed) {
+  var HearthstoneInterface = function(playerNames, playerDecks, id, actionsRef, seed) {
     this.seed = seed;
     this.random = function () {
       var x = Math.sin(this.seed++) * 10000;
@@ -18,6 +18,7 @@
     }
   
     this.playerNames = playerNames;
+    this.playerDecks = playerDecks;
     this.field = document.getElementById('game_field');
     this.actionsRef = actionsRef;
     this.id = id;
@@ -91,10 +92,6 @@
     };
     
     this.startGame = function() {
-      console.log('STARTGAME CALLED');
-      // deal cards
-      // todo: initial cards
-      
       this.actionsRef.on('child_added', function(snapshot) {
         var action = snapshot.val();
         var player = this.playerControllers[action.playerId];
@@ -148,12 +145,12 @@
       this.field.querySelector('#message').style.display = 'none';
     };
     
-    this.addOpponent = function(name) {
+    this.addOpponent = function(name, deck) {
       if (this.playerNames.length == 1) {
         this.playerNames.push(name);
-        this.opponent = new Player([], new Mage(), this);
+        this.playerDecks.push(deck);
+        this.opponent = new Player(deck.cards.map(hashToCard), newHero(deck.hero), this);
         this.playerControllers.push(this.opponent);
-        this.deal();
         this.draw();
         this.currGame = new Hearthstone(this.playerControllers, this.seed);
         this.startGame();
@@ -182,7 +179,7 @@
           draftContainer.innerHTML = '';
           
           for (var i = 0; i < this.player.turn.draftOptions.length; i++) {
-            draftContainer.appendChild(this.drawCard(this.player.turn.draftOptions[i]));
+            draftContainer.appendChild(this.drawCard(this.player, this.player.turn.draftOptions[i]));
           }
         } else {
           draftOverlay.style.display = 'none';
@@ -194,7 +191,7 @@
       if (isPlayer) {
         field.querySelector('.hand').innerHTML = '';
         for (var i = 0; i < player.hand.length; i++) {
-          field.querySelector('.hand').appendChild(this.drawCard(player.hand[i]));
+          field.querySelector('.hand').appendChild(this.drawCard(player, player.hand[i]));
         }
       } else {
         field.querySelector('.hand').innerHTML = player.hand.length + ' cards in hand';
@@ -240,7 +237,7 @@
       }
     };
     
-    this.drawCard = function(card) {
+    this.drawCard = function(player, card) {
       var base = document.createElement('div');
       base.className = 'card';
       
@@ -326,10 +323,10 @@
       base.appendChild(descriptionContainer);
       
       var description = document.createElement('span');
-      description.innerHTML = card.getDescription();
+      description.innerHTML = card.getDescription(this.currGame, player);
       descriptionContainer.appendChild(description);
       
-      var lineHeight = this.getLineHeight(card);
+      var lineHeight = this.getLineHeight(player, card);
       if (lineHeight != 12) {
         description.style.lineHeight = lineHeight + 'px';
       }
@@ -346,21 +343,21 @@
       return base;
     };
     
-    this.getLineHeight = function(card) {
+    this.getLineHeight = function(player, card) {
       var sizing = document.createElement('span');
       sizing.style.fontFamily = 'helvetica';
       sizing.style.display = 'block';
       sizing.style.fontSize = '11px';
       sizing.style.lineHeight = '12px';
       sizing.style.width = card.type == CardType.SPELL ? '110px' : '115px';
-      sizing.innerHTML = card.getDescription();
+      sizing.innerHTML = card.getDescription(this.currGame, player);
       sizing.style.visibility = 'hidden';
       document.body.appendChild(sizing);
       var lineHeight = 12;
       while(sizing.offsetHeight > (card.type == CardType.SPELL ? 55 : 60)) {
         lineHeight--;
         sizing.style.lineHeight = lineHeight + 'px';
-        console.log(lineHeight, card.getDescription());
+        console.log(lineHeight, card.getDescription(this.currGame, player));
       }
       document.body.removeChild(sizing);
       return lineHeight;
@@ -560,42 +557,18 @@
       this.draw();
     };
     
-    // temporary card dealing
-    this.deal = function() {
-      this.playerControllers[0].deck.push(NeutralCards.StonetuskBoar);
-      this.playerControllers[0].deck.push(NeutralCards.StonetuskBoar);
-      this.playerControllers[0].deck.push(NeutralCards.Wisp);
-      this.playerControllers[0].deck.push(NeutralCards.Wisp);
-
-      this.playerControllers[1].deck.push(NeutralCards.StonetuskBoar);
-      this.playerControllers[1].deck.push(NeutralCards.StonetuskBoar);
-      this.playerControllers[1].deck.push(NeutralCards.Wisp);
-      this.playerControllers[1].deck.push(NeutralCards.Wisp);
-      
-      for (prop in MageCards) {
-        if (MageCards[prop].draftable) {
-          this.playerControllers[0].deck.push(MageCards[prop]);
-          this.playerControllers[0].deck.push(MageCards[prop]);
-          this.playerControllers[1].deck.push(MageCards[prop]);
-          this.playerControllers[1].deck.push(MageCards[prop]);
-        }
-      }
-      
-      this.shuffle(this.playerControllers[0].deck);
-      this.shuffle(this.playerControllers[1].deck);
-    }
-    
     this.field.querySelector('#end_turn').onclick = this.endTurn.bind(this);
-    
     this.field.querySelector('#draft_select').onclick = this.draft.bind(this);
     
     // opponent has yet to join
     if (this.playerNames.length == 1) {
-      this.player = new Player([], new Mage(), this);
+      console.log('opponent has not joined');
+      this.player = new Player(this.playerDecks[0].cards.map(hashToCard), newHero(this.playerDecks[0].hero), this);
       this.playerControllers.push(this.player);
     } else {
-      this.player = new Player([], new Mage(), this);
-      this.opponent = new Player([], new Mage(), this);
+      console.log('opponent has joined');
+      this.player = new Player(this.playerDecks[this.id].cards.map(hashToCard), newHero(this.playerDecks[this.id].hero), this);
+      this.opponent = new Player(this.playerDecks[1 - this.id].cards.map(hashToCard), newHero(this.playerDecks[1 - this.id].hero), this);
       if (this.id == 0) {
         this.playerControllers.push(this.player);
         this.playerControllers.push(this.opponent);
@@ -603,7 +576,6 @@
         this.playerControllers.push(this.opponent);
         this.playerControllers.push(this.player);
       }
-      this.deal();
       this.draw();
       this.currGame = new Hearthstone(this.playerControllers, this.seed);
       this.startGame();
@@ -620,29 +592,45 @@
     var gameName = params.game;
     var name = params.name;
     
+    var decksRef = new Firebase('https://cepheids.firebaseio.com/Hearthstone/decks/');
     var gameServer = new Firebase('https://cepheids.firebaseio.com/Hearthstone/games/' + gameName);
-    var actionsRef, playerNames, seed;
+    var actionsRef, playerInfo, playerNames = [], playerDecks = [], seed;
     gameServer.transaction(function(game) {
       console.log(arguments); 
       if (game != null) {
         actionsRef = gameServer.child('actions');
-        playerNames = game.playerNames.slice(0);
+        playerInfo = game.playerInfo.slice(0);
         seed = game.seed;
       }
       return game;
     }, function() {
-      if (actionsRef == null || playerNames == null || seed == null) {
+      if (actionsRef == null || playerInfo == null || seed == null) {
         console.log('Error: Game does not exist: https://cepheids.firebaseio.com/Hearthstone/games/' + gameName);
         return;
       }
-      window.ui = new HearthstoneInterface(playerNames, playerNames.indexOf(name), actionsRef, seed);
-      if (playerNames.length == 1) {
-        // check for updates
-        gameServer.child('playerNames').on('child_added', function(snapshot) {
-          var playerNames = snapshot.val();
-          window.ui.addOpponent(playerNames[1]);
-        });
-      }
+      
+      decksRef.child(playerInfo[0].deck).on('value', function(snapshot) {
+        playerNames.push(playerInfo[0].name);
+        playerDecks.push(snapshot.val());
+        if (playerInfo.length == 1) {
+          window.ui = new HearthstoneInterface(playerNames, playerDecks, playerNames.indexOf(name), actionsRef, seed);
+          gameServer.child('playerInfo').on('child_added', function(snapshot) {
+            var info = snapshot.val();
+            if (info.name != name) {
+              decksRef.child(info.deck).on('value', function(snapshot) {
+                console.log('child added, adding opponent');
+                window.ui.addOpponent(info.name, snapshot.val());
+              });
+            }
+          });
+        } else {
+          decksRef.child(playerInfo[1].deck).on('value', function(snapshot) {
+            playerNames.push(playerInfo[1].name);
+            playerDecks.push(snapshot.val());
+            window.ui = new HearthstoneInterface(playerNames, playerDecks, playerNames.indexOf(name), actionsRef, seed);
+          });
+        }
+      });
     });
   };
   

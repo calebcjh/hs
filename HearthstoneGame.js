@@ -10,6 +10,30 @@
   var HearthstoneGame = function(roomField) {
     this.roomField = roomField;
     
+    this.decks = new Firebase('https://cepheids.firebaseio.com/Hearthstone/decks/');
+    
+    this.listDeck = function(deckName) {
+      var entry = document.getElementById('deck_' + deckName);
+      if (!entry) {
+        entry = document.createElement('option');
+        entry.id = 'deck_' + deckName;
+        roomField.querySelector('#deck').appendChild(entry);
+      }
+      
+      entry.innerHTML = deckName;
+      entry.value = deckName;
+    };
+    
+    // check for decks
+    this.decks.on('child_added', function(snapshot) {
+      this.listDeck(snapshot.name());
+    }.bind(this));
+    
+    // check for updates
+    this.decks.on('child_changed', function(snapshot) {
+      this.listDeck(snapshot.name());
+    }.bind(this));
+    
     this.server = new Firebase('https://cepheids.firebaseio.com/Hearthstone/games/');
     
     this.listGame = function(gameName, game) {
@@ -31,20 +55,20 @@
       entry.appendChild(type);
       
       var players = document.createElement('td');
-      players.innerHTML = game.playerNames.join(', ');
+      players.innerHTML = game.playerInfo.map(function(info) { return info.name; }).join(', ');
       entry.appendChild(players);
       
       var join = document.createElement('td');
       var button = document.createElement('button');
       button.innerHTML = 'Join';
       button.onclick = function(gameName) {
-        this.joinGame(gameName, roomField.querySelector('#player_name').value);
+        this.joinGame(gameName, roomField.querySelector('#player_name').value, roomField.querySelector('#deck').value);
       }.bind(this, gameName);
       join.appendChild(button);
       entry.appendChild(join);
     };
     
-    this.joinGame = function(gameName, playerName) {
+    this.joinGame = function(gameName, playerName, playerDeck) {
       var ref = this.server.child(gameName);
       var id = -1;
       
@@ -54,12 +78,13 @@
           return game;
         }
         
-        id = game.playerNames.indexOf(playerName);
-        if (id != -1) {
-          return game;
+        for (var i = 0; i < game.playerInfo.length; i++) {
+          if (playerName == game.playerInfo[i].name) {
+            return game;
+          }
         }
         
-        id = game.playerNames.length;
+        id = game.playerInfo.length;
         if (id >= 2) {
           // too many players.
           id = -1;
@@ -67,7 +92,7 @@
           return game;
         }
         
-        game.playerNames.push(playerName);
+        game.playerInfo.push({name: playerName, deck: playerDeck});
         
         return game;
       }, function(error, committed, snapshot) /* completion call back */ {
@@ -84,25 +109,22 @@
     
     // check for games
     this.server.on('child_added', function(snapshot) {
-      var game = snapshot.val();
-      this.listGame(snapshot.name(), game);
+      this.listGame(snapshot.name(), snapshot.val());
     }.bind(this));
     
     // check for updates
     this.server.on('child_changed', function(snapshot) {
-      var game = snapshot.val();
-      var gameName = snapshot.name();
-      this.listGame(gameName, game);
+      this.listGame(snapshot.name(), snapshot.val());
     }.bind(this));
     
-    this.createGame = function(gameName, playerName) {
+    this.createGame = function(gameName, playerName, playerDeck) {
       this.server.child(gameName).transaction(function(currentValue) {
         if (currentValue == null) {
           var actionsRef = this.server.child(gameName).child('actions');
           
           // create game
           var seed = Math.floor(Math.random() * 100000);
-          return {playerNames: [playerName], seed: seed};
+          return {playerInfo: [{name: playerName, deck: playerDeck}], seed: seed};
         } else {
           console.log('Error: Game already exists. Pick a new name');
           return currentValue;
@@ -118,7 +140,7 @@
     };
     
     roomField.querySelector('#create').onclick = function() {
-      this.createGame(roomField.querySelector('#game_name').value, roomField.querySelector('#player_name').value);
+      this.createGame(roomField.querySelector('#game_name').value, roomField.querySelector('#player_name').value, roomField.querySelector('#deck').value);
     }.bind(this);
   };
   
