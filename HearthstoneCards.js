@@ -71,7 +71,6 @@
   }
   
   var EventHandler = function(owner, event, handler) {
-    console.log(this);
     this.owner = owner;
     this.event = event;
     this.handler = handler;
@@ -108,7 +107,6 @@
     requiresTarget: false,
     requiresPosition: false,
     updateStats: function(game) {
-      console.log(this, game);
       for (var i = 0; i < game.auras.length; i++) {
         var aura = game.auras[i];
         var index = this.appliedAuras.indexOf(aura);
@@ -1211,7 +1209,6 @@
     }}),
     ArcaneMissiles: new Card('Arcane Missiles', 'Deal $3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.getSpellDamage(game.currentPlayer, 3); i++) {
-      debugger;
         var numTargets = game.otherPlayer.minions.length + (game.otherPlayer.hero.hp > 0 ? 1 : 0);
         var selectedTarget = game.random(numTargets);
         var target;
