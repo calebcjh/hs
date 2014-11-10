@@ -1209,7 +1209,7 @@
     }}),
     ArcaneMissiles: new Card('Arcane Missiles', 'Deal $3 damage randomly split among enemy characters.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.getSpellDamage(game.currentPlayer, 3); i++) {
-        var numTargets = game.otherPlayer.minions.length + (game.otherPlayer.hero.hp > 0 ? 1 : 0);
+        var numTargets = game.otherPlayer.minions.length + 1;
         var selectedTarget = game.random(numTargets);
         var target;
         if (selectedTarget == numTargets - 1) {

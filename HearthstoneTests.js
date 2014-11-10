@@ -97,10 +97,10 @@ tests.testMulligan = function() {
   assert(5, p2.hand.length);
   assert(4, p2.deck.length);
   assert('The Coin', p2.hand[0].name);
-  assert('Blizzard', p2.hand[1].name);
-  assert('Flamestrike', p2.hand[2].name);
-  assert('Frost Bolt', p2.hand[3].name);
-  assert('Cone of Cold', p2.hand[4].name);
+  assert('Fireball', p2.hand[1].name);
+  assert('Arcane Missiles', p2.hand[2].name);
+  assert('Cone of Cold', p2.hand[3].name);
+  assert('Frost Bolt', p2.hand[4].name);
 };
 
 tests.testHeroAttack = function() {

@@ -722,26 +722,33 @@
     this.shuffle(this.players[1].deck);
     
     for (var i = 0; i < 3; i++) {
-      p1Options.push(this.players[0].deck.pop().copy());
-      p2Options.push(this.players[1].deck.pop().copy());
+      if (this.players[0].deck.length > 0) // check required for tests without cards
+        p1Options.push(this.players[0].deck.pop().copy());
+      if (this.players[1].deck.length > 0)
+        p2Options.push(this.players[1].deck.pop().copy());
     }
-    p2Options.push(this.players[1].deck.pop().copy());
+    if (this.players[1].deck.length > 0)
+      p2Options.push(this.players[1].deck.pop().copy());
     
-    this.mulligansRequired = 2;
+    this.mulligansRequired = (p1Options.length > 0 ? 1 : 0) + (p2Options.length > 0 ? 1 : 0);
     
-    var p1DraftTurn = new Turn(this);
-    p1DraftTurn.draftOptions = p1Options;
-    p1DraftTurn.draftPicks = p1Options.length;
-    p1DraftTurn.drafting = true;
-    p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
-    this.players[0].play(p1DraftTurn);
+    if (p1Options.length > 0) {
+      var p1DraftTurn = new Turn(this);
+      p1DraftTurn.draftOptions = p1Options;
+      p1DraftTurn.draftPicks = p1Options.length;
+      p1DraftTurn.drafting = true;
+      p1DraftTurn.draft = this.mulligan.bind(this, this.players[0], p1Options);
+      this.players[0].play(p1DraftTurn);
+    }
 
-    var p2DraftTurn = new Turn(this);
-    p2DraftTurn.draftOptions = p2Options;
-    p2DraftTurn.draftPicks = p2Options.length;
-    p2DraftTurn.drafting = true;
-    p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
-    this.players[1].play(p2DraftTurn);
+    if (p2Options.length > 0) {
+      var p2DraftTurn = new Turn(this);
+      p2DraftTurn.draftOptions = p2Options;
+      p2DraftTurn.draftPicks = p2Options.length;
+      p2DraftTurn.drafting = true;
+      p2DraftTurn.draft = this.mulligan.bind(this, this.players[1], p2Options);
+      this.players[1].play(p2DraftTurn);
+    }
     
     this.players[1].hand.push(NeutralCards.TheCoin);
     
