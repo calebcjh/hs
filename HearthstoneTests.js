@@ -175,3 +175,26 @@ tests.testSpellDamageDescription = function() {
   p1.turn.playCard(p1.hand[0], 0);
   assert('Deal 4 damage. If you have a Beast, deal 6 damage instead.', HunterCards.KillCommand.getDescription(game, p1));
 };
+
+tests.testBattlecryTarget = function() {
+  var p1 = new Player([], new Warrior);
+  var p2 = new Player([], new Hunter);
+  var game = new Hearthstone([p1, p2], 0);
+  p1.currentMana = 2;
+  p1.hand.push(NeutralCards.AbusiveSergeant.copy());
+  p1.hand.push(NeutralCards.AbusiveSergeant.copy());
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  assert(1, p1.hand.length);
+  assert(1, p1.currentMana);
+  assert('Abusive Sergeant', p1.minions[0].name);
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  assert(1, p1.hand.length);
+  assert(1, p1.currentMana);
+  p1.turn.playCard(p1.hand[0], 0, p1.minions[0]);
+  assert(2, p1.minions.length);
+  assert(4, p1.minions[1].getCurrentAttack());
+  assert(0, p1.hand.length);
+  assert(0, p1.currentMana);
+};

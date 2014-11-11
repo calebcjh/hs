@@ -453,11 +453,17 @@
         this.takeAction(Actions.PLAY_CARD, card, null /* minion */, 0 /* position */, null);
         this.clearSelection();
       } else {
-        if (card.requiresPosition && this.player.minions.length == 0) {
-          this.selectedPosition = 0;
-        }
         console.log(card, 'selected');
         this.selectedCard = card;
+        if (card.requiresPosition && this.player.minions.length == 0) {
+          if (!card.requiresTarget || !card.hasValidTarget(this.currGame, 0)) {
+            console.log('playing', card, 'at position', 0);
+            this.takeAction(Actions.PLAY_CARD, card, null /* minion */, 0);
+            this.clearSelection();
+          } else {
+            this.selectedPosition = 0;
+          }
+        }
       }
       
       this.draw();
@@ -469,7 +475,7 @@
       }
       
       if (this.selectedCard && this.selectedCard.requiresPosition && this.selectedPosition == -1) {
-        if (!this.selectedCard.requiresTarget) {
+        if (!this.selectedCard.requiresTarget || !this.selectedCard.hasValidTarget(this.currGame, index)) {
           console.log('playing', this.selectedCard, 'at position', index);
           this.takeAction(Actions.PLAY_CARD, this.selectedCard, null /* minion */, index);
           this.clearSelection();

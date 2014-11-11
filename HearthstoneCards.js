@@ -203,28 +203,55 @@
         return false;
       }
       
-      if (this.requiresTarget && !opt_target) {
-        console.log('requires target');
-        return false;
-      }
+      // when a minion card requires target, it only applies if there is a valid target.
+      if (this.requiresTarget && this.hasValidTarget(game, position)) {
+        if (!opt_target) {
+          console.log('requires target');
+          return false;
+        }
       
-      // verify target
-      if (opt_target && opt_target.stealth) {
-        console.log('cannot target stealthed minions');
-        return false;
-      }
-      
-      if (this.minionOnly && opt_target.type != TargetType.MINION) {
-        console.log('minion only');
-        return false;
-      }
-      
-      // verify battlecry target
-      if (this.battlecry && this.battlecry.verify) {
-        return this.battlecry.verify(game, position, opt_target);
+        // verify target
+        if (opt_target.stealth) {
+          console.log('cannot target stealthed minions');
+          return false;
+        }
+        
+        if (this.minionOnly && opt_target.type != TargetType.MINION) {
+          console.log('minion only');
+          return false;
+        }
+        
+        // verify battlecry target
+        if (this.battlecry && this.battlecry.verify) {
+          return this.battlecry.verify(game, position, opt_target);
+        }
       }
       
       return true;
+    },
+    hasValidTarget: function(game, position) {
+      if (!this.battlecry || (!this.battlecry.verify && !this.minionOnly)) {
+        return false;
+      }
+      if (!this.battlecry.verify && this.minionOnly) {
+        return game.currentPlayer.minions.length > 0 || game.otherPlayer.minions.length > 0;
+      }
+      if (!this.minionOnly) {
+        if (this.battlecry.verify(game, position, game.currentPlayer.hero) || this.battlecry.verify(game, position, game.otherPlayer.hero)) {
+          return true;
+        }
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        if (this.battlecry.verify(game, position, game.currentPlayer.minions[i])) {
+          return true;
+        }
+      }
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        if (this.battlecry.verify(game, position, game.otherPlayer.minions[i])) {
+          return true;
+        }
+      }
+      return false;
     },
     activate: function(game, position, opt_target) {
       // spend mana
@@ -246,7 +273,7 @@
       game.updateStats();
       
       // execute battlecry
-      if (this.battlecry) {
+      if (this.battlecry && (opt_target || !this.requiresTarget)) {
         this.battlecry.activate(game, minion, position, opt_target);
       }
       
