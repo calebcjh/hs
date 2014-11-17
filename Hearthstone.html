@@ -29,7 +29,6 @@
   
   .selected.card {
     transform: translateY(-50px) !important;
-    transform: translateY(-50px);
     z-index: 999;
   }
   
@@ -201,6 +200,18 @@
   
   .card:nth-child(9):nth-last-child(1) {
     transform: rotate(16deg) scale(0.7) translateY(146px);
+  }
+  
+  #draft_container .card,
+  #draft_container .selected.card  {
+    transform: none !important;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  
+  #draft_container .card:hover,
+  #draft_container .selected.card:hover  {
+    transform: scale(1.1) !important;
   }
   
   .card.minionCard .overlay {
@@ -657,7 +668,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 250px;
+    bottom: 200px;
     text-align: enter;
     vertical-align: middle;
   }
