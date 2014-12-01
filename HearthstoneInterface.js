@@ -366,20 +366,39 @@
     this.drawMinion = function(minion, index, isPlayer) {
       var base = document.createElement('div');
       base.className = 'minion';
-      base.innerHTML = minion.name;
       
       if (minion == this.selectedMinion) {
         base.className += ' selected';
       }
       
-      if (minion.frozen) {
-        base.className += ' frozen';
+      var minionImage = document.createElement('img');
+      minionImage.className = 'image';
+      minionImage.src = 'http://www.hsdeck.com/images/tokens/' + minion.card.getReference() + '.png';
+      base.appendChild(minionImage);
+      
+      var minionOverlay = document.createElement('div');
+      minionOverlay.className = 'overlay';
+      base.appendChild(minionOverlay);
+      
+      // taunt
+      
+      if (minion.card.rarity == Rarity.LEGENDARY) {
+        var dragon = document.createElement('div');
+        dragon.className = 'dragon';
+        base.appendChild(dragon);
       }
       
-      var mana = document.createElement('div');
-      mana.className = 'mana';
-      mana.innerHTML = minion.card.mana;
-      base.appendChild(mana);
+      // stealth
+      
+      if (minion.frozen) {
+        var frozen = document.createElement('div');
+        frozen.className = 'frozen';
+        base.appendChild(frozen);
+      }
+      
+      // silence
+      
+      // divine
       
       var attack = document.createElement('div');
       attack.className = 'attack';
