@@ -380,7 +380,11 @@
       minionOverlay.className = 'overlay';
       base.appendChild(minionOverlay);
       
-      // taunt
+      if (minion.taunt) {
+        var taunt = document.createElement('div');
+        taunt.className = 'taunt';
+        base.appendChild(taunt);
+      }
       
       if (minion.card.rarity == Rarity.LEGENDARY) {
         var dragon = document.createElement('div');
@@ -388,7 +392,11 @@
         base.appendChild(dragon);
       }
       
-      // stealth
+      if (minion.stealth) {
+        var stealth = document.createElement('div');
+        stealth.className = 'stealth';
+        base.appendChild(stealth);
+      }
       
       if (minion.frozen) {
         var frozen = document.createElement('div');
@@ -396,9 +404,17 @@
         base.appendChild(frozen);
       }
       
-      // silence
+      if (minion.silenced) {
+        var silenced = document.createElement('div');
+        silenced.className = 'silenced';
+        base.appendChild(silenced);
+      }
       
-      // divine
+      if (minion.divineShield) {
+        var divine = document.createElement('div');
+        divine.className = 'divine';
+        base.appendChild(divine);
+      }
       
       var attack = document.createElement('div');
       attack.className = 'attack';

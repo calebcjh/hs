@@ -438,7 +438,7 @@
     height: 100px;
     position: relative;
     text-align: center;
-    margin: 0 10px 0 10px;
+    margin: 0 16px 0 16px;
     font-size: 20px;
     vertical-align: bottom;
   }
@@ -458,6 +458,15 @@
     width: 105px;
   }
   
+  .minion .taunt {
+    background: url('images/taunt.png');
+    height: 155px;
+    left: -18px;
+    position: absolute;
+    top: -15px;
+    width: 119px;
+  }
+  
   .minion .dragon {
     background: url('images/legendary.png');
     height: 87px;
@@ -467,6 +476,15 @@
     width: 117px;
   }
   
+  .minion .stealth {
+    background: url('images/stealth.png');
+    height: 116px;
+    left: -3px;
+    position: absolute;
+    top: -11px;
+    width: 86px;
+  }
+  
   .minion .frozen {
     background: url('images/frozen.png');
     height: 157px;
@@ -474,6 +492,24 @@
     position: absolute;
     top: -26px;
     width: 135px;
+  }
+  
+  .minion .silenced {
+    background: url('images/silenced.png');
+    height: 137px;
+    left: -27px;
+    position: absolute;
+    top: -22px;
+    width: 123px;
+  }
+  
+  .minion .divine {
+    background: url('images/divine.png');
+    height: 186px;
+    left: -40px;
+    position: absolute;
+    top: -36px;
+    width: 157px;
   }
   
   .minion .attack {
@@ -660,11 +696,11 @@
   }
   
   #opponent_field .minions {
-    bottom: 20px;
+    bottom: 30px;
   }
   
   #player_field .minions {
-    top: 20px;
+    top: 25px;
   }
   
   .selected {

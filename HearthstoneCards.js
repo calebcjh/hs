@@ -1068,7 +1068,7 @@
     ElvenArcher: new Card('Elven Archer', 'Battlecry: Deal 1 damage.', Set.BASIC, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 1, {requiresTarget: true, attack: 1, hp: 1, battlecry: {activate: function(game, minion, position, target) {
       game.dealDamage(target, 1, this);
     }}}),
-    FacelessManipulator: new Card('Faceless Manipulator', 'Battlecry: Choose a minion and become a copy of it.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.COMMON, 5, {requiresTarget: true, minionOnly: true, attack: 3, hp: 3, battlecry: {activate: function(game, minion, position, target) {
+    FacelessManipulator: new Card('Faceless Manipulator', 'Battlecry: Choose a minion and become a copy of it.', Set.EXPERT, CardType.MINION, HeroClass.NEUTRAL, Rarity.EPIC, 5, {requiresTarget: true, minionOnly: true, attack: 3, hp: 3, battlecry: {activate: function(game, minion, position, target) {
       var player = minion.player;
       minion.remove(game);
       var clonedMinion = target.clone(game, player);
