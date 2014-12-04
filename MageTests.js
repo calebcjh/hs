@@ -122,6 +122,30 @@ tests.testMirrorImage = function() {
   assert(0, p1.minions[2].getCurrentAttack());
 };
 
+tests.testMirrorImageLimit = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.hand.push(MageCards.MirrorImage.copy());
+  p1.currentMana = 5;
+  p1.turn.playCard(p1.hand[0]);
+  assert(2, p1.minions.length);
+  p1.turn.playCard(p1.hand[0]);
+  assert(4, p1.minions.length);
+  p1.turn.playCard(p1.hand[0]);
+  assert(6, p1.minions.length);
+  p1.turn.playCard(p1.hand[0]);
+  assert(7, p1.minions.length);
+  p1.turn.playCard(p1.hand[0]);
+  assert(7, p1.minions.length);
+  assert(1, p1.hand.length);
+  assert(1, p1.currentMana);
+};
+
 tests.testPolymorph = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());

@@ -201,23 +201,31 @@
       field.querySelector('.deck').innerHTML = player.deck.length + ' cards in deck';
       
       hero = field.querySelector('.hero');
+      hero.className = 'hero ' + HeroNames[player.hero.heroPower.heroClass];
       
       if (player.hero.frozen) {
-        hero.className = 'hero frozen';
-      } else {
-        hero.className = 'hero'
+        hero.className += ' frozen';
       }
       
       hero.querySelector('.secrets').innerHTML = player.secrets.length + ' secrets';
+      
+      hero.querySelector('.hp').innerHTML = player.hero.hp;
+      
+      if (player.hero.armor > 0) {
+        hero.querySelector('.armor').innerHTML = player.hero.armor;
+      } else {
+        hero.querySelector('.armor').style.display = 'none';
+      }
       
       var attack = player.hero.attack;
       if (player.hero.weapon) {
         attack += player.hero.weapon.getCurrentAttack();
       }
-      hero.querySelector('.attack').innerHTML = attack;
-      
-      hero.querySelector('.hp').innerHTML = player.hero.hp;
-      hero.querySelector('.armor').innerHTML = player.hero.armor;
+      if (attack > 0 || player.hero.weapon) {
+        hero.querySelector('.attack').innerHTML = attack;
+      } else {
+        hero.querySelector('.attack').style.display = 'none';
+      }
       
       if (isPlayer) {
         hero.onclick = this.selectHero.bind(this, player.hero);
@@ -226,10 +234,15 @@
       }
       
       var heroPower = field.querySelector('.hero_power');
-      heroPower.innerHTML = 'hero power';
       if (isPlayer) {
         heroPower.onclick = this.selectCard.bind(this, player.hero.heroPower);
       }
+      if (player.usedHeroPower) {
+        heroPower.style.display = 'none';
+      } else {
+        heroPower.style.display = '';
+      }
+      field.querySelector('.hero_power_image').className = 'hero_power_image ' + HeroNames[player.hero.heroPower.heroClass];
       
       field.querySelector('.minions').innerHTML = '';
       for (var i = 0; i < player.minions.length; i++) {
@@ -258,7 +271,6 @@
       base.appendChild(imageContainer);
       
       var image = document.createElement('img');
-      console.log(card);
       image.src = 'http://www.hsdeck.com/images/cards/' + card.getReference() + '.png';
       imageContainer.appendChild(image);
       

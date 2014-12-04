@@ -391,6 +391,10 @@
       if (opt_target && (opt_target.magicImmune || opt_target.immune)) {
         return false;
       }
+      
+      if (opt_target && (opt_target.stealth && opt_target.player != game.currentPlayer)) {
+        return false;
+      }
 
       return true;
     },
@@ -504,7 +508,6 @@
         }
       }
 
-      console.log(this, arguments);
       var oldMaxHp = this.getMaxHp();
 
       for (var i = 0; i < game.auras.length; i++) {
@@ -554,7 +557,7 @@
       }
     };
     
-    this.listTargets = function(game) {
+    this.listTargets = card.listTargets || function(game) {
       var opponent;
       if (this.player == game.currentPlayer) {
         opponent = game.otherPlayer;
@@ -563,16 +566,17 @@
       }
       var targets = [];
       for (var i = 0; i < opponent.minions.length; i++) {
-        if (opponent.minions[i].taunt) {
+        if (opponent.minions[i].taunt && !opponent.minions[i].stealth) {
           targets.push(opponent.minions[i]);
         }
       }
       if (targets.length > 0) {
         return targets;
       } else {
-        targets = opponent.minions.slice(0);
+        targets = opponent.minions.filter(function(minion) { return !minion.stealth; });
         targets.push(opponent.hero);
       }
+
       return targets;
     };
     
@@ -814,16 +818,17 @@
       }
       var targets = [];
       for (var i = 0; i < opponent.minions.length; i++) {
-        if (opponent.minions[i].taunt) {
+        if (opponent.minions[i].taunt && !opponent.minions[i].stealth) {
           targets.push(opponent.minions[i]);
         }
       }
       if (targets.length > 0) {
         return targets;
       } else {
-        targets = opponent.minions.slice(0);
+        targets = opponent.minions.filter(function(minion) { return !minion.stealth; });
         targets.push(opponent.hero);
       }
+      
       return targets;
     },
     updateStats: function(game, reapply) {
@@ -888,6 +893,8 @@
     WARRIOR: 8,
     NEUTRAL: 9,
   };
+  
+  var HeroNames = ['druid', 'hunter', 'mage', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'];
   
   var newHero = function(heroClass) {
     switch(heroClass) {
@@ -1270,18 +1277,22 @@
     MirrorImageMinion: new Card('Mirror Image', 'Taunt', Set.BASIC, CardType.MINION, HeroClass.MAGE, Rarity.FREE, 0, {draftable: false, attack: 0, hp: 2, taunt: true, getReference: function() {
       return 'MirrorImageMinion';
     }}),
-    MirrorImage: new Card('Mirror Image', 'Summon two 0/2 minions with Taunt.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {applyEffects: function(game, unused_position, unused_target) {
+    MirrorImage: new Card('Mirror Image', 'Summon two 0/2 minions with Taunt.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 1, {verify: function(game, unused_position, target) {
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.length < 7;
+    }, applyEffects: function(game, unused_position, unused_target) {
       var image1 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, 0, false, true /* taunt */, false, [], []);
       game.currentPlayer.minions.push(image1);
       image1.playOrderIndex = game.playOrderIndex++;
       game.updateStats();
       game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image1));
       
-      var image2 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, 0, false, true /* taunt */, false, [], []);
-      game.currentPlayer.minions.push(image2);
-      image2.playOrderIndex = game.playOrderIndex++;
-      game.updateStats();
-      game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
+      if (game.currentPlayer.minions.length < 7) {
+        var image2 = new Minion(game.currentPlayer, 'Mirror Image', MageCards.MirrorImageMinion.copy(), 0, 2, false, false, false, false, 0, false, true /* taunt */, false, [], []);
+        game.currentPlayer.minions.push(image2);
+        image2.playOrderIndex = game.playOrderIndex++;
+        game.updateStats();
+        game.handlers[Events.AFTER_MINION_SUMMONED].forEach(run(game, game.currentPlayer, game.currentPlayer.minions.length - 1, image2));
+      }
     }}),
     Polymorph: new Card('Polymorph', 'Transform a minion into a 1/1 Sheep.', Set.BASIC, CardType.SPELL, HeroClass.MAGE, Rarity.FREE, 4, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var index = target.player.minions.indexOf(target);
@@ -2159,7 +2170,9 @@
     game.dealDamageToHero(game.otherPlayer.hero, 2);
   }}));
   
-  var Paladin = new Hero(new Card('Reinforce', 'Summon a 1/1 Silver Hand Recruit.', Set.BASIC, CardType.HERO_POWER, HeroClass.PALADIN, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+  var Paladin = new Hero(new Card('Reinforce', 'Summon a 1/1 Silver Hand Recruit.', Set.BASIC, CardType.HERO_POWER, HeroClass.PALADIN, Rarity.FREE, 2, {verify: function(game, unused_target) {
+    return game.currentPlayer.minions.length < 7;
+  }, applyEffects: function(game, unused_position, unused_target) {
     minion = new Minion(game.currentPlayer, 'Silver Hand Recruit', PaladinCards.SilverHandRecruit.copy(), 1, 1, false, false, false, false, 0, false, false, false, [], []);
     game.currentPlayer.minions.push(minion);
     minion.playOrderIndex = game.playOrderIndex++;
@@ -2215,6 +2228,7 @@
   window.Rarity = Rarity;
   window.CardType = CardType;
   window.HeroClass = HeroClass;
+  window.HeroNames = HeroNames;
   window.Hunter = Hunter;
   window.Mage = Mage;
   window.Paladin = Paladin;

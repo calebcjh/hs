@@ -426,8 +426,7 @@
         return;
       }
       var hero = this.field.querySelector('#hero');
-      var name = ['druid', 'hunter', 'mage', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'];
-      hero.style.background = 'url(images/' + name[this.pickedHero] + '.png)';
+      hero.style.background = 'url(images/' + HeroNames[this.pickedHero] + '.png)';
     };
     
     this.updateDeckCost = function() {

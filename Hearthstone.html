@@ -25,6 +25,7 @@
     margin-right: -50px;
     font-size: 12px;
     vertical-align: bottom;
+    pointer-events: auto;
   }
   
   .selected.card {
@@ -601,63 +602,162 @@
   
   .hero {
     position: absolute;
-    width: 145px;
-    height: 150px;
-    left: 650px;
+    background-size: 100% 100%;
+  }
+  
+  .hero.druid {
+    background-image: url(images/druid-hero.png);
+  }
+  
+  .hero.hunter {
+    background-image: url(images/hunter-hero.png);
+  }
+  
+  .hero.mage {
+    background-image: url(images/mage-hero.png);
+  }
+  
+  .hero.paladin {
+    background-image: url(images/paladin-hero.png);
+  }
+  
+  .hero.priest {
+    background-image: url(images/priest-hero.png);
+  }
+  
+  .hero.rogue {
+    background-image: url(images/rogue-hero.png);
+  }
+  
+  .hero.shaman {
+    background-image: url(images/shaman-hero.png);
+  }
+  
+  .hero.warlock {
+    background-image: url(images/warlock-hero.png);
+  }
+  
+  .hero.warrior {
+    background-image: url(images/warrior-hero.png);
   }
   
   .hero .hp {
     position: absolute;
-    bottom: 11px;
-    right: 5px;
-    background-color: rgba(192, 0, 0, 0.5);
-    border-radius: 20px;
-    width: 30px;
-    height: 30px;
-  }
-  
-  #opponent_field .hero {
-    top: 75px;
-  }
-  
-  #player_field .hero {
-    top: 175px;
+    bottom: -15px;
+    right: -13px;
+    background-image: url(images/health.png);
+    background-repeat: no-repeat;
+    width: 39px;
+    height: 50px;
+    line-height: 45px;
   }
   
   .hero .armor {
     position: absolute;
-    bottom: 39px;
-    right: 5px;
-    background-color: rgba(128, 128, 128, 0.5);
-    border-radius: 20px;
-    width: 30px;
-    height: 30px;
+    bottom: 35px;
+    right: -11px;
+    background-image: url(images/armor.png);
+    background-repeat: no-repeat;
+    width: 40px;
+    height: 47px;
+    line-height: 45px;
   }
   
   .hero .attack {
     position: absolute;
-    bottom: 11px;
-    left: 5px;
-    background-color: rgba(160, 160, 0, 0.5);
-    border-radius: 20px;
-    width: 30px;
-    height: 30px;
+    bottom: -11px;
+    left: -17px;
+    background-image: url(images/attack.png);
+    background-repeat: no-repeat;
+    width: 46px;
+    height: 52px;
+    line-height: 55px;
+    padding-left: 5px;
+  }
+  
+  #opponent_field .hero {
+    height: 144px;
+    left: 658px;
+    top: 73px;
+    width: 127;
+  }
+  
+  #player_field .hero {
+    height: 146px;
+    left: 658px;
+    top: 168px;
+    width: 130px;
   }
   
   .hero_power {
     position: absolute;
-    width: 110px;
+    width: 113px;
     height: 120px;
   }
   
+  .hero_power_overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url('images/hero-power.png');
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  
+  .hero_power_image {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-top: 4px;
+    margin-left: 1px;
+  }
+  
+  .hero_power_image.druid {
+    background-image: url('images/druid-power.png');
+  }
+  
+  .hero_power_image.hunter {
+    background-image: url('images/hunter-power.png');
+  }
+  
+  .hero_power_image.mage {
+    background-image: url('images/mage-power.png');
+  }
+  
+  .hero_power_image.paladin {
+    background-image: url('images/paladin-power.png');
+  }
+  
+  .hero_power_image.priest {
+    background-image: url('images/priest-power.png');
+  }
+  
+  .hero_power_image.rogue {
+    background-image: url('images/rogue-power.png');
+  }
+  
+  .hero_power_image.shaman {
+    background-image: url('images/shaman-power.png');
+  }
+  
+  .hero_power_image.warlock {
+    background-image: url('images/warlock-power.png');
+  }
+  
+  .hero_power_image.warrior {
+    background-image: url('images/warrior-power.png');
+  }
+  
   #opponent_field .hero_power {
-    left: 794px;
-    top: 114px;
+    left: 793px;
+    top: 116px;
   }
   
   #player_field .hero_power {
-    left: 799px;
-    top: 179px;
+    left: 798px;
+    top: 180px;
   }
   
   #message {
@@ -688,6 +788,7 @@
     position: absolute;
     bottom: -40px;
     width: 1440px;
+    pointer-events: none;
   }
   
   .minions {
@@ -708,7 +809,7 @@
   }
   
   .minion.selected {
-    box-shadow: 0 0 40px 10px lime;
+    box-shadow: inset 0 0 40px 0px lime, 0 0 40px 10px lime;
   }
   
   .frozen {
@@ -755,7 +856,10 @@
       <div class="hp"></div>
       <div class="armor"></div>
     </div>
-    <div class="hero_power"></div>
+    <div class="hero_power">
+      <div class="hero_power_image"></div>
+      <div class="hero_power_overlay"></div>
+    </div>
     <div class="minions"></div>
   </div>
   <div id="message">Waiting for an opponent...</div>
@@ -769,7 +873,10 @@
       <div class="hp"></div>
       <div class="armor"></div>
     </div>
-    <div class="hero_power"></div>
+    <div class="hero_power">
+      <div class="hero_power_image"></div>
+      <div class="hero_power_overlay"></div>
+    </div>
     <div class="minions"></div>
     <div class="hand"></div>
   </div>

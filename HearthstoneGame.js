@@ -69,6 +69,7 @@
     };
     
     this.joinGame = function(gameName, playerName, playerDeck) {
+      console.log(arguments);
       var ref = this.server.child(gameName);
       var id = -1;
       
@@ -80,6 +81,7 @@
         
         for (var i = 0; i < game.playerInfo.length; i++) {
           if (playerName == game.playerInfo[i].name) {
+            id = i;
             return game;
           }
         }

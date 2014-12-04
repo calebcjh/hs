@@ -123,6 +123,8 @@
       game.simultaneousDamageDone(group);
       
       game.handlers[Events.AFTER_MINION_ATTACKS].forEach(run(game, minion, target));
+      
+      minion.stealth = false;
     };
     
     this.heroAttack = function(hero, target) {
@@ -201,7 +203,7 @@
         return false;
       }
       
-      if (!game.currentPlayer.hero.heroPower.verify(game, opt_target)) {
+      if (!game.currentPlayer.hero.heroPower.verify(game, null /* position */, opt_target)) {
         // ignore invalid plays
         console.log('invalid play');
         return;

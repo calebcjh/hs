@@ -280,8 +280,11 @@ tests.testRagnarosTheFirelord = function() {
   p2.currentMana = 1;
   p2.turn.playCard(p2.hand[1]);
   p2.turn.endTurn();
+  assert(0, p1.minions[0].listTargets(game).length);
   p1.turn.minionAttack(p1.minions[0], p2.hero);
   assert(21, p2.hero.hp);
+  p1.turn.minionAttack(p1.minions[0], p2.minions[0]);
+  assert(2, p2.minions.length);
   assert(0, p1.minions[0].attackCount);
   game.random = function(n) {
     assert(3, n);
@@ -513,6 +516,51 @@ tests.testWildPyromancer = function() {
   assert(1, p2.minions[1].currentHp);
   assert(29, p2.hero.hp);
   assert(27, p1.hero.hp);
+};
+
+tests.testWorgenInfiltrator = function() {
+  var p1 = new Player([], new Mage());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(NeutralCards.WorgenInfiltrator.copy());
+  p1.currentMana = 1;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.endTurn();
+  p2.currentMana = 2;
+p2.turn.useHeroPower(p1.minions[0]);
+  assert(1, p1.minions.length);
+  assert(2, p2.currentMana);
+  assert(false, p2.usedHeroPower);
+  p2.hand.push(NeutralCards.StonetuskBoar.copy());
+  p2.turn.playCard(p2.hand[1], 0);
+  assert(1, p2.minions.length);
+  p2.turn.minionAttack(p2.minions[0], p1.minions[0]);
+  assert(1, p2.minions.length);
+  assert(1, p1.minions.length);
+  assert(0, p2.minions[0].attackCount);
+  assert(29, p1.hero.hp);
+  p2.turn.minionAttack(p2.minions[0], p1.hero);
+  assert(28, p1.hero.hp);
+  p2.turn.endTurn();
+  assert(29, p2.hero.hp);
+  p1.turn.minionAttack(p1.minions[0], p2.hero);
+  assert(27, p2.hero.hp);
+  assert(1, p1.minions[0].attackCount);
+  assert(false, p1.minions[0].stealth);
+  p1.turn.endTurn();
+  p2.currentMana = 2;
+  p2.turn.useHeroPower(p1.minions[0]);
+  assert(0, p2.currentMana);
+  assert(true, p2.usedHeroPower);
+  assert(0, p1.minions.length);
+  p2.turn.endTurn();
+  p1.currentMana = 3;
+  p1.hand.push(NeutralCards.WorgenInfiltrator.copy());
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(1, p1.minions.length);
+  p1.turn.useHeroPower(p1.minions[0]);
+  assert(0, p1.minions.length);
+  
 };
 
 tests.testYouthfulBrewmaster = function() {
