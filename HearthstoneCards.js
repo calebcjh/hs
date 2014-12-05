@@ -1529,7 +1529,9 @@
       return this.owner.player.minions.indexOf(entity) != -1 && entity != this.owner;
     }}]}),
     Misha: new Card('Misha', 'Taunt.', Set.BASIC, CardType.MINION, HeroClass.HUNTER, Rarity.FREE, 3, {draftable: false, attack: 4, hp: 4, taunt: true, tag: 'Beast'}),
-    AnimalCompanion: new Card('Animal Companion', 'Summon a random Beast Companion', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {applyEffects: function(game, unused_position, unused_target) {
+    AnimalCompanion: new Card('Animal Companion', 'Summon a random Beast Companion', Set.BASIC, CardType.SPELL, HeroClass.HUNTER, Rarity.FREE, 3, {verify: function(game, unused_position, target) {
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.length < 7;
+    }, applyEffects: function(game, unused_position, unused_target) {
       var selectedMinion = game.random(3);
       var minion;
       if (selectedMinion == 0) {
@@ -1641,7 +1643,6 @@
     BestialWrath: new Card('Bestial Wrath', 'Give a Beast +2 Attack and Immune this turn.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.indexOf(target) != -1 && target.isBeast;
     }, applyEffects: function(game, unused_position, target) {
-      // change all secrets' cost to 0
       var bestialWrath = new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD, [{event: Events.END_TURN, handler: function(game) {
         this.owner.owner.immune = false;
         this.owner.remove(game);
@@ -1880,7 +1881,9 @@
       snipe.activate(game);
     }}),
     Hound: new Card('Hound', 'Charge', Set.EXPERT, CardType.MINION, HeroClass.HUNTER, Rarity.COMMON, 1, {draftable: false, attack: 1, hp: 1, charge: true, tag: 'Beast'}),
-    UnleashTheHounds: new Card('Unleash the Hounds', 'For each enemy minion, summon a 1/1 hound with Charge.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {applyEffects: function(game, unused_position, unused_target) {
+    UnleashTheHounds: new Card('Unleash the Hounds', 'For each enemy minion, summon a 1/1 hound with Charge.', Set.EXPERT, CardType.SPELL, HeroClass.HUNTER, Rarity.COMMON, 3, {verify: function(game, unused_position, target) {
+      return this.__proto__.verify.call(this, game, unused_position, target) && game.currentPlayer.minions.length < 7;
+    }, applyEffects: function(game, unused_position, unused_target) {
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
         var hound = new Minion(game.currentPlayer, 'Hound', HunterCards.Hound.copy(), 1, 1, true /* charge */, false, false, false, 0, false, false, false, [], []);
         game.currentPlayer.minions.push(hound);
@@ -1932,6 +1935,7 @@
       game.updateStats();
     }}),
     ShadowMadness: new Card('Shadow Madness', 'Gain control of an enemy minion with 3 or less Attack until end of turn.', Set.EXPERT, CardType.SPELL, HeroClass.PRIEST, Rarity.RARE, 4, {minionOnly: true, requiresTarget: true, verify: function(game, unused_position, target) {
+      // TODO: can this be casted when you have a full board?
       return this.__proto__.verify.call(this, game, unused_position, target) && game.otherPlayer.minions.indexOf(target) != -1 && target.getCurrentAttack() <= 2;
     }, applyEffects: function(game, unused_position, target) {
       var index = game.otherPlayer.minions.indexOf(target);
@@ -2095,6 +2099,33 @@
         }
       }
     }}),
+    CommandingShout: new Card('Commanding Shout', 'Your minions can\'t be reduced below 1 Health this turn. Draw a card.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.RARE, 2, {applyEffects: function(game, unused_position, target) {
+      var container = {registeredHandlers: []};
+      
+      // handler1: when minion takes damage, reduce it appropriately if minion does not have divine shield
+      container.minionDamageHandler = new EventHandler(container, Events.BEFORE_MINION_TAKES_DAMAGE, function(game, minion, handlerParams) {
+        if (game.currentPlayer.minions.indexOf(minion) != -1 && handlerParams.amount > 0 && !minion.divineShield) {
+          handlerParams.amount = Math.min(handlerParams.amount, minion.currentHp - 1);
+        }
+      });
+      
+      // handler2: on end turn, restore cost, delete both handlers
+      container.endOfTurnHandler = new EventHandler(container, Events.END_TURN, function(game) {
+        this.remove(game);
+        this.owner.minionDamageHandler.remove(game);
+      });
+      
+      container.minionDamageHandler.register(game);
+      container.endOfTurnHandler.register(game);
+      
+      game.drawCard(game.currentPlayer);
+    }}),
+    CruelTaskmaster: new Card('Cruel Taskmaster', 'Battlecry: Deal 1 damage to a minion and give it +2 Attack.', Set.EXPERT, CardType.MINION, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
+      return target.type == TargetType.MINION;
+    }, activate: function(game, minion, position, target) {
+      game.dealDamage(target, 1, this);
+      target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
+    }}}),
     DeathsBite: new Card('Death\'s Bite', 'Deathrattle: Deal 1 damage to all minions.', Set.NAXXRAMAS, CardType.WEAPON, HeroClass.WARIOR, Rarity.FREE, 4, {attack: 4, durability: 2, deathrattle: function(game) {
       var group = game.initializeSimultaneousDamage();
       for (var i = 0; i < game.otherPlayer.minions.length; i++) {
@@ -2110,12 +2141,6 @@
         minion.charge = true;
       }
     }}]}),
-    CruelTaskmaster: new Card('Cruel Taskmaster', 'Battlecry: Deal 1 damage to a minion and give it +2 Attack.', Set.EXPERT, CardType.MINION, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, attack: 2, hp: 2, battlecry: {verify: function(game, position, target) {
-      return target.type == TargetType.MINION;
-    }, activate: function(game, minion, position, target) {
-      game.dealDamage(target, 1, this);
-      target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
-    }}}),
     Gorehowl: new Card('Gorehowl', 'Attacking a minion costs 1 Attack instead of 1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.WARRIOR, Rarity.EPIC, 7, {attack: 7, durability: 1, handlers: [{event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
       if (hero == this.owner.player.hero && target.type == TargetType.MINION) {
         hero.weapon.durability++;
@@ -2187,7 +2212,7 @@
   var Shaman = new Hero(new Card('Totemic Call', 'Summon a random Totem', Set.BASIC, CardType.HERO_POWER, HeroClass.SHAMAN, Rarity.FREE, 2, {verify: function(game, unused_target) {
     return game.currentPlayer.minions.filter(function(minion) {
       return ['Healing Totem', 'Searing Totem', 'Stoneclaw Totem', 'Wrath of Air Totem'].indexOf(minion.name) != -1;
-    }).length < 4;
+    }).length < 4 && game.currentPlayer.minions.length < 7;
   }, applyEffects: function(game, unused_position, unused_target) {
     var options = [ShamanCards.HealingTotem.copy(), ShamanCards.SearingTotem.copy(), ShamanCards.StoneclawTotem.copy(), ShamanCards.WrathOfAirTotem.copy()];
     game.currentPlayer.minions.forEach(function(minion) {
