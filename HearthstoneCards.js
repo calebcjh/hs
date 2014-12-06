@@ -1424,7 +1424,7 @@
       }
       
       var container = {registeredHandlers: []};
-      // handler1: on card play, if secret, restore cost, delete both handlers
+      // handler1: on card play, if secret, restore cost, delete all handlers
       container.secretPlayedHandler = new EventHandler(container, Events.BEFORE_SPELL, function(game, card, handlerParams) {
         if (card.isSecret) {
           for (var i = 0; i < game.currentPlayer.hand.length; i++) {
@@ -1435,11 +1435,18 @@
             }
           }
           this.remove(game);
+          this.owner.cardDrawHandler.remove(game);
           this.owner.endOfTurnHandler.remove(game);
         }
       });
       
-      // TODO: handler2, on card gained
+      // handler2: on card draw, apply enchant mana
+      container.cardDrawHandler = new EventHandler(container, Events.GAIN_CARD, function(game, player, card) {
+        if (card.isSecret && player == game.currentPlayer) {
+          card.enchantMana += -card.getCurrentMana();
+        };
+      });
+      
 
       // handler3: on end turn, restore cost, delete both handlers
       container.endOfTurnHandler = new EventHandler(container, Events.END_TURN, function(game) {
@@ -1451,10 +1458,12 @@
           }
         }
         this.remove(game);
+        this.owner.cardDrawHandler.remove(game);
         this.owner.secretPlayedHandler.remove(game);
       });
       
       container.secretPlayedHandler.register(game);
+      container.cardDrawHandler.register(game);
       container.endOfTurnHandler.register(game);
     }}}),
     ManaWyrm: new Card('Mana Wyrm', 'Whenever you cast a spell, gain +1 Attack.', Set.EXPERT, CardType.MINION, HeroClass.MAGE, Rarity.COMMON, 1, {attack: 1, hp: 3, handlers: [{event: Events.BEFORE_SPELL, handler: function(game, card, handlerParams) {

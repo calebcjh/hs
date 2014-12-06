@@ -424,17 +424,25 @@ tests.testKirinTorMage = function() {
   var p1 = new Player([], new Mage());
   var p2 = new Player([], new Mage());
   var game = new Hearthstone([p1, p2], 0);
-  p1.hand.push(MageCards.Counterspell.copy());
   p1.hand.push(MageCards.KirinTorMage.copy());
-  p1.currentMana = 3;
+  p1.hand.push(NeutralCards.AcolyteOfPain.copy());
+  p1.hand.push(MageCards.Counterspell.copy());
+  p1.deck.push(MageCards.MirrorEntity.copy());
+  p1.currentMana = 8;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  assert(1, p1.hand.length);
+  assert(1, p1.deck.length);
+  p1.turn.useHeroPower(p1.minions[1]);
+  assert(2, p1.hand.length);
+  assert(0, p1.deck.length);
+  assert(0, p1.hand[0].getCurrentMana());
+  assert(0, p1.hand[1].getCurrentMana());
+  p1.turn.playCard(p1.hand[1]);
+  assert(1, p1.secrets.length);
+  assert('Mirror Entity', p1.secrets[0].name);
   assert('Counterspell', p1.hand[0].name);
   assert(3, p1.hand[0].getCurrentMana());
-  p1.turn.playCard(p1.hand[1], 0);
-  assert(0, p1.hand[0].getCurrentMana());
-  assert(0, p1.currentMana);
-  p1.turn.playCard(p1.hand[0]);
-  assert(0, p1.hand.length);
-  assert(1, p1.secrets.length);
 };
 
 tests.testManaWyrm = function() {
