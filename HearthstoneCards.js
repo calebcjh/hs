@@ -51,7 +51,7 @@
   var Events = {
     START_TURN: 0,
     END_TURN: 1,
-    AFTER_DRAW: 2,
+    GAIN_CARD: 2,
     BEFORE_HERO_ATTACKS: 3,
     AFTER_HERO_ATTACKS: 4,
     BEFORE_HERO_TAKES_DAMAGE: 5,
@@ -1424,7 +1424,6 @@
       }
       
       var container = {registeredHandlers: []};
-      
       // handler1: on card play, if secret, restore cost, delete both handlers
       container.secretPlayedHandler = new EventHandler(container, Events.BEFORE_SPELL, function(game, card, handlerParams) {
         if (card.isSecret) {
@@ -1440,7 +1439,9 @@
         }
       });
       
-      // handler2: on end turn, restore cost, delete both handlers
+      // TODO: handler2, on card gained
+
+      // handler3: on end turn, restore cost, delete both handlers
       container.endOfTurnHandler = new EventHandler(container, Events.END_TURN, function(game) {
         for (var i = 0; i < game.currentPlayer.hand.length; i++) {
           var card = game.currentPlayer.hand[i];

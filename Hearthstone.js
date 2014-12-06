@@ -640,7 +640,7 @@
     card.updateStats(this);
     
     // trigger card draw triggers
-    this.handlers[Events.AFTER_DRAW].forEach(run(this, player, card));
+    this.handlers[Events.GAIN_CARD].forEach(run(this, player, card));
     
     return card;
   };
