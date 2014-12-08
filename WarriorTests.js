@@ -265,6 +265,198 @@ tests.testDeathsBite = function() {
   assert(false, p1.hero.weapon);
 };
 
+tests.testExecute = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  // try to execute own healthy armorsmith
+  p1.hand.push(WarriorCards.Armorsmith.copy());
+  p1.hand.push(WarriorCards.Execute.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.hand.length);
+  assert(1, p1.currentMana);
+  p1.turn.endTurn();
+  p2.hand.push(MageCards.ManaWyrm.copy());
+  p2.hand.push(MageCards.Spellbender.copy());
+  p2.currentMana = 4;
+  p2.turn.playCard(p2.hand[1], 0);
+  p2.turn.playCard(p2.hand[1]);
+  p2.turn.endTurn();
+  p1.currentMana = 1;
+  // try to execute healthy mana wyrm
+  p1.turn.playCard(p1.hand[0], p2.minions[0]);
+  assert(1, p1.hand.length);
+  assert(1, p1.currentMana);
+  assert(1, p2.secrets.length);
+  assert(1, p2.minions.length);
+  assert('Mana Wyrm', p2.minions[0].name);
+  // run armorsmith into mana wyrm, then try to execute armorsmith
+  p1.turn.minionAttack(p1.minions[0], p2.minions[0]);
+  assert(2, p1.minions[0].currentHp);
+  assert(2, p2.minions[0].currentHp);
+  p1.turn.playCard(p1.hand[0], p1.minions[0]);
+  assert(1, p1.hand.length);
+  assert(1, p1.currentMana);
+  assert(1, p1.minions.length);
+  // execute mana wyrm, but executes spellbender instead
+  p1.turn.playCard(p1.hand[0], undefined, p2.minions[0]);
+  assert(0, p1.hand.length);
+  assert(0, p1.currentMana);
+  assert(0, p2.secrets.length);
+  assert(1, p2.minions.length);
+  assert('Mana Wyrm', p2.minions[0].name);
+};
+
+tests.testFrothingBerserker = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.FrothingBerserker.copy());
+  p1.hand.push(WarriorCards.Armorsmith.copy());
+  p1.hand.push(WarriorCards.CommandingShout.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.hand.push(WarriorCards.DeathsBite.copy());
+  p1.currentMana = 27;
+  p1.turn.playCard(p1.hand[0], 0);
+  p1.turn.playCard(p1.hand[0], 1);
+  p1.turn.playCard(p1.hand[0]);
+  p1.turn.playCard(p1.hand[0]);
+  assert(4, p1.minions[0].currentHp);
+  assert(4, p1.minions[1].currentHp);
+  assert(0, p1.hero.armor);
+  assert(2, p1.minions[0].getCurrentAttack());
+  p1.turn.playCard(p1.hand[0]);
+  assert(3, p1.minions[0].currentHp);
+  assert(3, p1.minions[1].currentHp);
+  assert(2, p1.hero.armor);
+  assert(4, p1.minions[0].getCurrentAttack());
+  p1.turn.playCard(p1.hand[0]);
+  assert(2, p1.minions[0].currentHp);
+  assert(2, p1.minions[1].currentHp);
+  assert(4, p1.hero.armor);
+  assert(6, p1.minions[0].getCurrentAttack());
+  p1.turn.playCard(p1.hand[0]);
+  assert(1, p1.minions[0].currentHp);
+  assert(1, p1.minions[1].currentHp);
+  assert(6, p1.hero.armor);
+  assert(8, p1.minions[0].getCurrentAttack());
+  p1.turn.playCard(p1.hand[0]);
+  assert(1, p1.minions[0].currentHp);
+  assert(1, p1.minions[1].currentHp);
+  assert(6, p1.hero.armor);
+  assert(8, p1.minions[0].getCurrentAttack());
+  assert(0, p1.hand.length);
+  p1.turn.endTurn();
+  p2.currentMana = 2;
+  assert(2, p1.minions.length);
+  p2.turn.useHeroPower(p1.minions[1]);
+  assert(7, p1.hero.armor);
+  assert(9, p1.minions[0].getCurrentAttack());
+};
+
+tests.testGrommashHellscream = function() {
+  var p1 = new Player([], new Priest());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.GrommashHellscream.copy());
+  p1.hand.push(PriestCards.HolySmite.copy());
+  p1.hand.push(PriestCards.HolySmite.copy());
+  p1.hand.push(PaladinCards.Humility.copy());
+  p1.hand.push(PriestCards.HolySmite.copy());
+  p1.hand.push(HunterCards.HuntersMark.copy());
+  p1.hand.push(PriestCards.PowerWordShield.copy());
+  p1.hand.push(PriestCards.HolySmite.copy());
+  p1.currentMana = 18;
+  // Check for charge
+  p1.turn.playCard(p1.hand[0], 0);
+  assert(true, p1.minions[0].hasCharge());
+  assert(4, p1.minions[0].getCurrentAttack());
+  // Holysmite Grommash.
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(7, p1.minions[0].currentHp);
+  assert(10, p1.minions[0].getCurrentAttack());
+  // Heal
+  p1.turn.useHeroPower(p1.minions[0]);
+  assert(9, p1.minions[0].currentHp);
+  assert(4, p1.minions[0].getCurrentAttack());
+  // HolySmite
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(7, p1.minions[0].currentHp);
+  assert(10, p1.minions[0].getCurrentAttack());
+  // Humility
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(7, p1.minions[0].currentHp);
+  assert(1, p1.minions[0].getCurrentAttack());
+  // Heal
+  p1.usedHeroPower = false;
+  p1.turn.useHeroPower(p1.minions[0]);
+  assert(9, p1.minions[0].currentHp);
+  assert(1, p1.minions[0].getCurrentAttack());
+  // HolySmite
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(7, p1.minions[0].currentHp);
+  assert(7, p1.minions[0].getCurrentAttack());
+  // HuntersMark
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.minions[0].currentHp);
+  assert(1, p1.minions[0].getCurrentAttack());
+  // PowerWordShield and HolySmite
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  p1.turn.playCard(p1.hand[0], undefined, p1.minions[0]);
+  assert(1, p1.minions[0].currentHp);
+  assert(7, p1.minions[0].getCurrentAttack());
+  // Wrap up
+  assert(0, p1.currentMana);
+  assert(0, p1.hand.length);
+  p1.turn.minionAttack(p1.minions[0], p2.hero);
+  assert(23, p2.hero.hp);
+};
+
+tests.testMortalStrike = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.MortalStrike.copy());
+  p1.hand.push(WarriorCards.MortalStrike.copy());
+  p1.hand.push(WarriorCards.MortalStrike.copy());
+  p1.hand.push(WarriorCards.MortalStrike.copy());
+  p1.hand.push(WarriorCards.MortalStrike.copy());
+  p1.hand.push(WarriorCards.MortalStrike.copy());
+  p1.currentMana = 24;
+  assert(29, p1.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.hero);
+  assert(25, p1.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.hero);
+  assert(21, p1.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.hero);
+  assert(17, p1.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.hero);
+  assert(13, p1.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.hero);
+  assert(9, p1.hero.hp);
+  p1.turn.playCard(p1.hand[0], undefined, p1.hero);
+  assert(3, p1.hero.hp);
+};
+
+tests.testShieldBlock = function() {
+  var p1 = new Player([], new Warrior());
+  var p2 = new Player([], new Mage());
+  var game = new Hearthstone([p1, p2], 0);
+  p1.hand.push(WarriorCards.ShieldBlock.copy());
+  p1.deck.push(NeutralCards.TheCoin.copy());
+  p1.currentMana = 3;
+  p1.turn.playCard(p1.hand[0]);
+  assert(5, p1.hero.armor);
+  assert(1, p1.hand.length);
+  assert('The Coin', p1.hand[0].name);
+  assert(0, p1.deck.length);
+};
+
 tests.testWarsongCommander = function() {
   var p1 = new Player([], new Warrior());
   var p2 = new Player([], new Mage());

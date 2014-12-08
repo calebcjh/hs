@@ -68,6 +68,7 @@
     BEFORE_HERO_POWER: 16,
     AFTER_HERO_POWER: 17,
     SECRET_TRIGGERED: 18,
+    STATS_UPDATED: 19,
   }
   
   var EventHandler = function(owner, event, handler) {
@@ -88,7 +89,7 @@
       var index = game.handlers[this.event].indexOf(this);
       delete game.handlers[this.event][index]; // delete must be used because handlers can be removed while being iterated over
       var index2 = owner.registeredHandlers.indexOf(this);
-      owner.registeredHandlers.splice(index2, 1);
+      delete owner.registeredHandlers[index2];
     };
   };
   
@@ -540,6 +541,8 @@
           this.updateStats(game);
         }
       }
+      
+      game.handlers[Events.STATS_UPDATED].forEach(run(game, this));
     };
     
     this.registerAuras = function(game) {
@@ -967,6 +970,7 @@
       for (var i = 0; i < this.registeredHandlers.length; i++) {
         this.registeredHandlers[i].remove(game);
       }
+      this.registeredHandlers = [];
     };
     
     this.triggered = function(game) {
@@ -1013,10 +1017,12 @@
     };
     this.remove = function(game) {
       var index = this.owner.enchantments.indexOf(this);
+      // TODO: Verify that splice can be used safely.
       this.owner.enchantments.splice(index, 1);
       for (var i = 0; i < this.registeredHandlers.length; i++) {
         this.registeredHandlers[i].remove(game);
       }
+      this.registeredHandlers = [];
     };
   };
   
@@ -1931,7 +1937,7 @@
   };
 
   var PriestCards = {
-    HolySmite: new Card('Holy Smite', 'Deal $2 damage.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 2, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+    HolySmite: new Card('Holy Smite', 'Deal $2 damage.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 1, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 2), this);
     }}),
     PowerWordShield: new Card('Power Word: Shield', 'Give a minion +2 Health. Draw a card.', Set.BASIC, CardType.SPELL, HeroClass.PRIEST, Rarity.FREE, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
@@ -2145,10 +2151,16 @@
         game.dealSimultaneousDamage(game.currentPlayer.minions[i], 1, this, group);
       }
       game.simultaneousDamageDone(group);
-    }}), 
-    WarsongCommander: new Card('Warsong Commander', 'Whenever you summon a minion with 3 or less Attack, give it Charge.', Set.BASIC, CardType.MINION, HeroClass.WARRIOR, Rarity.FREE, 3, {hp: 3, attack: 2, handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
-      if (minion != this.owner && minion.player == this.owner.player && minion.attack <= 3) {
-        minion.charge = true;
+    }}),
+    Execute: new Card('Execute', 'Destroy a damaged enemy minion.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
+      return this.__proto__.verify.call(this, game, unused_position, target) && target.player != game.currentPlayer && target.currentHp < target.getMaxHp();
+    }, applyEffects: function(game, unused_position, target) {
+      game.kill(target);
+    }}),
+    FieryWarAxe: new Card('Fiery War Axe', '', Set.BASIC, CardType.WEAPON, HeroClass.WARIOR, Rarity.FREE, 2, {draftable: false, attack: 3, durability: 2}),
+    FrothingBerserker: new Card('Frothing Berserker', 'Whenever a minion takes damage, gain +1 Attack.', Set.EXPERT, CardType.MINION, HeroClass.WARRIOR, Rarity.RARE, 3, {hp: 4, attack: 2, handlers: [{event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
+      if (amount > 0) {
+        this.owner.enchantments.push(new Enchantment(this.owner, 1, ModifierType.ADD, 0, ModifierType.ADD));
       }
     }}]}),
     Gorehowl: new Card('Gorehowl', 'Attacking a minion costs 1 Attack instead of 1 Durability.', Set.EXPERT, CardType.WEAPON, HeroClass.WARRIOR, Rarity.EPIC, 7, {attack: 7, durability: 1, handlers: [{event: Events.AFTER_HERO_ATTACKS, handler: function(game, hero, target) {
@@ -2157,15 +2169,41 @@
         hero.weapon.attack--;
       }
     }}]}),
+    GrommashHellscream: new Card('Grommash Hellscream', 'Charge\nEnrage: +6 Attack', Set.EXPERT, CardType.MINION, HeroClass.WARRIOR, Rarity.LEGENDARY, 8, {charge: true, hp: 9, attack: 4, getReference: function() {
+      return 'GromHellscream';
+    }, handlers: [{event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
+      if (this.owner == minion && amount > 0 && minion.currentHp + amount == minion.getMaxHp()) {
+        var enrage = new Enchantment(minion, 6, ModifierType.ADD, 0, ModifierType.ADD, [{event: Events.STATS_UPDATED, handler: function(game, minion) {
+          if (this.owner.owner == minion && minion.currentHp == minion.getMaxHp()) {
+            this.owner.remove(game);
+          }
+        }}, {event: Events.AFTER_MINION_TAKES_DAMAGE, handler: function(game, minion, amount, source) {
+          if (this.owner.owner == minion && minion.currentHp == minion.getMaxHp()) {
+            this.owner.remove(game);
+          }
+        }}]);
+        minion.enchantments.push(enrage);
+        enrage.registerHandlers(game);
+      }
+    }}]}),
     InnerRage: new Card('Inner Rage', 'Deal $1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 1), this);
       target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
+    }}),
+    KorkronElite: new Card('Kor\'kron Elite', 'Charge', Set.BASIC, CardType.MINION, HeroClass.WARRIOR, Rarity.FREE, 4, {charge: true, hp: 3, attack: 4}),
+    MortalStrike: new Card('Mortal Strike', 'Deal $4 damage. If you have 12 or less Health, deal $6 instead.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.RARE, 4, {requiresTarget: true, applyEffects: function(game, unused_position, target) {
+      var amount = game.currentPlayer.hero.hp <= 12 ? 6 : 4;
+      game.dealDamage(target, game.getSpellDamage(game.currentPlayer, amount), this);
     }}),
     Rampage: new Card('Rampage', 'Give a damaged minion +3/+3.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, minionOnly: true, verify: function(game, unused_position, target) {
       return this.__proto__.verify.call(this, game, unused_position, target) && target.currentHp < target.getMaxHp();
     }, applyEffects: function(game, unused_position, target) {
       target.enchantments.push(new Enchantment(target, 3, ModifierType.ADD, 3, ModifierType.ADD));
       target.currentHp += 3;
+    }}),
+    ShieldBlock: new Card('Shield Block', 'Gain 5 Armor. Draw a card.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 3, {applyEffects: function(game, unused_position, unused_target) {
+      game.currentPlayer.hero.armor += 5;
+      game.drawCard(game.currentPlayer);
     }}),
     ShieldSlam: new Card('Shield Slam', 'Deal 1 damage to a minion for each Armor you have.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.EPIC, 1, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       var damage = 0;
@@ -2184,6 +2222,11 @@
         game.updateStats();
       };
     }}),
+    WarsongCommander: new Card('Warsong Commander', 'Whenever you summon a minion with 3 or less Attack, give it Charge.', Set.BASIC, CardType.MINION, HeroClass.WARRIOR, Rarity.FREE, 3, {hp: 3, attack: 2, handlers: [{event: Events.AFTER_MINION_SUMMONED, handler: function(game, player, position, minion) {
+      if (minion != this.owner && minion.player == this.owner.player && minion.attack <= 3) {
+        minion.charge = true;
+      }
+    }}]}),
   };
   
   var Cards = [];
