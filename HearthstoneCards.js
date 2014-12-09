@@ -2186,6 +2186,13 @@
         enrage.registerHandlers(game);
       }
     }}]}),
+    HeroicStrike: new Card('Heroic Strike', 'Give your hero +4 Attack this turn.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.FREE, 2, {applyEffects: function(game, unused_position, unused_target) {
+      var heroic = new Enchantment(game.currentPlayer.hero, 4, ModifierType.ADD, 0, ModifierType.ADD, [{event: Events.END_TURN, handler: function(game) {
+        this.owner.remove(game);
+      }}]);
+      game.currentPlayer.hero.enchantments.push(heroic);
+      heroic.registerHandlers(game);
+    }}),
     InnerRage: new Card('Inner Rage', 'Deal $1 damage to a minion and give it +2 Attack', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 0, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
       game.dealDamage(target, game.getSpellDamage(game.currentPlayer, 1), this);
       target.enchantments.push(new Enchantment(target, 2, ModifierType.ADD, 0, ModifierType.ADD));
@@ -2212,6 +2219,13 @@
       }
       game.dealDamage(target, damage, this);
     }}),
+    Slam: new Card('Slam', 'Deal $2 damage to a minion. If it survives, draw a card.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 2, {requiresTarget: true, minionOnly: true, applyEffects: function(game, unused_position, target) {
+      var damage = game.getSpellDamage(game.currentPlayer, 2);
+      game.dealDamage(target, damage, this);
+      if (target.currentHp > 0) {
+        game.drawCard(game.currentPlayer);
+      }
+    }}),
     Upgrade: new Card('Upgrade!', 'If you have a weapon, give it +1/+1. Otherwise, equip a 1/3 weapon.', Set.EXPERT, CardType.SPELL, HeroClass.WARRIOR, Rarity.RARE, 1, {applyEffects: function(game, unused_position, unused_target) {
       if (game.currentPlayer.hero.weapon) {
         game.currentPlayer.hero.weapon.durability++;
@@ -2227,6 +2241,16 @@
         minion.charge = true;
       }
     }}]}),
+    Whirlwind: new Card('Whirlwind', 'Deal $1 damage to ALL minions.', Set.BASIC, CardType.SPELL, HeroClass.WARRIOR, Rarity.COMMON, 1, {applyEffects: function(game, unused_position, unused_target) {
+      var group = game.initializeSimultaneousDamage();
+      for (var i = 0; i < game.otherPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.otherPlayer.minions[i], game.getSpellDamage(game.currentPlayer, 1), this, group);
+      }
+      for (var i = 0; i < game.currentPlayer.minions.length; i++) {
+        game.dealSimultaneousDamage(game.currentPlayer.minions[i], game.getSpellDamage(game.currentPlayer, 1), this, group);
+      }
+      game.simultaneousDamageDone(group);
+    }}),
   };
   
   var Cards = [];
